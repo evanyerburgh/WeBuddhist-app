@@ -214,10 +214,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       children: [
         // Loading previous indicator
         if (state.isLoadingPrevious)
-          const PaginationLoadingIndicator(
-            message: 'Loading previous...',
-            showSkeleton: true,
-          ),
+          const SegmentSkeletonList(count: 1, linesPerSegment: 2),
         // Main content list
         Expanded(
           child: ScrollablePositionedList.builder(
@@ -241,10 +238,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
         // Loading next indicator
         if (state.isLoadingNext)
-          const PaginationLoadingIndicator(
-            message: 'Loading more...',
-            showSkeleton: true,
-          ),
+          const SegmentSkeletonList(count: 1, linesPerSegment: 2),
       ],
     );
   }
