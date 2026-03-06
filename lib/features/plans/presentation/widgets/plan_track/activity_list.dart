@@ -11,6 +11,7 @@ class ActivityList extends StatelessWidget {
   final int today;
   final int totalDays;
   final Function(String taskId) onActivityToggled;
+  final VoidCallback? onReaderClosed;
   final AuthorDtoModel? author;
   final String? planId;
   final int? dayNumber;
@@ -22,6 +23,7 @@ class ActivityList extends StatelessWidget {
     required this.today,
     required this.totalDays,
     required this.onActivityToggled,
+    this.onReaderClosed,
     this.author,
     this.planId,
     this.dayNumber,
@@ -100,7 +102,9 @@ class ActivityList extends StatelessWidget {
         currentTextIndex: currentTextIndex >= 0 ? currentTextIndex : 0,
       );
 
-      context.push('/reader/$sourceTextId', extra: navigationContext);
+      context.push('/reader/$sourceTextId', extra: navigationContext).then((_) {
+        onReaderClosed?.call();
+      });
     }
   }
 
