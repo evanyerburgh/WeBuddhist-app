@@ -251,23 +251,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             ],
           ),
         ),
-        // Animated App Bar overlay
-        // Positioned(
-        //   top: 0,
-        //   left: 0,
-        //   right: 0,
-        //   child: AnimatedSlide(
-        //     duration: const Duration(milliseconds: 500),
-        //     curve: Curves.easeInOut,
-        //     offset: _isAppBarVisible ? Offset.zero : const Offset(0, -1),
-        //     child: ReaderAppBarOverlay(
-        //       params: _params,
-        //       colorIndex: widget.colorIndex,
-        //       onSearchPressed: () => _handleSearch(context, state),
-        //       onLanguagePressed: () => _handleLanguageSelection(context, state),
-        //     ),
-        //   ),
-        // ),
+        // Floating play button — always visible, bottom-center
+        Positioned(
+          bottom: MediaQuery.of(context).padding.bottom + 80,
+          left: 0,
+          right: 0,
+          child: const Center(child: _FloatingPlayButton()),
+        ),
       ],
     );
   }
@@ -338,5 +328,35 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         }
       }
     }
+  }
+}
+
+class _FloatingPlayButton extends StatelessWidget {
+  const _FloatingPlayButton();
+
+  static const double _size = 56;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? Colors.white.withAlpha(230) : Colors.white;
+    final iconColor = isDark ? Colors.black87 : Colors.black;
+    final shadowColor = isDark ? Colors.black54 : Colors.black26;
+
+    return Material(
+      shape: const CircleBorder(),
+      color: bgColor,
+      elevation: 6,
+      shadowColor: shadowColor,
+      child: InkWell(
+        onTap: () {},
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: _size,
+          height: _size,
+          child: Icon(Icons.play_arrow_rounded, color: iconColor, size: 32),
+        ),
+      ),
+    );
   }
 }

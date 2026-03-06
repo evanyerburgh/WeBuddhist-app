@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/features/plans/data/providers/plan_days_providers.dart';
+import 'package:flutter_pecha/features/plans/data/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/providers/reader_notifier.dart';
@@ -74,6 +76,7 @@ class _SwipeNavigationWrapperState
                         SwipeDirection.next,
                       )
                       : null,
+              onFinishedTap: canSwipe ? _finishReading : null,
               onEdgeReached: _showEdgeReachedFeedback,
             ),
         ],
@@ -140,6 +143,25 @@ class _SwipeNavigationWrapperState
     });
   }
 
+  void _finishReading() {
+    final navContext = widget.params.navigationContext;
+    if (navContext != null && navContext.source == NavigationSource.plan) {
+      final planId = navContext.planId;
+      final dayNumber = navContext.dayNumber;
+      if (planId != null && dayNumber != null) {
+        ref.invalidate(
+          userPlanDayContentFutureProvider(
+            PlanDaysParams(planId: planId, dayNumber: dayNumber),
+          ),
+        );
+        ref.invalidate(userPlanDaysCompletionStatusProvider(planId));
+      }
+    }
+    if (mounted) {
+      context.pop();
+    }
+  }
+
   void _showEdgeReachedFeedback(SwipeDirection direction) {
     final message =
         direction == SwipeDirection.next
@@ -163,6 +185,7 @@ class _BottomBar extends StatelessWidget {
   final bool isAppBarVisible;
   final VoidCallback? onPreviousTap;
   final VoidCallback? onNextTap;
+  final VoidCallback? onFinishedTap;
   final void Function(SwipeDirection direction) onEdgeReached;
 
   const _BottomBar({
@@ -171,6 +194,7 @@ class _BottomBar extends StatelessWidget {
     required this.isAppBarVisible,
     required this.onPreviousTap,
     required this.onNextTap,
+    this.onFinishedTap,
     required this.onEdgeReached,
   });
 
@@ -281,7 +305,7 @@ class _BottomBar extends StatelessWidget {
           _NavigationButton(
             icon: Icons.check,
             isEnabled: !hasNext,
-            onTap: () => context.pop(),
+            onTap: onFinishedTap ?? () => context.pop(),
           ),
       ],
     );
