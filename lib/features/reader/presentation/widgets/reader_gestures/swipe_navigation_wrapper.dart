@@ -68,9 +68,7 @@ class _SwipeNavigationWrapperState
               shape: const CircleBorder(),
               color: Theme.of(context).cardColor,
               child: InkWell(
-                onTap: () {
-                  // TODO: Implement audio playback
-                },
+                onTap: () {},
                 customBorder: const CircleBorder(),
                 child: Container(
                   width: 56,

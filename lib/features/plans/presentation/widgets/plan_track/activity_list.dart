@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/features/plans/models/author/author_dto_model.dart';
 import 'package:flutter_pecha/features/plans/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
-import 'package:flutter_pecha/shared/extensions/typography_extensions.dart';
 import 'package:go_router/go_router.dart';
 
 class ActivityList extends StatelessWidget {
@@ -205,8 +204,8 @@ class _TaskTitleButton extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: context.languageTextStyle(
-                    language,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                   ),
                 ),
