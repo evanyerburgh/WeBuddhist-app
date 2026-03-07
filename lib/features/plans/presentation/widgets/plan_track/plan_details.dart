@@ -52,14 +52,22 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
     return Scaffold(
       appBar: _buildAppBar(context, language, localizations),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            PlanCoverImage(imageUrl: widget.plan.imageUrl ?? ''),
-            _buildDayCarouselSection(language),
-            _buildDayContentSection(context, language),
-          ],
-        ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PlanCoverImage(imageUrl: widget.plan.imageUrl ?? ''),
+                  _buildDayCarouselSection(language),
+                  _buildDayContentSection(context, language),
+                ],
+              ),
+            ),
+          ),
+          // _buildStartReadingButton(context, localizations, language),
+        ],
       ),
     );
   }
@@ -111,13 +119,14 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (_) => DayCompletionBottomSheet(
-          dayNumber: dayNumber,
-          totalDays: widget.plan.totalDays,
-          completedDays: completedDays,
-          imageUrl: widget.plan.imageUrl,
-          planTitle: widget.plan.title,
-        ),
+        builder:
+            (_) => DayCompletionBottomSheet(
+              dayNumber: dayNumber,
+              totalDays: widget.plan.totalDays,
+              completedDays: completedDays,
+              imageUrl: widget.plan.imageUrl,
+              planTitle: widget.plan.title,
+            ),
       );
     } catch (e) {
       _logger.error('Error showing day completion', e);
@@ -132,29 +141,6 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     return AppBar(
       title: Text(widget.plan.title, style: TextStyle(fontSize: 20)),
       elevation: 0,
-      actions: [
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (value) {
-            if (value == 'unenroll') {
-              _showUnenrollDialog(context);
-            }
-          },
-          itemBuilder:
-              (BuildContext context) => [
-                PopupMenuItem<String>(
-                  value: 'unenroll',
-                  child: Row(
-                    children: [
-                      Icon(Icons.exit_to_app, size: 20),
-                      SizedBox(width: 12),
-                      Text(localizations.plan_unenroll),
-                    ],
-                  ),
-                ),
-              ],
-        ),
-      ],
     );
   }
 
@@ -217,7 +203,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     );
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -435,6 +421,36 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   void _showErrorSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  Widget _buildStartReadingButton(
+    BuildContext context,
+    AppLocalizations localizations,
+    String language,
+  ) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () {},
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).cardColor,
+              foregroundColor: Theme.of(context).textTheme.bodyMedium?.color,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: Text(
+              localizations.start_reading,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
