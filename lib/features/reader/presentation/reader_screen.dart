@@ -45,7 +45,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   // App bar visibility state
   bool _isAppBarVisible = true;
-   
   // Scroll controller callback
   void Function(String segmentId, {double? alignment})? _scrollToSegment;
 
@@ -82,8 +81,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// Only fires when subtaskId is present (enrolled plan), skipped for preview.
   void _trackSubtaskCompletion() {
     final navContext = widget.navigationContext;
-    if (navContext == null || navContext.source != NavigationSource.plan)
+    if (navContext == null || navContext.source != NavigationSource.plan) {
       return;
+    }
 
     final items = navContext.planTextItems;
     final index = navContext.currentTextIndex;
@@ -245,8 +245,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                             params: _params,
                             onClose: () => notifier.selectSegment(null),
                             onOpenCommentary: () {
-                              if (_scrollToSegment != null && state.selectedSegment != null) {
-                                _scrollToSegment!(state.selectedSegment!.segmentId, alignment: 0.0);
+                              if (_scrollToSegment != null &&
+                                  state.selectedSegment != null) {
+                                _scrollToSegment!(
+                                  state.selectedSegment!.segmentId,
+                                  alignment: 0.0,
+                                );
                               }
                             },
                           ),

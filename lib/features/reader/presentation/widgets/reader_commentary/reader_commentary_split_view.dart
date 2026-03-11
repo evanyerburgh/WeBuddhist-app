@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/reader_commentary_panel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +17,6 @@ class ReaderCommentarySplitView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(readerNotifierProvider(params));
-    final notifier = ref.read(readerNotifierProvider(params).notifier);
 
     final isCommentaryOpen = state.isCommentaryOpen;
     final splitRatio = state.splitRatio;
@@ -27,13 +24,10 @@ class ReaderCommentarySplitView extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableHeight = constraints.maxHeight;
-        final dividerHeight = isCommentaryOpen
-            ? ReaderConstants.commentaryDividerHeight
-            : 0.0;
         final commentaryHeight = isCommentaryOpen
-            ? availableHeight * (1 - splitRatio) - dividerHeight
+            ? availableHeight * (1 - splitRatio)
             : 0.0;
-        final mainHeight = availableHeight - commentaryHeight - dividerHeight;
+        final mainHeight = availableHeight - commentaryHeight;
 
         return Column(
           children: [
@@ -42,30 +36,6 @@ class ReaderCommentarySplitView extends ConsumerWidget {
               height: mainHeight,
               child: mainContent,
             ),
-            // Resizable divider (only when commentary is open)
-            if (isCommentaryOpen)
-              GestureDetector(
-                onVerticalDragUpdate: (details) {
-                  final newRatio = (mainHeight + details.delta.dy) / availableHeight;
-                  notifier.updateSplitRatio(newRatio);
-                },
-                child: Container(
-                  height: dividerHeight,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.greyMedium
-                      : Colors.grey[300],
-                  child: Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).dividerColor,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             // Commentary panel (bottom, only when open)
             if (isCommentaryOpen && state.commentarySegmentId != null)
               SizedBox(
@@ -73,6 +43,7 @@ class ReaderCommentarySplitView extends ConsumerWidget {
                 child: ReaderCommentaryPanel(
                   segmentId: state.commentarySegmentId!,
                   params: params,
+                  availableHeight: availableHeight,
                 ),
               ),
           ],

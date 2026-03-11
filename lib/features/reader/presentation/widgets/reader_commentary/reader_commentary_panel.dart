@@ -14,8 +14,7 @@ class _CommentaryPanelConstants {
 
   static const double horizontalPadding = 16.0;
   static const double cardSpacing = 16.0;
-  static const double dividerHeight = 2.0;
-  static const double dividerMargin = 8.0;
+  static const double dividerHeight = 1.0;
   static const double contentSpacing = 8.0;
   static const int previewMaxLength = 150;
 }
@@ -29,11 +28,13 @@ final _expandedCommentaryIndexProvider = StateProvider.family<int?, String>(
 class ReaderCommentaryPanel extends ConsumerWidget {
   final String segmentId;
   final ReaderParams params;
+  final double availableHeight;
 
   const ReaderCommentaryPanel({
     super.key,
     required this.segmentId,
     required this.params,
+    required this.availableHeight,
   });
 
   @override
@@ -52,8 +53,10 @@ class ReaderCommentaryPanel extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // Header with close button
+          // Header with close button and resizable divider
           _CommentaryPanelHeader(
+            params: params,
+            availableHeight: availableHeight,
             onClose: () {
               notifier.closeCommentary();
               ref
@@ -97,46 +100,72 @@ class ReaderCommentaryPanel extends ConsumerWidget {
   }
 }
 
-/// Header for the commentary panel
-class _CommentaryPanelHeader extends StatelessWidget {
+/// Header for the commentary panel with resizable divider
+class _CommentaryPanelHeader extends ConsumerWidget {
   final VoidCallback onClose;
+  final ReaderParams params;
+  final double availableHeight;
 
-  const _CommentaryPanelHeader({required this.onClose});
+  const _CommentaryPanelHeader({
+    required this.onClose,
+    required this.params,
+    required this.availableHeight,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final localizations = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color:
-                Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.greyDark
-                    : AppColors.greyLight,
-            width: 2,
+    final notifier = ref.read(readerNotifierProvider(params).notifier);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Resizable divider handle
+        GestureDetector(
+          onVerticalDragUpdate: (details) {
+            final state = ref.read(readerNotifierProvider(params));
+            final currentMainHeight = availableHeight * state.splitRatio;
+            final newRatio =
+                (currentMainHeight + details.delta.dy) / availableHeight;
+            notifier.updateSplitRatio(newRatio);
+          },
+          child:
+          // Header content
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              border: Border.symmetric(
+                horizontal: BorderSide(
+                  color:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.greyDark
+                          : AppColors.greyLight,
+                  width: 2,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 8),
+                Text(
+                  localizations.text_commentary,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: onClose,
+                  icon: const Icon(Icons.close),
+                  tooltip: localizations.text_close_commentary,
+                  iconSize: 20,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 8),
-          Text(
-            localizations.text_commentary,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: onClose,
-            icon: const Icon(Icons.close),
-            tooltip: localizations.text_close_commentary,
-            iconSize: 20,
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -162,8 +191,8 @@ class _CommentaryPanelContent extends StatelessWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(
-        _CommentaryPanelConstants.horizontalPadding,
+      padding: const EdgeInsets.symmetric(
+        horizontal: _CommentaryPanelConstants.horizontalPadding,
       ),
       itemCount: commentaries.length,
       itemBuilder: (context, index) {
@@ -203,10 +232,7 @@ class _CommentaryCard extends StatelessWidget {
     final titleFontSize = commentary.language == 'bo' ? 16.0 : 14.0;
 
     return Container(
-      margin: const EdgeInsets.only(
-        bottom: _CommentaryPanelConstants.cardSpacing,
-        top: _CommentaryPanelConstants.cardSpacing,
-      ),
+      margin: const EdgeInsets.only(top: _CommentaryPanelConstants.cardSpacing),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -220,17 +246,6 @@ class _CommentaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: _CommentaryPanelConstants.contentSpacing),
-          // Divider
-          Container(
-            height: _CommentaryPanelConstants.dividerHeight,
-            color:
-                Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.greyDark
-                    : Colors.grey,
-            margin: const EdgeInsets.only(
-              bottom: _CommentaryPanelConstants.dividerMargin,
-            ),
-          ),
           // Content
           ...commentary.segments.map((segment) {
             final content = segment.content;
@@ -271,6 +286,14 @@ class _CommentaryCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
+          ),
+          // divider
+          Container(
+            height: _CommentaryPanelConstants.dividerHeight,
+            color:
+                Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.greyDark
+                    : Colors.grey[300],
           ),
         ],
       ),
