@@ -68,7 +68,12 @@ class _SwipeNavigationWrapperState
                 shape: const CircleBorder(),
                 color: Theme.of(context).cardColor,
                 child: InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    // show a comming soon snackbar
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Coming soon')),
+                    );
+                  },
                   customBorder: const CircleBorder(),
                   child: Container(
                     width: 56,
@@ -141,7 +146,7 @@ class _SwipeNavigationWrapperState
     SwipeDirection direction,
   ) {
     if (_isNavigating) return;
-    
+
     final newContext = _navigationService.createNavigationContextForAdjacent(
       currentContext,
       direction,
