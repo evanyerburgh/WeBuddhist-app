@@ -26,6 +26,8 @@ class DayCarousel extends StatelessWidget {
     // Convert to local time first, then extract date-only to avoid
     // timezone-related date shifts when the time component crosses midnight
     final localStartDate = DateUtils.dateOnly(startDate.toLocal());
+    final selectedIndex = days.indexWhere((d) => d.dayNumber == selectedDay);
+    final initialPage = selectedIndex >= 0 ? selectedIndex : 0;
 
     return Container(
       height: 80,
@@ -34,13 +36,13 @@ class DayCarousel extends StatelessWidget {
         options: CarouselOptions(
           aspectRatio: 1,
           height: 70,
-          viewportFraction: 0.24, // Show ~4 items at once (60px + margins)
+          viewportFraction: 0.24,
           enableInfiniteScroll: false,
-          scrollPhysics: const ClampingScrollPhysics(), // Smoother scroll
+          scrollPhysics: const ClampingScrollPhysics(),
           autoPlayCurve: Curves.easeInOut,
           autoPlayAnimationDuration: const Duration(milliseconds: 300),
-          padEnds: false, // Remove extra padding at start/end
-          initialPage: 0, // Start from the beginning
+          padEnds: false,
+          initialPage: initialPage,
         ),
         itemCount: days.length,
         itemBuilder: (context, index, realIndex) {
