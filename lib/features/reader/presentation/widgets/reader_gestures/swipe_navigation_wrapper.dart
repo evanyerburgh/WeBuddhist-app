@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/plans/data/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/data/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
@@ -32,6 +33,7 @@ class SwipeNavigationWrapper extends ConsumerStatefulWidget {
 
 class _SwipeNavigationWrapperState
     extends ConsumerState<SwipeNavigationWrapper> {
+  static final _logger = AppLogger('SwipeNavigationWrapper');
   final NavigationService _navigationService = const NavigationService();
   bool _isNavigating = false;
 
@@ -48,6 +50,9 @@ class _SwipeNavigationWrapperState
 
     // Determine if we should enable swipe and show full controls
     final canSwipe = navigationContext != null && navigationContext.canSwipe;
+    final isPlanNavigation =
+        navigationContext != null &&
+        navigationContext.source == NavigationSource.plan;
 
     return GestureDetector(
       onHorizontalDragStart: canSwipe ? _onDragStart : null,
@@ -57,37 +62,43 @@ class _SwipeNavigationWrapperState
         children: [
           widget.child,
           // Circular audio play button - positioned above SegmentActionBar
-          // if (!hideBottomNav)
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            bottom: hideBottomNav ? 110 : 80,
-            left: MediaQuery.of(context).size.width / 2 - 28,
-            child: Material(
-              elevation: 4,
-              shape: const CircleBorder(),
-              color: Theme.of(context).cardColor,
-              child: InkWell(
-                onTap: () {},
-                customBorder: const CircleBorder(),
-                child: Container(
-                  width: 56,
-                  height: 56,
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    Icons.play_arrow_rounded,
-                    size: 32,
-                    color: Theme.of(context).colorScheme.onSurface,
+          if (!state.isCommentaryOpen)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              bottom: hideBottomNav ? 110 : 80,
+              left: MediaQuery.of(context).size.width / 2 - 28,
+              child: Material(
+                elevation: 4,
+                shape: const CircleBorder(),
+                color: Theme.of(context).cardColor,
+                child: InkWell(
+                  onTap: () {
+                    // show a comming soon snackbar
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Coming soon')),
+                    );
+                  },
+                  customBorder: const CircleBorder(),
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.play_arrow_rounded,
+                      size: 32,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           // Bottom bar - always present but animated in/out
-          if (showBottomBar)
+          if (showBottomBar && !state.isCommentaryOpen)
             _BottomBar(
               textDetail: widget.textDetail,
               navigationContext: navigationContext,
+              isPlanNavigation: isPlanNavigation,
               isAppBarVisible: widget.isAppBarVisible,
               onPreviousTap:
                   canSwipe
@@ -104,7 +115,6 @@ class _SwipeNavigationWrapperState
                       )
                       : null,
               onFinishedTap: canSwipe ? _finishReading : null,
-              onEdgeReached: _showEdgeReachedFeedback,
             ),
         ],
       ),
@@ -131,17 +141,43 @@ class _SwipeNavigationWrapperState
 
     // Check if navigation is possible
     if (!_navigationService.canNavigate(navigationContext, direction)) {
-      _showEdgeReachedFeedback(direction);
       return;
     }
 
     _navigateToAdjacentText(navigationContext, direction);
   }
 
+  void _completeCurrentSubtask() {
+    final navContext = widget.params.navigationContext;
+    if (navContext == null || navContext.source != NavigationSource.plan) return;
+
+    final items = navContext.planTextItems;
+    final index = navContext.currentTextIndex;
+    if (items == null || index == null || index < 0 || index >= items.length) {
+      return;
+    }
+
+    final currentItem = items[index];
+    final subtaskId = currentItem.subtaskId;
+    if (subtaskId == null || subtaskId.isEmpty) return;
+    if (currentItem.isCompleted) return;
+
+    Future.microtask(() async {
+      try {
+        await ref.read(completeSubTaskFutureProvider(subtaskId).future);
+        _logger.info('Marked subtask $subtaskId as complete on navigation');
+      } catch (e) {
+        _logger.error('Failed to complete subtask $subtaskId', e);
+      }
+    });
+  }
+
   void _navigateToAdjacentText(
     NavigationContext currentContext,
     SwipeDirection direction,
   ) {
+    if (_isNavigating) return;
+
     final newContext = _navigationService.createNavigationContextForAdjacent(
       currentContext,
       direction,
@@ -155,7 +191,16 @@ class _SwipeNavigationWrapperState
     );
     if (adjacentText == null) return;
 
+    if (direction == SwipeDirection.next) {
+      _completeCurrentSubtask();
+    }
+
     _isNavigating = true;
+
+    // Clear UI state before navigation for clean transition
+    final notifier = ref.read(readerNotifierProvider(widget.params).notifier);
+    notifier.selectSegment(null);
+    notifier.closeCommentary();
 
     // Navigate to the new text
     // Pass NavigationContext directly (it already contains targetSegmentId)
@@ -166,11 +211,15 @@ class _SwipeNavigationWrapperState
 
     // Reset navigating flag after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {
-      _isNavigating = false;
+      if (mounted) {
+        _isNavigating = false;
+      }
     });
   }
 
   void _finishReading() {
+    _completeCurrentSubtask();
+
     final navContext = widget.params.navigationContext;
     if (navContext != null && navContext.source == NavigationSource.plan) {
       final planId = navContext.planId;
@@ -188,41 +237,26 @@ class _SwipeNavigationWrapperState
       context.pop();
     }
   }
-
-  void _showEdgeReachedFeedback(SwipeDirection direction) {
-    final message =
-        direction == SwipeDirection.next
-            ? 'Last text in this day'
-            : 'First text in this day';
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 1),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
 }
 
 /// Bottom bar - shows title only initially, expands to show full controls when tapped
 class _BottomBar extends StatelessWidget {
   final NavigationContext? navigationContext;
   final TextDetail textDetail;
+  final bool isPlanNavigation;
   final bool isAppBarVisible;
   final VoidCallback? onPreviousTap;
   final VoidCallback? onNextTap;
   final VoidCallback? onFinishedTap;
-  final void Function(SwipeDirection direction) onEdgeReached;
 
   const _BottomBar({
     required this.textDetail,
     required this.navigationContext,
+    this.isPlanNavigation = false,
     required this.isAppBarVisible,
     required this.onPreviousTap,
     required this.onNextTap,
     this.onFinishedTap,
-    required this.onEdgeReached,
   });
 
   @override
@@ -250,7 +284,9 @@ class _BottomBar extends StatelessWidget {
             child:
                 canSwipe
                     ? _buildFullControls(context)
-                    : _buildMinimalTitle(context),
+                    : isPlanNavigation
+                        ? _buildSingleItemControls(context)
+                        : _buildMinimalTitle(context),
           ),
         ),
       ),
@@ -272,6 +308,31 @@ class _BottomBar extends StatelessWidget {
     );
   }
 
+  Widget _buildSingleItemControls(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            textDetail.title,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontFamily: getFontFamily(textDetail.language),
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        _NavigationButton(
+          icon: Icons.check,
+          isEnabled: true,
+          onTap: onFinishedTap ?? () => context.pop(),
+        ),
+      ],
+    );
+  }
+
   Widget _buildFullControls(BuildContext context) {
     final hasPrevious = navigationContext!.hasPreviousText;
     final hasNext = navigationContext!.hasNextText;
@@ -285,10 +346,7 @@ class _BottomBar extends StatelessWidget {
           _NavigationButton(
             icon: Icons.chevron_left,
             isEnabled: hasPrevious,
-            onTap:
-                hasPrevious
-                    ? onPreviousTap!
-                    : () => onEdgeReached(SwipeDirection.previous),
+            onTap: hasPrevious ? onPreviousTap! : () => context.pop(),
           ),
         // Progress text
         Expanded(
@@ -321,8 +379,7 @@ class _BottomBar extends StatelessWidget {
           _NavigationButton(
             icon: Icons.chevron_right,
             isEnabled: hasNext,
-            onTap:
-                hasNext ? onNextTap! : () => onEdgeReached(SwipeDirection.next),
+            onTap: hasNext ? onNextTap! : () => context.pop(),
           ),
 
         // if is last text, show checked icon to pop back to the plan screen
