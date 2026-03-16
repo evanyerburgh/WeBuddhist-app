@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
-import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_item.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/data/providers/reader_notifier.dart';
@@ -22,12 +21,14 @@ class ReaderContentPart extends ConsumerStatefulWidget {
   final String language;
   final String? initialSegmentId;
   final void Function(bool isScrollingDown)? onScrollDirectionChanged;
+  final void Function(void Function(String segmentId, {double? alignment}))? onScrollControllerReady;
   const ReaderContentPart({
     super.key,
     required this.params,
     required this.language,
     this.initialSegmentId,
     this.onScrollDirectionChanged,
+    this.onScrollControllerReady,
   });
 
   @override
@@ -55,10 +56,18 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   bool _hasUserInteracted = false;
   bool _isProgrammaticScroll = false;
 
+  // Grey-out feature: show only initial segment, disable on first user scroll
+  bool _enableGreyOut = true;
+
   @override
   void initState() {
     super.initState();
     _itemPositionsListener.itemPositions.addListener(_onScrollPositionChanged);
+    
+    // Expose scroll controller to parent
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onScrollControllerReady?.call(_scrollToSegment);
+    });
   }
 
   @override
@@ -78,6 +87,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
     // Track scroll direction for app bar visibility
     _trackScrollDirection();
+
+    // Disable grey-out on first user scroll
+    if (_hasUserInteracted && _isUserScrolling && _enableGreyOut) {
+      setState(() {
+        _enableGreyOut = false;
+      });
+    }
   }
 
   void _trackScrollDirection() {
@@ -192,7 +208,14 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     });
   }
 
-  void _scrollToSegment(String segmentId, FlattenedContent content) {
+  void _scrollToSegment(String segmentId, {double? alignment}) {
+    final state = ref.read(readerNotifierProvider(widget.params));
+    final content = state.content;
+    if (content == null) {
+      _logger.debug('No content available for scrolling');
+      return;
+    }
+    
     final index = content.getSegmentIndex(segmentId);
     if (index == null) {
       _logger.debug('Segment $segmentId not found in content');
@@ -207,7 +230,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         index: index,
         duration: ReaderConstants.scrollAnimationDuration,
         curve: Curves.easeInOutCubic,
-        alignment: ReaderConstants.scrollToSegmentAlignment,
+        alignment: alignment ?? ReaderConstants.scrollToSegmentAlignment,
       );
       _logger.debug('Scrolling to segment $segmentId at index $index');
 
@@ -234,7 +257,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         widget.initialSegmentId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_hasScrolledToInitial && _itemScrollController.isAttached) {
-          _scrollToSegment(widget.initialSegmentId!, state.content!);
+          _scrollToSegment(widget.initialSegmentId!);
           _hasScrolledToInitial = true;
         }
       });
@@ -314,13 +337,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         return const SizedBox.shrink();
       },
       segment:
-          (segment, depth, sectionId) => SegmentItem(
+          (segment, depth, sectionId) => SegmentItem( 
             segment: segment,
             depth: depth,
             language: widget.language,
             isSelected: state.selectedSegment?.segmentId == segment.segmentId,
             isHighlighted: state.highlightedSegmentId == segment.segmentId,
             highlightSource: state.highlightSource,
+            isGreyedOut: _enableGreyOut && 
+                         widget.initialSegmentId != null &&
+                         widget.initialSegmentId != segment.segmentId,
             onTap: () => onSegmentTap(segment),
           ),
     );

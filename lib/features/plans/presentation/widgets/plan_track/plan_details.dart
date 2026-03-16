@@ -10,7 +10,10 @@ import 'package:flutter_pecha/features/plans/models/plan_days_model.dart';
 import 'package:flutter_pecha/features/plans/models/user/user_plans_model.dart';
 import 'package:flutter_pecha/features/plans/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import '../day_completion_bottom_sheet.dart';
 import '../plan_cover_image.dart';
 import '../day_carousel.dart';
 import 'activity_list.dart';
@@ -34,7 +37,8 @@ class PlanDetails extends ConsumerStatefulWidget {
 
 class _PlanDetailsState extends ConsumerState<PlanDetails> {
   late int selectedDay;
-  final Set<String> _togglingTaskIds = {}; // Track tasks being toggled
+  final Set<String> _togglingTaskIds = {};
+  final Map<int, bool> _dayCompletionTracker = {};
 
   @override
   void initState() {
@@ -47,18 +51,89 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     final language = widget.plan.language;
     final localizations = context.l10n;
 
+    _listenForDayCompletion();
+
     return Scaffold(
       appBar: _buildAppBar(context, language, localizations),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            PlanCoverImage(imageUrl: widget.plan.imageUrl ?? ''),
-            _buildDayCarouselSection(language),
-            _buildDayContentSection(context, language),
-          ],
-        ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PlanCoverImage(imageUrl: widget.plan.imageUrl ?? ''),
+                  _buildDayCarouselSection(language),
+                  _buildDayContentSection(context, language),
+                ],
+              ),
+            ),
+          ),
+          _buildStartReadingButton(context, localizations),
+        ],
       ),
     );
+  }
+
+  void _listenForDayCompletion() {
+    ref.listen(
+      userPlanDayContentFutureProvider(
+        PlanDaysParams(planId: widget.plan.id, dayNumber: selectedDay),
+      ),
+      (previous, next) {
+        final dayContent = next.valueOrNull;
+        if (dayContent == null) return;
+
+        final day = dayContent.dayNumber;
+        if (_dayCompletionTracker.containsKey(day)) {
+          final wasCompleted = _dayCompletionTracker[day]!;
+          if (!wasCompleted && dayContent.isCompleted) {
+            _onDayCompleted(day);
+          }
+        }
+        _dayCompletionTracker[day] = dayContent.isCompleted;
+      },
+    );
+  }
+
+  void _onReaderClosed() {
+    if (!mounted) return;
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      ref.invalidate(
+        userPlanDayContentFutureProvider(
+          PlanDaysParams(planId: widget.plan.id, dayNumber: selectedDay),
+        ),
+      );
+      ref.invalidate(userPlanDaysCompletionStatusProvider(widget.plan.id));
+    });
+  }
+
+  Future<void> _onDayCompleted(int dayNumber) async {
+    try {
+      final completionStatus = await ref.read(
+        userPlanDaysCompletionStatusProvider(widget.plan.id).future,
+      );
+      final completedDays = completionStatus.values.where((v) => v).length;
+
+      if (!mounted) return;
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder:
+            (_) => DayCompletionBottomSheet(
+              dayNumber: dayNumber,
+              totalDays: widget.plan.totalDays,
+              completedDays: completedDays,
+              imageUrl: widget.plan.imageUrl,
+              planTitle: widget.plan.title,
+            ),
+      );
+    } catch (e) {
+      _logger.error('Error showing day completion', e);
+    }
   }
 
   AppBar _buildAppBar(
@@ -69,29 +144,6 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     return AppBar(
       title: Text(widget.plan.title, style: TextStyle(fontSize: 20)),
       elevation: 0,
-      actions: [
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (value) {
-            if (value == 'unenroll') {
-              _showUnenrollDialog(context);
-            }
-          },
-          itemBuilder:
-              (BuildContext context) => [
-                PopupMenuItem<String>(
-                  value: 'unenroll',
-                  child: Row(
-                    children: [
-                      Icon(Icons.exit_to_app, size: 20),
-                      SizedBox(width: 12),
-                      Text(localizations.plan_unenroll),
-                    ],
-                  ),
-                ),
-              ],
-        ),
-      ],
     );
   }
 
@@ -154,7 +206,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     );
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -170,6 +222,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                   dayNumber: selectedDay,
                   onActivityToggled:
                       (taskId) => _handleTaskToggle(taskId, dayContent.tasks),
+                  onReaderClosed: _onReaderClosed,
                 ),
             loading: () => const DayContentSkeleton(),
             error: (error, stackTrace) => _buildDayContentError(),
@@ -367,6 +420,102 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   void _showErrorSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  List<PlanTextItem> _buildPlanTextItems(List<UserTasksDto> tasks) {
+    final items = <PlanTextItem>[];
+    for (final task in tasks) {
+      if (task.subTasks.isEmpty) continue;
+      final subtask = task.subTasks[0];
+      if (subtask.sourceTextId != null && subtask.sourceTextId!.isNotEmpty) {
+        items.add(
+          PlanTextItem(
+            textId: subtask.sourceTextId!,
+            segmentId: subtask.segmentId,
+            title: task.title,
+            subtaskId: subtask.id,
+            isCompleted: subtask.isCompleted,
+          ),
+        );
+      }
+    }
+    return items;
+  }
+
+  void _startReading(List<UserTasksDto> tasks) {
+    final planTextItems = _buildPlanTextItems(tasks);
+    if (planTextItems.isEmpty) return;
+
+    // Find first uncompleted task with source text; fall back to first item
+    final targetIndex = planTextItems.indexWhere((item) => !item.isCompleted);
+    final index = targetIndex >= 0 ? targetIndex : 0;
+    final target = planTextItems[index];
+
+    final navigationContext = NavigationContext(
+      source: NavigationSource.plan,
+      planId: widget.plan.id,
+      dayNumber: selectedDay,
+      targetSegmentId: target.segmentId,
+      planTextItems: planTextItems,
+      currentTextIndex: index,
+    );
+
+    context.push('/reader/${target.textId}', extra: navigationContext).then((
+      _,
+    ) {
+      _onReaderClosed();
+    });
+  }
+
+  Widget _buildStartReadingButton(
+    BuildContext context,
+    AppLocalizations localizations,
+  ) {
+    final dayContent = ref.watch(
+      userPlanDayContentFutureProvider(
+        PlanDaysParams(planId: widget.plan.id, dayNumber: selectedDay),
+      ),
+    );
+
+    final tasks = dayContent.valueOrNull?.tasks;
+    final hasReadableContent =
+        tasks != null &&
+        tasks.any(
+          (t) => t.subTasks.any(
+            (s) => s.sourceTextId != null && s.sourceTextId!.isNotEmpty,
+          ),
+        );
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: hasReadableContent ? () => _startReading(tasks) : null,
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.onSurface,
+              foregroundColor: Theme.of(context).colorScheme.surface,
+              disabledBackgroundColor: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: Text(
+              localizations.start_reading,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
