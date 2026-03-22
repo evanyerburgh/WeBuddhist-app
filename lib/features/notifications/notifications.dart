@@ -16,11 +16,11 @@ export 'domain/repositories/notifications_repository.dart';
 // Domain - Use Cases
 export 'domain/usecases/notifications_usecases.dart';
 
-// Provider
-export 'provider/notification_provider.dart';
-
 // Services
 export 'services/notification_service.dart';
+
+// Presentation - Providers
+export 'presentation/providers/notification_provider.dart';
 
 // Presentation
 export 'presentation/notification_settings_screen.dart';

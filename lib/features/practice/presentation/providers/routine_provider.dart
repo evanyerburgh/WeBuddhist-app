@@ -1,4 +1,4 @@
-import 'package:flutter_pecha/features/practice/data/datasources/routine_local_storage.dart';
+import 'package:flutter_pecha/features/practice/data/datasource/routine_local_storage.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:flutter_pecha/features/practice/data/services/routine_notification_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

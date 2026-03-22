@@ -1,8 +1,8 @@
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/auth/application/user_notifier.dart';
-import 'package:flutter_pecha/features/onboarding/data/onboarding_local_datasource.dart';
-import 'package:flutter_pecha/features/onboarding/data/onboarding_remote_datasource.dart';
+import 'package:flutter_pecha/features/onboarding/data/datasource/onboarding_local_datasource.dart';
+import 'package:flutter_pecha/features/onboarding/data/datasource/onboarding_remote_datasource.dart';
 import 'package:flutter_pecha/features/onboarding/data/models/onboarding_preferences.dart';
 
 final _logger = AppLogger('OnboardingRepository');

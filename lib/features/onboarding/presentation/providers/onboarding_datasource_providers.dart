@@ -2,8 +2,8 @@ import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/network/api_client_provider.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/auth/application/user_notifier.dart';
-import 'package:flutter_pecha/features/onboarding/data/onboarding_local_datasource.dart';
-import 'package:flutter_pecha/features/onboarding/data/onboarding_remote_datasource.dart';
+import 'package:flutter_pecha/features/onboarding/data/datasource/onboarding_local_datasource.dart';
+import 'package:flutter_pecha/features/onboarding/data/datasource/onboarding_remote_datasource.dart';
 import 'package:flutter_pecha/features/onboarding/data/repositories/onboarding_repository.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 

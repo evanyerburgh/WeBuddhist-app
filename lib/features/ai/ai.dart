@@ -45,8 +45,8 @@ export 'services/rate_limiter.dart';
 export 'services/retry_service.dart';
 
 // Presentation - Screens
-export 'presentation/ai_mode_screen.dart';
-export 'presentation/search_results_screen.dart';
+export 'presentation/screens/ai_mode_screen.dart';
+export 'presentation/screens/search_results_screen.dart';
 
 // Presentation - Controllers
 export 'presentation/controllers/chat_controller.dart';

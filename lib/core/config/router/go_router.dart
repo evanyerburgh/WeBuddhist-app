@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
-import 'package:flutter_pecha/features/auth/presentation/login_page.dart';
+import 'package:flutter_pecha/features/auth/presentation/screens/login_page.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/features/auth/presentation/profile_page.dart';
+import 'package:flutter_pecha/features/auth/presentation/screens/profile_page.dart';
 import 'package:flutter_pecha/features/app/presentation/skeleton_screen.dart';
 import 'package:flutter_pecha/features/creator_info/presentation/creator_info_screen.dart';
-import 'package:flutter_pecha/features/onboarding/presentation/onboarding_wrapper.dart';
+import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_wrapper.dart';
 import 'package:flutter_pecha/features/home/data/models/prayer_data.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/view_illustration.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/youtube_video_player.dart';
@@ -40,7 +40,7 @@ import 'package:flutter_pecha/features/texts/presentation/version_selection/lang
 import 'package:flutter_pecha/features/texts/presentation/version_selection/version_selection_screen.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
 import 'package:flutter_pecha/features/recitation/presentation/screens/recitation_detail_screen.dart';
-import 'package:flutter_pecha/features/ai/presentation/search_results_screen.dart';
+import 'package:flutter_pecha/features/ai/presentation/screens/search_results_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';

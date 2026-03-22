@@ -33,7 +33,7 @@ export 'presentation/providers/routine_provider.dart';
 export 'data/utils/routine_time_utils.dart';
 
 // Data - Datasources
-export 'data/datasources/routine_local_storage.dart';
+export 'data/datasource/routine_local_storage.dart';
 
 // Presentation - Screens
 export 'presentation/screens/practice_screen.dart';

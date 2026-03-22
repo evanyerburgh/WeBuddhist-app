@@ -39,8 +39,8 @@ export 'application/user_notifier.dart';
 export 'application/user_state.dart';
 
 // Presentation - Screens
-export 'presentation/login_page.dart';
-export 'presentation/profile_page.dart';
+export 'presentation/screens/login_page.dart';
+export 'presentation/screens/profile_page.dart';
 
 // Presentation - Widgets
 export 'presentation/widgets/auth_buttons.dart';

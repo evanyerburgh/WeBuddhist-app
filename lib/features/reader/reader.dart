@@ -35,7 +35,7 @@ export 'presentation/providers/reader_notifier.dart';
 export 'presentation/providers/reader_providers.dart';
 
 // Presentation - Screens
-export 'presentation/reader_screen.dart';
+export 'presentation/screens/reader_screen.dart';
 
 // Presentation - Widgets
 export 'presentation/widgets/reader_app_bar/reader_app_bar.dart';
