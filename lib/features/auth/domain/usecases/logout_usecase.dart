@@ -1,20 +1,23 @@
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/auth/domain/repositories/auth_repository.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 import 'package:fpdart/fpdart.dart';
 
-/// Logout use case.
+/// Local logout use case.
+///
+/// Logs the user out locally (clears credentials from device).
 class LogoutUseCase extends UseCase<void, NoParams> {
-  final void Function() _logoutFn;
+  final AuthRepository _repository;
 
-  LogoutUseCase(this._logoutFn);
+  LogoutUseCase(this._repository);
 
   @override
   Future<Either<Failure, void>> call(NoParams params) async {
     try {
-      _logoutFn();
+      await _repository.localLogout();
       return const Right(null);
     } catch (e) {
-      return Left(UnknownFailure('Logout failed: $e'));
+      return Left(AuthenticationFailure('Logout failed: $e'));
     }
   }
 }

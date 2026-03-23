@@ -12,7 +12,7 @@ import 'package:flutter_pecha/features/ai/presentation/widgets/skeletons/chat_me
 import 'package:flutter_pecha/features/ai/validators/message_validator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/auth_providers.dart';
-import 'package:flutter_pecha/features/auth/application/user_notifier.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/user_notifier.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:go_router/go_router.dart';
 
