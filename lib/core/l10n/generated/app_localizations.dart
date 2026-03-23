@@ -1713,6 +1713,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'QR Code'**
   String get text_qrCode;
+
+  /// No description provided for @missedDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{0 missed days} =1{1 missed day} other{{count} missed days}}'**
+  String missedDaysCount(int count);
 }
 
 class _AppLocalizationsDelegate

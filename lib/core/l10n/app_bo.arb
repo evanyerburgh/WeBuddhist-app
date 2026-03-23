@@ -317,5 +317,13 @@
       }
     }
   },
-  "text_qrCode": "QR གོམ་པ།"
+  "text_qrCode": "QR གོམ་པ།",
+  "missedDaysCount": "{count, plural, =0{0 missed days} =1{1 missed day} other{{count} missed days}}",
+  "@missedDaysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -861,4 +861,16 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get text_qrCode => 'QR གོམ་པ།';
+
+  @override
+  String missedDaysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count missed days',
+      one: '1 missed day',
+      zero: '0 missed days',
+    );
+    return '$_temp0';
+  }
 }
