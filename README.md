@@ -122,12 +122,176 @@ Text(context.l10n.greeting('John'))
 ```
 
 ## ⚙️ Project Structure
+
+This project follows **Clean Architecture** principles with clear separation of concerns across three main layers.
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    PRESENTATION LAYER                           │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  UI Components (Screens, Widgets)                       │   │
+│  │  State Management (Riverpod Notifiers/Providers)        │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                              ↓                                  │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ depends on
+┌─────────────────────────────────────────────────────────────────┐
+│                      DOMAIN LAYER                               │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  Entities (Business Objects)                            │   │
+│  │  Use Cases (Business Logic)                             │   │
+│  │  Repository Interfaces (Contracts)                      │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                              ↓                                  │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ depends on
+┌─────────────────────────────────────────────────────────────────┐
+│                       DATA LAYER                                │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  Repository Implementations                             │   │
+│  │  Data Sources (API, Local Storage)                      │   │
+│  │  Models (DTOs for serialization)                        │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ depends on
+┌─────────────────────────────────────────────────────────────────┐
+│                    EXTERNAL SERVICES                            │
+│         (Auth0, Firebase, HTTP, Storage, etc.)                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Folder Structure
+
 ```
 lib/
-  main.dart                # App entry point
-  theme/app_theme.dart     # Light & dark theme config
-  ui/screens/              # UI screens
+├── core/                    # Shared infrastructure & utilities
+│   ├── config/              # App configuration
+│   ├── di/                  # Dependency injection
+│   ├── error/               # Error handling (Failures)
+│   ├── network/             # Network utilities
+│   ├── services/            # External service integrations
+│   ├── storage/             # Local storage utilities
+│   └── theme/               # App theming
+│
+├── features/                # Feature-based modules
+│   └── auth/                # ← Authentication feature example
+│       ├── domain/          # Business logic (no dependencies)
+│       ├── data/            # Data implementation
+│       └── presentation/    # UI & state management
+│
+└── shared/                  # Cross-cutting concerns
+    ├── data/                # Shared data layer utilities
+    ├── domain/              # Shared domain logic
+    ├── presentation/        # Shared UI components
+    └── widgets/             # Reusable widgets
 ```
+
+### Auth Flow Example
+
+Here's how authentication follows clean architecture through all layers:
+
+#### 1. Domain Layer (`features/auth/domain/`)
+*Pure business logic with no framework dependencies*
+
+```
+domain/
+├── entities/
+│   └── user.dart                    # User business entity
+├── repositories/
+│   └── auth_repository.dart         # Repository interface (contract)
+└── usecases/
+    ├── login_usecase.dart           # Login business logic
+    ├── get_current_user_usecase.dart
+    └── logout_usecase.dart
+```
+
+**Key points:**
+- `User` entity: Pure Dart class with business properties
+- `AuthRepository`: Abstract interface defining data operations
+- `LoginUseCase`: Orchestrates login logic, returns `Either<Failure, User>`
+
+#### 2. Data Layer (`features/auth/data/`)
+*Implements domain contracts, handles external dependencies*
+
+```
+data/
+├── models/
+│   └── user_model.dart              # DTO for JSON serialization
+├── datasources/
+│   └── auth_remote_datasource.dart  # API/Service calls
+└── repositories/
+    └── auth_repository_impl.dart    # Implements AuthRepository
+```
+
+**Key points:**
+- `UserModel`: Handles JSON ↔ Dart conversion
+- `AuthRemoteDataSource`: Makes actual API calls
+- `AuthRepositoryImpl`: Implements domain interface, uses datasource
+
+#### 3. Presentation Layer (`features/auth/presentation/`)
+*UI and state management*
+
+```
+presentation/
+├── providers/
+│   ├── auth_notifier.dart           # State management
+│   ├── auth_providers.dart          # DI setup
+│   └── use_case_providers.dart      # Use case providers
+├── screens/
+│   └── login_page.dart              # Login UI
+└── widgets/
+    └── login_form.dart              # Reusable form widget
+```
+
+**Key points:**
+- `AuthNotifier`: Manages auth state, calls use cases
+- `authProviders`: Wire up dependencies using Riverpod
+- `LoginPage`: UI that consumes state via providers
+
+### Data Flow Example: Login
+
+```
+User clicks login button
+        ↓
+LoginPage (Presentation)
+        ↓
+AuthNotifier.login() (Presentation)
+        ↓
+LoginUseCase.call() (Domain)
+        ↓
+AuthRepository.login() (Domain interface)
+        ↓
+AuthRepositoryImpl.login() (Data implementation)
+        ↓
+AuthRemoteDataSource.login() (Data)
+        ↓
+External Auth Service
+        ↓
+Returns Either<Failure, User>
+        ↓
+User entity flows back up through layers
+        ↓
+AuthNotifier updates state
+        ↓
+UI rebuilds with new state
+```
+
+### Key Principles
+
+| Layer | Responsibility | Dependencies |
+|-------|---------------|--------------|
+| **Domain** | Business rules & logic | None (pure Dart) |
+| **Data** | Data sources & persistence | Domain, external services |
+| **Presentation** | UI & state management | Domain (via use cases) |
+
+### Benefits
+
+- **Testable**: Each layer can be unit tested independently
+- **Maintainable**: Changes in one layer don't break others
+- **Scalable**: Easy to add new features following same pattern
+- **Flexible**: Swap implementations (e.g., change API) without affecting business logic
 
 ## 🤝 Contributing
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
