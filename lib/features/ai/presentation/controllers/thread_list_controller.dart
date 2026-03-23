@@ -4,7 +4,7 @@ import 'package:flutter_pecha/features/ai/presentation/providers/ai_chat_provide
 import 'package:flutter_pecha/features/ai/data/repositories/ai_chat_repository.dart';
 import 'package:flutter_pecha/features/ai/data/models/chat_thread.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/user_notifier.dart';
-import 'package:flutter_pecha/features/auth/presentation/providers/auth_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ThreadListState {

@@ -4,7 +4,7 @@ import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/auth/data/models/user_model.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/get_current_user_usecase.dart';
-import 'package:flutter_pecha/features/auth/presentation/providers/user_state.dart';
+import 'package:flutter_pecha/features/auth/presentation/state/user_state.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

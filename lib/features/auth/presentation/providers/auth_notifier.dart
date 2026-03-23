@@ -1,6 +1,7 @@
 // Riverpod provider and logic for authentication state.
 import 'package:auth0_flutter/auth0_flutter.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_and_onboarding_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/continue_as_guest_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/get_credentials_usecase.dart';
@@ -11,45 +12,9 @@ import 'package:flutter_pecha/features/auth/domain/usecases/login_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/providers/onboarding_datasource_providers.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
-import 'package:flutter_pecha/features/auth/presentation/providers/auth_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-/// Authentication state
-///
-/// Handles ONLY authentication concerns:
-/// - Login/logout status
-/// - Guest mode
-/// - Auth loading states
-/// - Auth errors
-///
-/// User profile data is now managed by UserNotifier (userProvider)
-class AuthState {
-  final bool isLoggedIn;
-  final bool isLoading;
-  final bool isGuest;
-  final String? errorMessage;
-
-  const AuthState({
-    required this.isLoggedIn,
-    this.isGuest = false,
-    this.isLoading = false,
-    this.errorMessage,
-  });
-
-  AuthState copyWith({
-    bool? isLoggedIn,
-    bool? isLoading,
-    bool? isGuest,
-    String? errorMessage,
-  }) => AuthState(
-    isLoggedIn: isLoggedIn ?? this.isLoggedIn,
-    isLoading: isLoading ?? this.isLoading,
-    isGuest: isGuest ?? this.isGuest,
-    errorMessage: errorMessage,
-  );
-
-  AuthState clearError() => copyWith(errorMessage: '');
-}
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final LoginUseCase _loginUseCase;
@@ -60,6 +25,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final IsGuestModeUseCase _isGuestModeUseCase;
   final ClearGuestModeUseCase _clearGuestModeUseCase;
   final LogoutUseCase _localLogoutUseCase;
+  final ClearGuestModeAndOnboardingUseCase _clearGuestModeAndOnboardingUseCase;
   final Ref ref;
   final _logger = AppLogger('AuthNotifier');
 
@@ -72,6 +38,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required IsGuestModeUseCase isGuestModeUseCase,
     required ClearGuestModeUseCase clearGuestModeUseCase,
     required LogoutUseCase localLogoutUseCase,
+    required ClearGuestModeAndOnboardingUseCase clearGuestModeAndOnboardingUseCase,
     required this.ref,
   })  : _loginUseCase = loginUseCase,
         _initializeAuthUseCase = initializeAuthUseCase,
@@ -81,6 +48,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         _isGuestModeUseCase = isGuestModeUseCase,
         _clearGuestModeUseCase = clearGuestModeUseCase,
         _localLogoutUseCase = localLogoutUseCase,
+        _clearGuestModeAndOnboardingUseCase = clearGuestModeAndOnboardingUseCase,
         super(const AuthState(isLoggedIn: false, isLoading: true)) {
     _restoreLoginState();
   }
@@ -264,13 +232,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _clearGuestModeAndOnboarding(bool wasGuest) async {
-    final clearGuestResult = await _clearGuestModeUseCase(const NoParams());
-    clearGuestResult.fold(
+    final clearResult = await _clearGuestModeAndOnboardingUseCase(
+      ClearGuestModeAndOnboardingParams(wasGuest: wasGuest),
+    );
+
+    clearResult.fold(
       (failure) {
-        _logger.warning('Failed to clear guest mode: ${failure.message}');
+        _logger.warning('Failed to clear guest mode and onboarding: ${failure.message}');
       },
       (_) {
-        _logger.debug('Guest mode cleared');
+        _logger.debug('Guest mode and onboarding cleared');
       },
     );
 

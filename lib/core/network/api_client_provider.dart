@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/auth/domain/repositories/auth_repository.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/auth_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:http/http.dart' as http;
 

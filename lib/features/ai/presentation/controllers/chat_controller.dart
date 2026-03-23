@@ -10,7 +10,7 @@ import 'package:flutter_pecha/features/ai/presentation/controllers/thread_list_c
 import 'package:flutter_pecha/features/ai/services/rate_limiter.dart';
 import 'package:flutter_pecha/features/ai/validators/message_validator.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/user_notifier.dart';
-import 'package:flutter_pecha/features/auth/presentation/providers/auth_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ChatState {
