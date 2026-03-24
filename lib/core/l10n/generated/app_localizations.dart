@@ -373,7 +373,7 @@ abstract class AppLocalizations {
   /// No description provided for @text_commentary.
   ///
   /// In en, this message translates to:
-  /// **'Commentary'**
+  /// **'Commentaries'**
   String get text_commentary;
 
   /// No description provided for @text_close_commentary.
@@ -957,6 +957,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Plan created'**
   String get plans_created;
+
+  /// No description provided for @ask_ai.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask AI'**
+  String get ask_ai;
 
   /// No description provided for @ai_chat_history.
   ///

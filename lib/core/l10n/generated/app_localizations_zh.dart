@@ -441,6 +441,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get plans_created => '參與設計的計劃';
 
   @override
+  String get ask_ai => '向 AI 提问';
+
+  @override
   String get ai_chat_history => '對話紀錄';
 
   @override
@@ -571,7 +574,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get search_coming_soon => 'Coming Soon';
+  String get search_coming_soon => '即将推出';
 
   @override
   String get search_buddhist_texts => 'Search Buddhist texts...';
@@ -580,7 +583,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get common_ok => 'OK';
 
   @override
-  String get comingSoonHeadline => 'Coming Soon';
+  String get comingSoonHeadline => '即将推出';
 
   @override
   String get routine_title => '日常修持';
