@@ -13,11 +13,6 @@ class InitializeAuthUseCase extends UseCase<void, NoParams> {
 
   @override
   Future<Either<Failure, void>> call(NoParams params) async {
-    try {
-      await _repository.initialize();
-      return const Right(null);
-    } catch (e) {
-      return Left(UnknownFailure('Failed to initialize auth: $e'));
-    }
+    return await _repository.initialize();
   }
 }

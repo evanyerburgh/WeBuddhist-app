@@ -7,18 +7,13 @@ import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 ///
 /// This use case retrieves the featured day plan with tasks.
 class GetFeaturedDayUseCase extends UseCase<FeaturedDayResponse, GetFeaturedDayParams> {
-  final Future<FeaturedDayResponse> Function({String? language}) _getFeaturedDay;
+  final Future<Either<Failure, FeaturedDayResponse>> Function({String? language}) _getFeaturedDay;
 
   GetFeaturedDayUseCase(this._getFeaturedDay);
 
   @override
   Future<Either<Failure, FeaturedDayResponse>> call(GetFeaturedDayParams params) async {
-    try {
-      final featuredDay = await _getFeaturedDay(language: params.language);
-      return Right(featuredDay);
-    } catch (e) {
-      return Left(ServerFailure('Failed to get featured day: $e'));
-    }
+    return await _getFeaturedDay(language: params.language);
   }
 }
 

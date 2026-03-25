@@ -7,18 +7,13 @@ import 'package:fpdart/fpdart.dart';
 /// Get credentials use case.
 ///
 /// Gets the current auth credentials.
-class GetCredentialsUseCase extends UseCase<Credentials?, NoParams> {
+class GetCredentialsUseCase extends UseCase<Credentials, NoParams> {
   final AuthRepository _repository;
 
   GetCredentialsUseCase(this._repository);
 
   @override
-  Future<Either<Failure, Credentials?>> call(NoParams params) async {
-    try {
-      final credentials = await _repository.getCredentials();
-      return Right(credentials);
-    } catch (e) {
-      return Left(AuthenticationFailure('Failed to get credentials: $e'));
-    }
+  Future<Either<Failure, Credentials>> call(NoParams params) async {
+    return await _repository.getCredentials();
   }
 }

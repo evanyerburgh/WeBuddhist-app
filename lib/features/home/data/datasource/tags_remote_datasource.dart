@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 
 class TagsRemoteDatasource {
@@ -21,11 +22,38 @@ class TagsRemoteDatasource {
         return tagsJson.map((tag) => tag.toString()).toList();
       } else {
         _logger.error('Failed to load tags: ${response.statusCode}');
-        throw Exception('Failed to load tags: ${response.statusCode}');
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('Tags not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to load tags: ${response.statusCode}');
+        }
       }
-    } catch (e) {
-      _logger.error('Error in fetchTags', e);
-      throw Exception('Failed to load tags: $e');
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchTags', e);
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw const NetworkException('Connection timeout');
+      } else if (e.type == DioExceptionType.connectionError) {
+        throw const NetworkException('No internet connection');
+      } else if (e.response?.statusCode != null) {
+        final statusCode = e.response!.statusCode!;
+        if (statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (statusCode == 404) {
+          throw const NotFoundException('Tags not found');
+        } else if (statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to load tags: $statusCode');
+        }
+      } else {
+        throw const NetworkException('Network error');
+      }
     }
   }
 }

@@ -13,11 +13,6 @@ class HasValidCredentialsUseCase extends UseCase<bool, NoParams> {
 
   @override
   Future<Either<Failure, bool>> call(NoParams params) async {
-    try {
-      final hasCredentials = await _repository.hasValidCredentials();
-      return Right(hasCredentials);
-    } catch (e) {
-      return Left(UnknownFailure('Failed to check credentials: $e'));
-    }
+    return await _repository.hasValidCredentials();
   }
 }

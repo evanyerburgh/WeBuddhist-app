@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/features/texts/data/models/search/multilingual_search_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/search/search_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/search/title_search_response.dart';
@@ -12,10 +12,50 @@ import 'package:flutter_pecha/features/texts/data/models/text/version_response.d
 
 class TextRemoteDatasource {
   final Dio dio;
-  final _logger = AppLogger('TextRemoteDatasource');
   final String baseUrl = dotenv.env['BASE_API_URL']!;
 
   TextRemoteDatasource({required this.dio});
+
+  // Helper method to handle Dio errors
+  Never _throwDioException(DioException e, String defaultMessage) {
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout) {
+      throw const NetworkException('Connection timeout');
+    } else if (e.type == DioExceptionType.connectionError) {
+      throw const NetworkException('No internet connection');
+    } else if (e.response?.statusCode != null) {
+      final statusCode = e.response!.statusCode!;
+      if (statusCode == 401) {
+        throw const AuthenticationException('Unauthorized');
+      } else if (statusCode == 403) {
+        throw const AuthorizationException('Forbidden');
+      } else if (statusCode == 404) {
+        throw const NotFoundException('Resource not found');
+      } else if (statusCode == 429) {
+        throw const RateLimitException('Too many requests');
+      } else {
+        throw ServerException('$defaultMessage: $statusCode');
+      }
+    } else {
+      throw const NetworkException('Network error');
+    }
+  }
+
+  // Helper method to handle status codes
+  void _handleStatusCode(int statusCode, String defaultMessage) {
+    if (statusCode == 401) {
+      throw const AuthenticationException('Unauthorized');
+    } else if (statusCode == 403) {
+      throw const AuthorizationException('Forbidden');
+    } else if (statusCode == 404) {
+      throw const NotFoundException('Resource not found');
+    } else if (statusCode == 429) {
+      throw const RateLimitException('Too many requests');
+    } else if (statusCode != 200) {
+      throw ServerException('$defaultMessage: $statusCode');
+    }
+  }
 
   // to get the texts
   Future<TextDetailResponse> fetchTexts({
@@ -24,20 +64,21 @@ class TextRemoteDatasource {
     int skip = 0,
     int limit = 20,
   }) async {
-    final response = await dio.get(
-      '/texts',
-      queryParameters: {
-        'collection_id': termId,
-        if (language != null) 'language': language,
-        'skip': skip,
-        'limit': limit,
-      },
-    );
+    try {
+      final response = await dio.get(
+        '/texts',
+        queryParameters: {
+          'collection_id': termId,
+          if (language != null) 'language': language,
+          'skip': skip,
+          'limit': limit,
+        },
+      );
 
-    if (response.statusCode == 200) {
+      _handleStatusCode(response.statusCode!, 'Failed to load texts');
       return TextDetailResponse.fromJson(response.data);
-    } else {
-      throw Exception('Failed to load texts');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to load texts');
     }
   }
 
@@ -46,16 +87,16 @@ class TextRemoteDatasource {
     required String textId,
     String? language,
   }) async {
-    final response = await dio.get(
-      '/texts/$textId/contents',
-      queryParameters: {'language': language ?? 'en'},
-    );
+    try {
+      final response = await dio.get(
+        '/texts/$textId/contents',
+        queryParameters: {'language': language ?? 'en'},
+      );
 
-    if (response.statusCode == 200) {
+      _handleStatusCode(response.statusCode!, 'Failed to load text content');
       return TocResponse.fromJson(response.data);
-    } else {
-      _logger.error('Failed to load text content: ${response.data}');
-      throw Exception('Failed to load text content');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to load text content');
     }
   }
 
@@ -64,16 +105,16 @@ class TextRemoteDatasource {
     required String textId,
     String? language,
   }) async {
-    final response = await dio.get(
-      '/texts/$textId/versions',
-      queryParameters: {'language': language ?? 'en'},
-    );
+    try {
+      final response = await dio.get(
+        '/texts/$textId/versions',
+        queryParameters: {'language': language ?? 'en'},
+      );
 
-    if (response.statusCode == 200) {
+      _handleStatusCode(response.statusCode!, 'Failed to load text version');
       return VersionResponse.fromJson(response.data);
-    } else {
-      _logger.error('Failed to load text version: ${response.data}');
-      throw Exception('Failed to load text version');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to load text version');
     }
   }
 
@@ -82,15 +123,16 @@ class TextRemoteDatasource {
     required String textId,
     String? language,
   }) async {
-    final response = await dio.get(
-      '/texts/$textId/commentaries',
-      queryParameters: {'language': language ?? 'en'},
-    );
-    if (response.statusCode == 200) {
+    try {
+      final response = await dio.get(
+        '/texts/$textId/commentaries',
+        queryParameters: {'language': language ?? 'en'},
+      );
+
+      _handleStatusCode(response.statusCode!, 'Failed to load commentary text');
       return CommentaryTextResponse.fromJson(response.data);
-    } else {
-      _logger.error('Failed to load commentary text: ${response.data}');
-      throw Exception('Failed to load commentary text');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to load commentary text');
     }
   }
 
@@ -112,13 +154,10 @@ class TextRemoteDatasource {
         },
       );
 
-      if (response.statusCode == 200) {
-        return ReaderResponse.fromJson(response.data);
-      } else {
-        throw Exception('Failed to load text details ::: ${response.data}');
-      }
-    } catch (e) {
-      throw Exception('Failed to load text details ????? $e');
+      _handleStatusCode(response.statusCode!, 'Failed to load text details');
+      return ReaderResponse.fromJson(response.data);
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to load text details');
     }
   }
 
@@ -128,19 +167,21 @@ class TextRemoteDatasource {
     String? language,
     String? textId,
   }) async {
-    final response = await dio.get(
-      '/search',
-      queryParameters: {
-        'query': query,
-        'search_type': 'SOURCE',
-        if (language != null) 'language': language,
-        if (textId != null) 'text_id': textId,
-      },
-    );
-    if (response.statusCode == 200) {
+    try {
+      final response = await dio.get(
+        '/search',
+        queryParameters: {
+          'query': query,
+          'search_type': 'SOURCE',
+          if (language != null) 'language': language,
+          if (textId != null) 'text_id': textId,
+        },
+      );
+
+      _handleStatusCode(response.statusCode!, 'Failed to search text');
       return SearchResponse.fromJson(response.data);
-    } else {
-      throw Exception('Failed to search text');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to search text');
     }
   }
 
@@ -150,19 +191,21 @@ class TextRemoteDatasource {
     String? language,
     String? textId,
   }) async {
-    final response = await dio.get(
-      '/search/multilingual',
-      queryParameters: {
-        'query': query,
-        'search_type': 'exact',
-        if (language != null) 'language': language,
-        if (textId != null) 'text_id': textId,
-      },
-    );
-    if (response.statusCode == 200) {
+    try {
+      final response = await dio.get(
+        '/search/multilingual',
+        queryParameters: {
+          'query': query,
+          'search_type': 'exact',
+          if (language != null) 'language': language,
+          if (textId != null) 'text_id': textId,
+        },
+      );
+
+      _handleStatusCode(response.statusCode!, 'Failed to search text');
       return MultilingualSearchResponse.fromJson(response.data);
-    } else {
-      throw Exception('MultilingualSearchResponse::: Failed to search text');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to search text');
     }
   }
 
@@ -173,17 +216,18 @@ class TextRemoteDatasource {
     int limit = 20,
     int offset = 0,
   }) async {
-    final response = await dio.get(
-      '/texts/title-search',
-      queryParameters: {
-        if (title != null && title.isNotEmpty) 'title': title,
-        if (author != null && author.isNotEmpty) 'author': author,
-        'limit': limit,
-        'offset': offset,
-      },
-    );
+    try {
+      final response = await dio.get(
+        '/texts/title-search',
+        queryParameters: {
+          if (title != null && title.isNotEmpty) 'title': title,
+          if (author != null && author.isNotEmpty) 'author': author,
+          'limit': limit,
+          'offset': offset,
+        },
+      );
 
-    if (response.statusCode == 200) {
+      _handleStatusCode(response.statusCode!, 'Failed to search titles');
       final jsonList = response.data as List<dynamic>;
       return TitleSearchResponse.fromJson(
         jsonList,
@@ -191,9 +235,8 @@ class TextRemoteDatasource {
         limit: limit,
         offset: offset,
       );
-    } else {
-      _logger.error('TitleSearchResponse::: Failed to search titles: ${response.statusCode}');
-      throw Exception('TitleSearchResponse::: Failed to search titles');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to search titles');
     }
   }
 
@@ -203,16 +246,17 @@ class TextRemoteDatasource {
     int limit = 20,
     int offset = 0,
   }) async {
-    final response = await dio.get(
-      '/texts/title-search',
-      queryParameters: {
-        if (author != null && author.isNotEmpty) 'author': author,
-        'limit': limit,
-        'offset': offset,
-      },
-    );
+    try {
+      final response = await dio.get(
+        '/texts/title-search',
+        queryParameters: {
+          if (author != null && author.isNotEmpty) 'author': author,
+          'limit': limit,
+          'offset': offset,
+        },
+      );
 
-    if (response.statusCode == 200) {
+      _handleStatusCode(response.statusCode!, 'Failed to search authors');
       final jsonList = response.data as List<dynamic>;
       return TitleSearchResponse.fromJson(
         jsonList,
@@ -220,9 +264,8 @@ class TextRemoteDatasource {
         limit: limit,
         offset: offset,
       );
-    } else {
-      _logger.error('AuthorSearchResponse::: Failed to search authors: ${response.statusCode}');
-      throw Exception('AuthorSearchResponse::: Failed to search authors');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to search authors');
     }
   }
 }

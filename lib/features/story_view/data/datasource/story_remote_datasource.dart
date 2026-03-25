@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/story_view/data/models/story_model.dart';
 import 'package:flutter_pecha/features/story_view/domain/entities/story.dart';
@@ -20,7 +21,7 @@ class StoryRemoteDataSource {
       return _getDefaultStories();
     } catch (e) {
       _logger.error('Failed to fetch stories from API', e);
-      rethrow;
+      throw ServerException('Failed to fetch stories: $e');
     }
   }
 
@@ -33,7 +34,7 @@ class StoryRemoteDataSource {
       return allStories.where((story) => story.type.name == type).toList();
     } catch (e) {
       _logger.error('Failed to fetch stories by type', e);
-      rethrow;
+      throw ServerException('Failed to fetch stories by type: $e');
     }
   }
 

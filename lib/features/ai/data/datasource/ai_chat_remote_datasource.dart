@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/ai/config/ai_config.dart';
 
@@ -52,7 +53,15 @@ class AiChatRemoteDatasource {
       if (response.statusCode != 200) {
         _logger.error('API error: ${response.statusCode}');
         _logger.error('Response headers: ${response.headers}');
-        throw Exception('API returned status ${response.statusCode}');
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else if (response.statusCode != null && response.statusCode! >= 500) {
+          throw ServerException('API error: ${response.statusCode}');
+        } else {
+          throw const NetworkException('Connection failed');
+        }
       }
 
       _logger.info('Receiving stream from API');
@@ -134,14 +143,29 @@ class AiChatRemoteDatasource {
       _logger.error('Dio error request options: ${e.requestOptions}');
       if (e.type == DioExceptionType.connectionTimeout ||
                  e.type == DioExceptionType.receiveTimeout) {
-        throw Exception('Connection timed out. Please check your internet connection.');
+        throw const NetworkException('Connection timed out');
       } else if (e.type == DioExceptionType.connectionError) {
-        throw Exception('Network error. Please check your internet connection.');
+        throw const NetworkException('Network error');
+      } else if (e.response?.statusCode != null) {
+        final statusCode = e.response!.statusCode!;
+        if (statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else if (statusCode >= 500) {
+          throw ServerException('Server error: $statusCode');
+        } else {
+          throw NetworkException('Connection failed: $statusCode');
+        }
+      } else {
+        throw const NetworkException('Connection failed');
       }
-      throw Exception('Failed to send message: ${e.message}');
     } catch (e, stackTrace) {
       _logger.error('Error in sendMessage stream', e, stackTrace);
-      rethrow;
+      if (e is TimeoutException) {
+        throw const NetworkException('Request timeout');
+      }
+      throw ServerException('Failed to send message: $e');
     }
   }
 }

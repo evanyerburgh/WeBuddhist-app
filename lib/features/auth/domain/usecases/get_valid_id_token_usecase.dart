@@ -6,18 +6,13 @@ import 'package:fpdart/fpdart.dart';
 /// Get valid ID token use case.
 ///
 /// Gets a valid ID token, refreshing if expired.
-class GetValidIdTokenUseCase extends UseCase<String?, NoParams> {
+class GetValidIdTokenUseCase extends UseCase<String, NoParams> {
   final AuthRepository _repository;
 
   GetValidIdTokenUseCase(this._repository);
 
   @override
-  Future<Either<Failure, String?>> call(NoParams params) async {
-    try {
-      final idToken = await _repository.getValidIdToken();
-      return Right(idToken);
-    } catch (e) {
-      return Left(AuthenticationFailure('Failed to get valid ID token: $e'));
-    }
+  Future<Either<Failure, String>> call(NoParams params) async {
+    return await _repository.getValidIdToken();
   }
 }

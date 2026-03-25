@@ -13,11 +13,6 @@ class LogoutUseCase extends UseCase<void, NoParams> {
 
   @override
   Future<Either<Failure, void>> call(NoParams params) async {
-    try {
-      await _repository.localLogout();
-      return const Right(null);
-    } catch (e) {
-      return Left(AuthenticationFailure('Logout failed: $e'));
-    }
+    return await _repository.localLogout();
   }
 }

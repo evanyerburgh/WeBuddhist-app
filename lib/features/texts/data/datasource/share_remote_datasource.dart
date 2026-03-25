@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 
 class ShareRemoteDatasource {
@@ -33,28 +34,27 @@ class ShareRemoteDatasource {
 
         final shortUrl = data['shortUrl'];
         if (shortUrl == null || shortUrl.toString().isEmpty) {
-          throw Exception('Missing or empty shortUrl in response');
+          throw const ServerException('Missing or empty shortUrl in response');
         }
 
         return shortUrl.toString();
       } else if (response.statusCode == 404) {
-        throw Exception('Share endpoint not found');
+        throw const NotFoundException('Share endpoint not found');
+      } else if (response.statusCode == 401) {
+        throw const AuthenticationException('Unauthorized');
+      } else if (response.statusCode == 429) {
+        throw const RateLimitException('Too many requests');
       } else if (response.statusCode != null && response.statusCode! >= 500) {
-        throw Exception('Server error: ${response.statusCode}');
+        throw ServerException('Server error: ${response.statusCode}');
       } else {
-        throw Exception('HTTP error: ${response.statusCode}');
+        throw ServerException('HTTP error: ${response.statusCode}');
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.sendTimeout) {
-        throw Exception('Request timeout');
+        throw const NetworkException('Request timeout');
       }
       _logger.error('Network error', e);
-      throw Exception('Network error: $e');
-    } catch (e) {
-      if (e is Exception) {
-        rethrow;
-      }
-      throw Exception('Network error: $e');
+      throw const NetworkException('Network error');
     }
   }
 }

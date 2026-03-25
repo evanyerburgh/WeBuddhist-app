@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
-import 'package:flutter_pecha/features/plans/exceptions/plan_exceptions.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_progress_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/response/user_plan_day_detail_response.dart';
 import 'package:flutter_pecha/features/plans/data/models/response/user_plan_day_completion_status_response.dart';
@@ -11,6 +11,32 @@ class UserPlansRemoteDatasource {
   final _logger = AppLogger('UserPlansRemoteDatasource');
 
   UserPlansRemoteDatasource({required this.dio});
+
+  // Helper method to handle Dio errors
+  Never _throwDioException(DioException e, String defaultMessage) {
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout) {
+      throw const NetworkException('Connection timeout');
+    } else if (e.type == DioExceptionType.connectionError) {
+      throw const NetworkException('No internet connection');
+    } else if (e.response?.statusCode != null) {
+      final statusCode = e.response!.statusCode!;
+      if (statusCode == 401) {
+        throw const AuthenticationException('Unauthorized');
+      } else if (statusCode == 403) {
+        throw const AuthorizationException('Forbidden');
+      } else if (statusCode == 404) {
+        throw const NotFoundException('Resource not found');
+      } else if (statusCode == 429) {
+        throw const RateLimitException('Too many requests');
+      } else {
+        throw ServerException('$defaultMessage: $statusCode');
+      }
+    } else {
+      throw const NetworkException('Network error');
+    }
+  }
 
   // get user plans by user id
   Future<UserPlanListResponseModel> fetchUserPlans({
@@ -33,15 +59,33 @@ class UserPlansRemoteDatasource {
         queryParameters: queryParams,
       );
 
+      _logger.debug('Response status: ${response.statusCode}');
+      _logger.debug('Response data type: ${response.data.runtimeType}');
+      _logger.debug('Response data: ${response.data}');
+
       if (response.statusCode == 200) {
+        // Handle case where response.data might be a String (HTML/plain text)
+        if (response.data is String) {
+          _logger.error('Received plain text response instead of JSON: ${response.data}');
+          throw const ServerException('Invalid response format from server');
+        }
         return UserPlanListResponseModel.fromJson(response.data);
       } else {
         _logger.error('Failed to load user plans: ${response.statusCode}');
-        throw Exception('Failed to load user plans: ${response.statusCode}');
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 403) {
+          throw const AuthorizationException('Forbidden');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('User plans not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to load user plans: ${response.statusCode}');
+        }
       }
-    } catch (e) {
-      _logger.error('Error in fetchUserPlans', e);
-      throw Exception('Failed to load user plans: $e');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to load user plans');
     }
   }
 
@@ -56,27 +100,20 @@ class UserPlansRemoteDatasource {
       if (response.statusCode == 204) {
         return true;
       } else {
-        throw PlanApiException(
-          'Failed to subscribe to plan',
-          statusCode: response.statusCode,
-          responseBody: response.data,
-        );
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 403) {
+          throw const AuthorizationException('Forbidden');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('Plan not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to subscribe to plan: ${response.statusCode}');
+        }
       }
-    } on DioException catch (e, stackTrace) {
-      throw PlanApiException(
-        'Network error while subscribing to plan',
-        originalError: e.error,
-        stackTrace: stackTrace,
-      );
-    } on PlanApiException {
-      rethrow;
-    } catch (e, stackTrace) {
-      throw PlanOperationException(
-        'subscribeToPlan',
-        'Unexpected error during subscription',
-        originalError: e,
-        stackTrace: stackTrace,
-      );
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to subscribe to plan');
     }
   }
 
@@ -90,12 +127,20 @@ class UserPlansRemoteDatasource {
         final jsonData = response.data as List<dynamic>;
         return jsonData.map((json) => PlanProgressModel.fromJson(json)).toList();
       } else {
-        throw Exception(
-          'Failed to load user plan progress details: ${response.statusCode}',
-        );
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 403) {
+          throw const AuthorizationException('Forbidden');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('Plan progress not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to load user plan progress details: ${response.statusCode}');
+        }
       }
-    } catch (e) {
-      throw Exception('Failed to load user plan progress details: $e');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to load user plan progress details');
     }
   }
 
@@ -109,13 +154,20 @@ class UserPlansRemoteDatasource {
       if (response.statusCode == 200) {
         return UserPlanDayDetailResponse.fromJson(response.data);
       } else {
-        throw Exception(
-          'Failed to load user plan day content: ${response.statusCode}',
-        );
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 403) {
+          throw const AuthorizationException('Forbidden');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('Plan day not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to load user plan day content: ${response.statusCode}');
+        }
       }
-    } catch (e) {
-      _logger.error('Failed to load user plan day content', e);
-      throw Exception('Failed to load user plan day content: $e');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to load user plan day content');
     }
   }
 
@@ -135,13 +187,20 @@ class UserPlansRemoteDatasource {
         _logger.error(
           'Failed to load plan days completion status: ${response.statusCode}',
         );
-        throw Exception(
-          'Failed to load plan days completion status: ${response.statusCode}',
-        );
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 403) {
+          throw const AuthorizationException('Forbidden');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('Plan not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to load plan days completion status: ${response.statusCode}');
+        }
       }
-    } catch (e) {
-      _logger.error('Error fetching plan days completion status', e);
-      throw Exception('Failed to load plan days completion status: $e');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to load plan days completion status');
     }
   }
 
@@ -155,12 +214,20 @@ class UserPlansRemoteDatasource {
       } else {
         final errorMessage = 'HTTP ${response.statusCode}: ${response.data}';
         _logger.error('Failed to complete sub task: $errorMessage');
-        throw Exception('Failed to complete sub task: $errorMessage');
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 403) {
+          throw const AuthorizationException('Forbidden');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('Sub task not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to complete sub task: ${response.statusCode}');
+        }
       }
-    } catch (e) {
-      if (e is Exception) rethrow;
-      _logger.error('Failed to complete sub task', e);
-      throw Exception('Failed to complete sub task: $e');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to complete sub task');
     }
   }
 
@@ -174,12 +241,20 @@ class UserPlansRemoteDatasource {
       } else {
         final errorMessage = 'HTTP ${response.statusCode}: ${response.data}';
         _logger.error('Failed to complete task: $errorMessage');
-        throw Exception('Failed to complete task: $errorMessage');
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 403) {
+          throw const AuthorizationException('Forbidden');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('Task not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to complete task: ${response.statusCode}');
+        }
       }
-    } catch (e) {
-      if (e is Exception) rethrow;
-      _logger.error('Failed to complete task', e);
-      throw Exception('Failed to complete task: $e');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to complete task');
     }
   }
 
@@ -193,12 +268,20 @@ class UserPlansRemoteDatasource {
       } else {
         final errorMessage = 'HTTP ${response.statusCode}: ${response.data}';
         _logger.error('Failed to delete task: $errorMessage');
-        throw Exception('Failed to delete task: $errorMessage');
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 403) {
+          throw const AuthorizationException('Forbidden');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('Task not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to delete task: ${response.statusCode}');
+        }
       }
-    } catch (e) {
-      if (e is Exception) rethrow;
-      _logger.error('Failed to delete task', e);
-      throw Exception('Failed to delete task: $e');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to delete task');
     }
   }
 
@@ -212,12 +295,20 @@ class UserPlansRemoteDatasource {
       } else {
         final errorMessage = 'HTTP ${response.statusCode}: ${response.data}';
         _logger.error('Failed to unenroll from plan: $errorMessage');
-        throw Exception('Failed to unenroll from plan: $errorMessage');
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 403) {
+          throw const AuthorizationException('Forbidden');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('Plan enrollment not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to unenroll from plan: ${response.statusCode}');
+        }
       }
-    } catch (e) {
-      if (e is Exception) rethrow;
-      _logger.error('Failed to unenroll from plan', e);
-      throw Exception('Failed to unenroll from plan: $e');
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to unenroll from plan');
     }
   }
 }

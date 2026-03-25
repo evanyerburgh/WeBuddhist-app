@@ -1,4 +1,6 @@
 import 'package:auth0_flutter/auth0_flutter.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
 
 /// Auth repository interface (Domain Layer)
@@ -9,48 +11,48 @@ abstract class AuthRepository {
   // ========== Initialization ==========
 
   /// Initialize auth (load config, setup provider)
-  Future<void> initialize();
+  Future<Either<Failure, void>> initialize();
 
   // ========== Authentication Operations ==========
 
   /// Login with Google
-  Future<Credentials?> loginWithGoogle();
+  Future<Either<Failure, Credentials>> loginWithGoogle();
 
   /// Login with Apple
-  Future<Credentials?> loginWithApple();
+  Future<Either<Failure, Credentials>> loginWithApple();
 
   /// Logout (local - clears credentials from device)
-  Future<void> localLogout();
+  Future<Either<Failure, void>> localLogout();
 
   /// Check if user has valid credentials
-  Future<bool> hasValidCredentials();
+  Future<Either<Failure, bool>> hasValidCredentials();
 
   /// Get current auth credentials
-  Future<Credentials?> getCredentials();
+  Future<Either<Failure, Credentials>> getCredentials();
 
   /// Check if ID token is expired
   bool isIdTokenExpired(String idToken);
 
   /// Get valid ID token (refreshes if expired)
-  Future<String?> getValidIdToken();
+  Future<Either<Failure, String>> getValidIdToken();
 
   /// Refresh ID token
-  Future<String?> refreshIdToken();
+  Future<Either<Failure, String>> refreshIdToken();
 
   // ========== Guest Mode Operations ==========
 
   /// Continue as guest mode
-  Future<void> continueAsGuest();
+  Future<Either<Failure, void>> continueAsGuest();
 
   /// Check if in guest mode
-  Future<bool> isGuestMode();
+  Future<Either<Failure, bool>> isGuestMode();
 
   /// Clear guest mode
-  Future<void> clearGuestMode();
+  Future<Either<Failure, void>> clearGuestMode();
 
   // ========== User Data Operations ==========
 
   /// Get current user profile from backend
-  Future<User?> getCurrentUser();
+  Future<Either<Failure, User>> getCurrentUser();
 }
 

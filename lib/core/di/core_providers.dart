@@ -52,15 +52,16 @@ final authServiceProvider = Provider<AuthService>((ref) {
 
 // ============ Interceptors ============
 
-/// Provider for AuthInterceptor (for main API - uses SecureStorage)
+/// Provider for AuthInterceptor (for main API - uses AuthService to get token from Auth0)
 final authInterceptorProvider = Provider<AuthInterceptor>((ref) {
   return AuthInterceptor(
-    ref.watch(secureStorageProvider),
+    ref.watch(authServiceProvider),
     ref.watch(loggerProvider),
   );
 });
 
 /// Provider for AI AuthInterceptor (for AI API - uses AuthService)
+/// NOTE: Both main API and AI API now use AuthService to get tokens from Auth0
 final aiAuthInterceptorProvider = Provider<AuthInterceptor>((ref) {
   return AuthInterceptor(
     ref.watch(authServiceProvider),

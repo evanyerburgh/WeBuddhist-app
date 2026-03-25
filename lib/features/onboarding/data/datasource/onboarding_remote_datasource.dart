@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/onboarding/data/models/onboarding_preferences.dart';
 
@@ -27,11 +28,38 @@ class OnboardingRemoteDatasource {
         return true;
       } else {
         _logger.warning('Failed to save onboarding preferences: ${response.statusCode}');
-        return false;
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 403) {
+          throw const AuthorizationException('Forbidden');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to save onboarding preferences: ${response.statusCode}');
+        }
       }
-    } catch (e) {
-      _logger.error('Error saving onboarding preferences to backend', e);
-      return false;
+    } on DioException catch (e) {
+      _logger.error('Dio error saving onboarding preferences to backend', e);
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw const NetworkException('Connection timeout');
+      } else if (e.type == DioExceptionType.connectionError) {
+        throw const NetworkException('No internet connection');
+      } else if (e.response?.statusCode != null) {
+        final statusCode = e.response!.statusCode!;
+        if (statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (statusCode == 403) {
+          throw const AuthorizationException('Forbidden');
+        } else if (statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException('Failed to save onboarding preferences: $statusCode');
+        }
+      } else {
+        throw const NetworkException('Network error');
+      }
     }
   }
 }

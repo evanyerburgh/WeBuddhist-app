@@ -4,29 +4,42 @@ class ProtectedRoutes {
   ///
   /// Paths can contain path parameters in curly braces like {planId}, {taskId}, etc.
   /// These parameters will match any value in that segment position.
+  ///
+  /// IMPORTANT: These paths should NOT include the /api/v1 prefix as the base URL
+  /// is already configured with it. Match the exact paths used in API calls.
   static const List<String> paths = [
     // User profile
-    '/api/v1/users/info',
-    '/api/v1/users/upload',
+    '/users/info',
+    '/users/upload',
 
-    // User progress
-    '/api/v1/users/me',
-    '/api/v1/users/me/plans',
-    '/api/v1/users/me/plans/{planId}',
-    '/api/v1/users/me/tasks',
-    '/api/v1/users/me/tasks/{taskId}/complete',
-    '/api/v1/users/me/sub-tasks',
-    '/api/v1/users/me/sub-tasks/{subTaskId}/complete',
-    '/api/v1/users/me/task/{taskId}',
-    '/api/v1/users/me/plan/{planId}/days/{dayNumber}',
+    // User progress - all /users/me routes require auth
+    '/users/me',
+    '/users/me/plans',
+    '/users/me/plans/{planId}',
+    '/users/me/tasks',
+    '/users/me/tasks/{taskId}/complete',
+    '/users/me/sub-tasks',
+    '/users/me/sub-tasks/{subTaskId}/complete',
+    '/users/me/task/{taskId}',
+    '/users/me/plan/{planId}/days/{dayNumber}',
+    '/users/me/plan/{planId}/days/{dayNumber}/content',
 
     // Recitations
-    '/api/v1/users/me/recitations',
+    '/users/me/recitations',
+    '/users/me/recitations/{recitationId}',
 
     // AI chat
     '/chats',
     '/threads',
     '/threads/{threadId}',
+
+    // Plans (public endpoints but may need auth for user-specific data)
+    '/plans/{planId}',
+    '/plans/{planId}/days',
+    '/plans/{planId}/days/{dayNumber}',
+
+    // Catch-all for all /users/me paths (better to be safe)
+    '/users/me/',
   ];
 
   /// Check if a given path is protected (requires authentication).

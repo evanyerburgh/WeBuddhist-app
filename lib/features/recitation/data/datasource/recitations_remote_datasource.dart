@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_content_model.dart';
@@ -23,6 +24,47 @@ class RecitationsRemoteDatasource {
 
   RecitationsRemoteDatasource({required this.dio});
 
+  // Helper method to handle Dio errors
+  Never _throwDioException(DioException e, String defaultMessage) {
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout) {
+      throw const NetworkException('Connection timeout');
+    } else if (e.type == DioExceptionType.connectionError) {
+      throw const NetworkException('No internet connection');
+    } else if (e.response?.statusCode != null) {
+      final statusCode = e.response!.statusCode!;
+      if (statusCode == 401) {
+        throw const AuthenticationException('Unauthorized');
+      } else if (statusCode == 403) {
+        throw const AuthorizationException('Forbidden');
+      } else if (statusCode == 404) {
+        throw const NotFoundException('Resource not found');
+      } else if (statusCode == 429) {
+        throw const RateLimitException('Too many requests');
+      } else {
+        throw ServerException('$defaultMessage: $statusCode');
+      }
+    } else {
+      throw const NetworkException('Network error');
+    }
+  }
+
+  // Helper method to handle status codes
+  void _handleStatusCode(int statusCode, String defaultMessage) {
+    if (statusCode == 401) {
+      throw const AuthenticationException('Unauthorized');
+    } else if (statusCode == 403) {
+      throw const AuthorizationException('Forbidden');
+    } else if (statusCode == 404) {
+      throw const NotFoundException('Resource not found');
+    } else if (statusCode == 429) {
+      throw const RateLimitException('Too many requests');
+    } else if (statusCode != 200 && statusCode != 201 && statusCode != 204) {
+      throw ServerException('$defaultMessage: $statusCode');
+    }
+  }
+
   // Get all recitations
   Future<List<RecitationModel>> fetchRecitations({
     RecitationsQueryParams? queryParams,
@@ -33,25 +75,19 @@ class RecitationsRemoteDatasource {
         queryParameters: queryParams?.toQueryParams(),
       );
 
-      if (response.statusCode == 200) {
-        final responseData = response.data as Map<String, dynamic>;
+      _handleStatusCode(response.statusCode!, 'Failed to fetch recitations');
 
-        // Parse the nested "recitations" array from the response
-        final List<dynamic> recitationsData =
-            responseData['recitations'] as List<dynamic>? ?? [];
+      final responseData = response.data as Map<String, dynamic>;
+      final List<dynamic> recitationsData =
+          responseData['recitations'] as List<dynamic>? ?? [];
 
-        return recitationsData
-            .map(
-              (json) => RecitationModel.fromJson(json as Map<String, dynamic>),
-            )
-            .toList();
-      } else {
-        _logger.error('Failed to fetch recitations: ${response.statusCode}');
-        throw Exception('Failed to fetch recitations: ${response.statusCode}');
-      }
-    } catch (e) {
-      _logger.error('Error fetching recitations', e);
-      throw Exception('Error fetching recitations: $e');
+      return recitationsData
+          .map(
+            (json) => RecitationModel.fromJson(json as Map<String, dynamic>),
+          )
+          .toList();
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to fetch recitations');
     }
   }
 
@@ -59,26 +95,19 @@ class RecitationsRemoteDatasource {
   Future<List<RecitationModel>> fetchSavedRecitations() async {
     try {
       final response = await dio.get('/users/me/recitations');
-      if (response.statusCode == 200) {
-        final responseData = response.data as Map<String, dynamic>;
-        final List<dynamic> recitationsData =
-            responseData['recitations'] as List<dynamic>? ?? [];
-        return recitationsData
-            .map(
-              (json) => RecitationModel.fromJson(json as Map<String, dynamic>),
-            )
-            .toList();
-      } else {
-        _logger.error(
-          'Failed to fetch saved recitations: ${response.statusCode}',
-        );
-        throw Exception(
-          'Failed to fetch saved recitations: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      _logger.error('Error fetching saved recitations', e);
-      throw Exception('Error fetching saved recitations: $e');
+
+      _handleStatusCode(response.statusCode!, 'Failed to fetch saved recitations');
+
+      final responseData = response.data as Map<String, dynamic>;
+      final List<dynamic> recitationsData =
+          responseData['recitations'] as List<dynamic>? ?? [];
+      return recitationsData
+          .map(
+            (json) => RecitationModel.fromJson(json as Map<String, dynamic>),
+          )
+          .toList();
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to fetch saved recitations');
     }
   }
 
@@ -92,7 +121,6 @@ class RecitationsRemoteDatasource {
     List<String>? adaptations,
   }) async {
     try {
-      // Build request body according to API spec
       final requestBody = <String, dynamic>{
         'language': language,
         'recitation': recitation ?? [],
@@ -109,19 +137,10 @@ class RecitationsRemoteDatasource {
         data: requestBody,
       );
 
-      if (response.statusCode == 200) {
-        return RecitationContentModel.fromJson(response.data);
-      } else {
-        _logger.error(
-          'Failed to fetch recitation content: ${response.statusCode}',
-        );
-        throw Exception(
-          'Failed to fetch recitation content: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      _logger.error('Error fetching recitation content', e);
-      throw Exception('Error fetching recitation content: $e');
+      _handleStatusCode(response.statusCode!, 'Failed to fetch recitation content');
+      return RecitationContentModel.fromJson(response.data);
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to fetch recitation content');
     }
   }
 
@@ -132,14 +151,11 @@ class RecitationsRemoteDatasource {
         '/users/me/recitations',
         data: {'text_id': id},
       );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;
-      } else {
-        return false;
-      }
-    } catch (e) {
-      _logger.error('Failed to save recitation', e);
-      throw Exception('Failed to save recitation: $e');
+
+      _handleStatusCode(response.statusCode!, 'Failed to save recitation');
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to save recitation');
     }
   }
 
@@ -147,14 +163,11 @@ class RecitationsRemoteDatasource {
   Future<bool> unsaveRecitation(String textId) async {
     try {
       final response = await dio.delete('/users/me/recitations/$textId');
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        return true;
-      } else {
-        return false;
-      }
-    } catch (e) {
-      _logger.error('Failed to unsave recitation', e);
-      throw Exception('Failed to unsave recitation: $e');
+
+      _handleStatusCode(response.statusCode!, 'Failed to unsave recitation');
+      return response.statusCode == 200 || response.statusCode == 204;
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to unsave recitation');
     }
   }
 
@@ -168,17 +181,11 @@ class RecitationsRemoteDatasource {
         '/users/me/recitations/order',
         data: {'recitations': recitations},
       );
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        return true;
-      } else {
-        _logger.error(
-          'Failed to update recitations order: ${response.statusCode}',
-        );
-        return false;
-      }
-    } catch (e) {
-      _logger.error('Failed to update recitations order', e);
-      throw Exception('Failed to update recitations order: $e');
+
+      _handleStatusCode(response.statusCode!, 'Failed to update recitations order');
+      return response.statusCode == 200 || response.statusCode == 204;
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to update recitations order');
     }
   }
 }

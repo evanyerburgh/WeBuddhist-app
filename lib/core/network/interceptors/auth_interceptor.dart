@@ -25,6 +25,10 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
+    // DEBUG: Log all requests
+    _logger.debug('[AuthInterceptor] Checking path: ${options.path}');
+    _logger.debug('[AuthInterceptor] Is protected: ${ProtectedRoutes.isProtected(options.path)}');
+
     // Add auth token to protected routes
     if (ProtectedRoutes.isProtected(options.path)) {
       String? token;
@@ -39,13 +43,17 @@ class AuthInterceptor extends Interceptor {
       } else if (_tokenSource is SecureStorage) {
         // For main API endpoints - use SecureStorage
         token = await (_tokenSource as SecureStorage).get(StorageKeys.accessToken);
+        _logger.debug('[AuthInterceptor] Retrieved token from storage: ${token != null ? 'YES' : 'NO'}');
       }
 
       if (token != null) {
         options.headers['Authorization'] = 'Bearer $token';
+        _logger.info('[AuthInterceptor] ✅ Added auth header for ${options.method} ${options.path}');
       } else {
-        _logger.warning('[AuthInterceptor] No auth token found for ${options.path}');
+        _logger.warning('[AuthInterceptor] ❌ No auth token found for ${options.path}');
       }
+    } else {
+      _logger.debug('[AuthInterceptor] ⚠️ Path not protected, skipping auth: ${options.path}');
     }
 
     handler.next(options);

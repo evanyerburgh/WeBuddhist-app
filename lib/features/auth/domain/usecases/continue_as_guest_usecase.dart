@@ -13,11 +13,6 @@ class ContinueAsGuestUseCase extends UseCase<void, NoParams> {
 
   @override
   Future<Either<Failure, void>> call(NoParams params) async {
-    try {
-      await _repository.continueAsGuest();
-      return const Right(null);
-    } catch (e) {
-      return Left(UnknownFailure('Failed to continue as guest: $e'));
-    }
+    return await _repository.continueAsGuest();
   }
 }
