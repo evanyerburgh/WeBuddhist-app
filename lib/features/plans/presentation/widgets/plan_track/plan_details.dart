@@ -17,6 +17,7 @@ import '../day_completion_bottom_sheet.dart';
 import '../plan_cover_image.dart';
 import '../day_carousel.dart';
 import 'activity_list.dart';
+import 'missed_days_badge.dart';
 
 final _logger = AppLogger('PlanDetails');
 
@@ -204,13 +205,21 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         PlanDaysParams(planId: widget.plan.id, dayNumber: selectedDay),
       ),
     );
+    final completionStatus = ref.watch(
+      userPlanDaysCompletionStatusProvider(widget.plan.id),
+    );
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDayTitle(context, language, selectedDay),
+          _buildDayTitle(
+            context,
+            language,
+            selectedDay,
+            completionStatus.valueOrNull,
+          ),
           userPlanDayContent.when(
             data:
                 (dayContent) => ActivityList(
@@ -260,14 +269,30 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     );
   }
 
-  Widget _buildDayTitle(BuildContext context, String language, int day) {
-    return Text(
-      "Day $day of ${widget.plan.totalDays}",
-      style: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        fontFamily: "Inter",
-      ),
+  Widget _buildDayTitle(
+    BuildContext context,
+    String language,
+    int day,
+    Map<int, bool>? completionStatus,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          "Day $day of ${widget.plan.totalDays}",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            fontFamily: "Inter",
+          ),
+        ),
+        if (completionStatus != null)
+          MissedDaysBadge(
+            startDate: widget.startDate,
+            totalDays: widget.plan.totalDays,
+            completionStatus: completionStatus,
+          ),
+      ],
     );
   }
 
