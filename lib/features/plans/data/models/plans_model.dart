@@ -1,5 +1,7 @@
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/plans/data/models/author/author_dto_model.dart';
+import 'package:flutter_pecha/features/plans/domain/entities/plan.dart' as domain;
+import 'package:flutter_pecha/features/plans/domain/entities/week_plan.dart';
 
 final _logger = AppLogger('PlansModel');
 
@@ -148,5 +150,83 @@ class PlansModel {
   @override
   String toString() {
     return 'PlansModel(id: $id, title: $title, language: $language, totalDays: $totalDays)';
+  }
+
+  /// Convert to Plan domain entity.
+  domain.Plan toEntity() {
+    // Map difficulty level string to enum
+    domain.DifficultyLevel difficulty;
+    switch (difficultyLevel?.toLowerCase()) {
+      case 'beginner':
+        difficulty = domain.DifficultyLevel.beginner;
+        break;
+      case 'intermediate':
+        difficulty = domain.DifficultyLevel.intermediate;
+        break;
+      case 'advanced':
+        difficulty = domain.DifficultyLevel.advanced;
+        break;
+      case 'all':
+      default:
+        difficulty = domain.DifficultyLevel.allLevels;
+    }
+
+    return domain.Plan(
+      id: id,
+      title: title,
+      titleTibetan: null, // Not available in the model
+      description: description,
+      authorId: author?.id ?? '',
+      authorName: author?.firstName ?? 'Unknown',
+      coverImageUrl: imageUrl,
+      totalDays: totalDays ?? 0,
+      difficulty: difficulty,
+      tags: tags ?? [],
+      weekPlans: const [], // Will be populated by separate call if needed
+    );
+  }
+
+  /// Create PlansModel from a Plan domain entity.
+  factory PlansModel.fromEntity(domain.Plan entity) {
+    // Map difficulty level enum to string
+    String? difficultyLevelStr;
+    switch (entity.difficulty) {
+      case domain.DifficultyLevel.beginner:
+        difficultyLevelStr = 'beginner';
+        break;
+      case domain.DifficultyLevel.intermediate:
+        difficultyLevelStr = 'intermediate';
+        break;
+      case domain.DifficultyLevel.advanced:
+        difficultyLevelStr = 'advanced';
+        break;
+      case domain.DifficultyLevel.allLevels:
+        difficultyLevelStr = 'all';
+        break;
+    }
+
+    return PlansModel(
+      id: entity.id,
+      title: entity.title,
+      description: entity.description,
+      language: 'en', // Will be set by the caller
+      difficultyLevel: difficultyLevelStr,
+      image: entity.coverImageUrl != null
+          ? ImageModel(
+              thumbnail: entity.coverImageUrl,
+              medium: entity.coverImageUrl,
+              original: entity.coverImageUrl,
+            )
+          : null,
+      totalDays: entity.totalDays,
+      tags: entity.tags,
+      author: entity.authorId.isNotEmpty
+          ? AuthorDtoModel(
+              id: entity.authorId,
+              firstName: entity.authorName ?? 'Unknown',
+              lastName: '',
+            )
+          : null,
+    );
   }
 }

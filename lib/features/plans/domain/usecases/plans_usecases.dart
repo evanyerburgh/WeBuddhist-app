@@ -1,3 +1,4 @@
+import 'package:equatable/equatable.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
@@ -5,15 +6,58 @@ import 'package:flutter_pecha/features/plans/domain/entities/plan_progress.dart'
 import 'package:flutter_pecha/features/plans/domain/repositories/plans_repository.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 
-/// Get plans use case.
-class GetPlansUseCase extends UseCase<List<Plan>, NoParams> {
+/// Get plans use case with pagination and filtering support.
+class GetPlansUseCase extends UseCase<List<Plan>, GetPlansParams> {
   final PlansRepository _repository;
 
   GetPlansUseCase(this._repository);
 
   @override
-  Future<Either<Failure, List<Plan>>> call(NoParams params) async {
-    return await _repository.getPlans();
+  Future<Either<Failure, List<Plan>>> call(GetPlansParams params) async {
+    return await _repository.getPlans(
+      language: params.language,
+      search: params.search,
+      tag: params.tag,
+      skip: params.skip,
+      limit: params.limit,
+    );
+  }
+}
+
+/// Parameters for GetPlansUseCase with pagination and filtering support.
+class GetPlansParams extends Equatable {
+  final String language;
+  final String? search;
+  final String? tag;
+  final int skip;
+  final int limit;
+
+  const GetPlansParams({
+    required this.language,
+    this.search,
+    this.tag,
+    this.skip = 0,
+    this.limit = 20,
+  });
+
+  @override
+  List<Object?> get props => [language, search, tag, skip, limit];
+
+  /// Create a copy with different parameters for pagination
+  GetPlansParams copyWith({
+    String? language,
+    String? search,
+    String? tag,
+    int? skip,
+    int? limit,
+  }) {
+    return GetPlansParams(
+      language: language ?? this.language,
+      search: search ?? this.search,
+      tag: tag ?? this.tag,
+      skip: skip ?? this.skip,
+      limit: limit ?? this.limit,
+    );
   }
 }
 
@@ -32,10 +76,13 @@ class GetPlanDetailUseCase extends UseCase<Plan?, GetPlanDetailParams> {
   }
 }
 
-class GetPlanDetailParams {
+class GetPlanDetailParams extends Equatable {
   final String planId;
 
   const GetPlanDetailParams({required this.planId});
+
+  @override
+  List<Object?> get props => [planId];
 }
 
 /// Enroll in plan use case.
@@ -53,10 +100,13 @@ class EnrollInPlanUseCase extends UseCase<PlanProgress, EnrollInPlanParams> {
   }
 }
 
-class EnrollInPlanParams {
+class EnrollInPlanParams extends Equatable {
   final String planId;
 
   const EnrollInPlanParams({required this.planId});
+
+  @override
+  List<Object?> get props => [planId];
 }
 
 /// Update plan progress use case.
@@ -81,7 +131,7 @@ class UpdateProgressUseCase extends UseCase<PlanProgress, UpdateProgressParams> 
   }
 }
 
-class UpdateProgressParams {
+class UpdateProgressParams extends Equatable {
   final String planId;
   final int dayNumber;
   final String? taskId;
@@ -91,6 +141,9 @@ class UpdateProgressParams {
     required this.dayNumber,
     this.taskId,
   });
+
+  @override
+  List<Object?> get props => [planId, dayNumber, taskId];
 }
 
 /// Search plans use case.
@@ -108,8 +161,11 @@ class SearchPlansUseCase extends UseCase<List<Plan>, SearchPlansParams> {
   }
 }
 
-class SearchPlansParams {
+class SearchPlansParams extends Equatable {
   final String query;
 
   const SearchPlansParams({required this.query});
+
+  @override
+  List<Object?> get props => [query];
 }

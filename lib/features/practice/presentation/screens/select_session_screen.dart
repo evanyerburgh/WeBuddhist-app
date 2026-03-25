@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
@@ -11,6 +12,8 @@ import 'package:flutter_pecha/features/recitation/presentation/providers/recitat
 import 'package:flutter_pecha/features/recitation/presentation/widgets/recitation_list_skeleton.dart';
 import 'package:flutter_pecha/shared/extensions/typography_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final _logger = AppLogger('SelectSessionScreen');
 
 /// Combined screen for selecting either a Plan or Recitation to add to routine.
 /// Returns [SessionSelection] - either [PlanSessionSelection] or [RecitationSessionSelection].
@@ -46,6 +49,7 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
   @override
   void initState() {
     super.initState();
+    _logger.debug('🚀 initState() called');
     _tabController = TabController(length: 2, vsync: this);
     _plansScrollController.addListener(_onPlansScroll);
   }
@@ -121,6 +125,7 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
 
   @override
   Widget build(BuildContext context) {
+    _logger.debug('🎨 ===== BUILD STARTED =====');
     final localizations = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context);
     final languageCode = locale.languageCode;
@@ -128,6 +133,7 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
     // Get enrolled plan IDs from paginated provider (already loaded by app)
     final myPlansState = ref.watch(myPlansPaginatedProvider);
     final enrolledPlanIds = myPlansState.plans.map<String>((e) => e.id).toSet();
+    _logger.debug('📊 My Plans: ${myPlansState.plans.length} plans');
 
     // Get saved recitation IDs from backend
     final savedRecitationIds = ref
@@ -142,6 +148,11 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
       ...savedRecitationIds,
       ...widget.excludedRecitationIds,
     };
+
+    _logger.debug('📊 Excluded Plan IDs: ${allExcludedPlanIds.length}');
+    _logger.debug('📊 Excluded Recitation IDs: ${allExcludedRecitationIds.length}');
+    _logger.debug('📊 Enrolled Plan IDs (being filtered out): ${enrolledPlanIds.length}');
+    _logger.debug('📊 Routine Plan IDs (being filtered out): ${widget.excludedPlanIds.length}');
 
     return Scaffold(
       appBar: AppBar(
@@ -215,11 +226,16 @@ class _PlansTab extends ConsumerWidget {
     final localizations = AppLocalizations.of(context)!;
     final plansState = ref.watch(findPlansPaginatedProvider);
 
+    _logger.debug('📋 _PlansTab BUILD: ${plansState.plans.length} plans, isLoading: ${plansState.isLoading}, error: ${plansState.error}');
+    _logger.debug('🚫 Excluded IDs: ${excludedPlanIds.length}');
+
     if (plansState.isLoading && plansState.plans.isEmpty) {
+      _logger.debug('⏳ SHOWING: Loading skeleton');
       return const PlanListSkeleton();
     }
 
     if (plansState.error != null && plansState.plans.isEmpty) {
+      _logger.debug('❌ SHOWING: Error - ${plansState.error}');
       return ErrorStateWidget(
         error: plansState.error!,
         onRetry: () => ref.read(findPlansPaginatedProvider.notifier).retry(),
@@ -227,13 +243,17 @@ class _PlansTab extends ConsumerWidget {
       );
     }
 
-    // Filter out enrolled plans and plans already in routine
+    // Filter out ONLY plans already in routine (not enrolled plans)
+    // Users should be able to add enrolled plans to their routine
     final availablePlans =
         plansState.plans
             .where((plan) => !excludedPlanIds.contains(plan.id))
             .toList();
 
+    _logger.debug('✅ Available plans after filtering (routine only): ${availablePlans.length}');
+
     if (availablePlans.isEmpty && !plansState.isLoading) {
+      _logger.debug('📭 SHOWING: Empty state (no available plans)');
       return Center(
         child: Text(
           localizations.no_plans_found,
@@ -242,6 +262,7 @@ class _PlansTab extends ConsumerWidget {
       );
     }
 
+    _logger.debug('🎯 SHOWING: ListView with ${availablePlans.length} plans');
     return ListView.separated(
       controller: scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),

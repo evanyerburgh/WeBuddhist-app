@@ -19,6 +19,25 @@ class OnboardingPreferences extends BaseEntity {
     required this.completedAt,
   });
 
+  /// Creates a copy with the specified fields replaced with new values
+  OnboardingPreferences copyWith({
+    String? userId,
+    List<String>? interests,
+    String? primaryLanguage,
+    int? dailyPracticeGoalMinutes,
+    List<String>? preferredPracticeTypes,
+    DateTime? completedAt,
+  }) {
+    return OnboardingPreferences(
+      userId: userId ?? this.userId,
+      interests: interests ?? this.interests,
+      primaryLanguage: primaryLanguage ?? this.primaryLanguage,
+      dailyPracticeGoalMinutes: dailyPracticeGoalMinutes ?? this.dailyPracticeGoalMinutes,
+      preferredPracticeTypes: preferredPracticeTypes ?? this.preferredPracticeTypes,
+      completedAt: completedAt ?? this.completedAt,
+    );
+  }
+
   @override
   List<Object?> get props => [
     userId,

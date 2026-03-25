@@ -1,6 +1,9 @@
+import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/plans/data/repositories/plans_repository.dart';
 import 'package:flutter_pecha/features/plans/data/models/plans_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final _logger = AppLogger('FindPlansNotifier');
 
 /// State for paginated plans list
 class FindPlansState {
@@ -47,36 +50,62 @@ class FindPlansNotifier extends StateNotifier<FindPlansState> {
 
   FindPlansNotifier({required this.repository, required this.languageCode})
     : super(const FindPlansState()) {
+    _logger.debug('🏗️ FindPlansNotifier CREATED with language: $languageCode');
     loadInitial();
+  }
+
+  @override
+  void dispose() {
+    _logger.debug('💥 FindPlansNotifier DISPOSED - this will reset state!');
+    super.dispose();
   }
 
   /// Load initial plans
   Future<void> loadInitial() async {
-    if (state.isLoading) return;
+    _logger.debug('🔄 loadInitial() called - current state: ${state.plans.length} plans, isLoading: ${state.isLoading}');
 
+    if (state.isLoading) {
+      _logger.debug('⏸️ Already loading, skipping');
+      return;
+    }
+
+    _logger.debug('📊 Setting isLoading: true');
     state = state.copyWith(isLoading: true, error: null);
+    _logger.debug('📊 State after setting loading: ${state.plans.length} plans, isLoading: ${state.isLoading}');
 
     try {
+      _logger.debug('🌐 Calling repository.getPlans(language: $languageCode, skip: 0, limit: $_limit)');
       final plans = await repository.getPlans(
         language: languageCode,
         skip: 0,
         limit: _limit,
       );
 
+      _logger.debug('✅ Got ${plans.length} plans from repository');
+
       if (mounted) {
-        state = state.copyWith(
+        _logger.debug('📦 Updating state with ${plans.length} plans');
+        final newState = state.copyWith(
           plans: plans,
           isLoading: false,
           hasMore: plans.length >= _limit,
           skip: plans.length,
           error: null,
         );
+        state = newState;
+        _logger.debug('✅ State updated: ${state.plans.length} plans, hasMore: ${state.hasMore}');
+      } else {
+        _logger.debug('⚠️ Not mounted, skipping state update');
       }
     } catch (e) {
+      _logger.error('❌ Error loading plans: $e');
       if (mounted) {
+        _logger.debug('📊 Setting error state');
         state = state.copyWith(isLoading: false, error: e.toString());
       }
     }
+
+    _logger.debug('🏁 loadInitial() finished - final state: ${state.plans.length} plans, isLoading: ${state.isLoading}');
   }
 
   /// Load more plans

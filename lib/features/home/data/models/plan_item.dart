@@ -1,3 +1,8 @@
+import '../../domain/entities/featured_content.dart';
+
+/// PlanItem model for JSON serialization.
+///
+/// This handles conversion between JSON and the FeaturedContent domain entity.
 class PlanItem {
   final String label;
   final String contentType;
@@ -31,6 +36,68 @@ class PlanItem {
       'author': author,
       'imageUrl': imageUrl,
     };
+  }
+
+  /// Convert to FeaturedContent domain entity.
+  FeaturedContent toEntity({
+    required String id,
+    String? targetId,
+  }) {
+    // Map contentType to FeaturedContentType
+    FeaturedContentType type;
+    switch (contentType.toLowerCase()) {
+      case 'plan':
+        type = FeaturedContentType.plan;
+        break;
+      case 'text':
+        type = FeaturedContentType.text;
+        break;
+      case 'recitation':
+        type = FeaturedContentType.recitation;
+        break;
+      case 'video':
+        type = FeaturedContentType.video;
+        break;
+      default:
+        type = FeaturedContentType.plan;
+    }
+
+    return FeaturedContent(
+      id: id,
+      title: label,
+      description: content,
+      imageUrl: imageUrl ?? '',
+      type: type,
+      targetId: targetId,
+    );
+  }
+
+  /// Create PlanItem from a FeaturedContent domain entity.
+  factory PlanItem.fromEntity(FeaturedContent featuredContent) {
+    // Map FeaturedContentType to contentType string
+    String contentTypeStr;
+    switch (featuredContent.type) {
+      case FeaturedContentType.plan:
+        contentTypeStr = 'plan';
+        break;
+      case FeaturedContentType.text:
+        contentTypeStr = 'text';
+        break;
+      case FeaturedContentType.recitation:
+        contentTypeStr = 'recitation';
+        break;
+      case FeaturedContentType.video:
+        contentTypeStr = 'video';
+        break;
+    }
+
+    return PlanItem(
+      label: featuredContent.title,
+      contentType: contentTypeStr,
+      content: featuredContent.description,
+      imageUrl: featuredContent.imageUrl.isNotEmpty ? featuredContent.imageUrl : null,
+      author: null, // Not mapped from FeaturedContent
+    );
   }
 }
 

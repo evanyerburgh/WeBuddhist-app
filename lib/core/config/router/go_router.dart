@@ -722,8 +722,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
       // 2. Check onboarding for authenticated non-guest users
       if (isLoggedIn && !isGuest) {
-        final hasCompletedOnboarding =
-            await onboardingRepo.hasCompletedOnboarding();
+        final onboardingResult = await onboardingRepo.isOnboardingCompleted();
+        final hasCompletedOnboarding = onboardingResult.fold(
+          (failure) {
+            _logger.warning('Failed to check onboarding status', failure);
+            return false; // Default to false on error
+          },
+          (isCompleted) => isCompleted,
+        );
 
         // Redirect to onboarding if not completed (unless already there or on login)
         if (!hasCompletedOnboarding &&
@@ -750,8 +756,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (isLoggedIn && currentPath == RouteConfig.login) {
         // Check if they need onboarding first
         if (!isGuest) {
-          final hasCompletedOnboarding =
-              await onboardingRepo.hasCompletedOnboarding();
+          final onboardingResult = await onboardingRepo.isOnboardingCompleted();
+          final hasCompletedOnboarding = onboardingResult.fold(
+            (failure) {
+              _logger.warning('Failed to check onboarding status', failure);
+              return false; // Default to false on error
+            },
+            (isCompleted) => isCompleted,
+          );
           if (!hasCompletedOnboarding) {
             _logger.debug('New authenticated user, redirecting to onboarding');
             return RouteConfig.onboarding;

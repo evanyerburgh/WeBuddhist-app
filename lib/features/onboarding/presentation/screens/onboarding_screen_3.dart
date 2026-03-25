@@ -29,7 +29,7 @@ class OnboardingScreen3 extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedLanguage = ref.watch(
-      onboardingProvider.select((state) => state.preferences.preferredLanguage),
+      onboardingProvider.select((state) => state.preferences.primaryLanguage),
     );
     final appLocalizations = AppLocalizations.of(context);
 
@@ -97,8 +97,10 @@ class OnboardingScreen3 extends ConsumerWidget {
   }
 
   void _handleContinue(WidgetRef ref) {
-    final selectedLanguage =
-        ref.read(onboardingProvider).preferences.preferredLanguage;
+    final selectedLanguage = ref
+        .read(onboardingProvider)
+        .preferences
+        .primaryLanguage;
     if (selectedLanguage != null) {
       onNext();
     }

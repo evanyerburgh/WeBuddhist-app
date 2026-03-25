@@ -30,6 +30,29 @@ class Recitation extends BaseEntity {
     return title;
   }
 
+  /// Creates a copy with the specified fields replaced with new values
+  Recitation copyWith({
+    String? id,
+    String? title,
+    String? titleTibetan,
+    String? reciterName,
+    Duration? duration,
+    String? audioUrl,
+    ContentType? contentType,
+    String? textId,
+  }) {
+    return Recitation(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      titleTibetan: titleTibetan ?? this.titleTibetan,
+      reciterName: reciterName ?? this.reciterName,
+      duration: duration ?? this.duration,
+      audioUrl: audioUrl ?? this.audioUrl,
+      contentType: contentType ?? this.contentType,
+      textId: textId ?? this.textId,
+    );
+  }
+
   @override
   List<Object?> get props => [id, title, titleTibetan, reciterName, duration, audioUrl, contentType, textId];
 }

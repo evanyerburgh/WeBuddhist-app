@@ -18,6 +18,25 @@ class SegmentEntity extends Equatable {
     this.contentChinese,
   });
 
+  /// Creates a copy with the specified fields replaced with new values
+  SegmentEntity copyWith({
+    String? id,
+    int? segmentNumber,
+    String? contentTibetan,
+    String? contentSanskrit,
+    String? contentEnglish,
+    String? contentChinese,
+  }) {
+    return SegmentEntity(
+      id: id ?? this.id,
+      segmentNumber: segmentNumber ?? this.segmentNumber,
+      contentTibetan: contentTibetan ?? this.contentTibetan,
+      contentSanskrit: contentSanskrit ?? this.contentSanskrit,
+      contentEnglish: contentEnglish ?? this.contentEnglish,
+      contentChinese: contentChinese ?? this.contentChinese,
+    );
+  }
+
   @override
   List<Object?> get props => [id, segmentNumber, contentTibetan, contentSanskrit, contentEnglish, contentChinese];
 }

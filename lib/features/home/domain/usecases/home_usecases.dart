@@ -6,6 +6,9 @@ import 'package:flutter_pecha/features/home/domain/entities/prayer.dart';
 import 'package:flutter_pecha/features/home/domain/repositories/home_repository.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 
+export 'get_tags_usecase.dart';
+export 'get_featured_day_usecase.dart';
+
 /// Get daily prayer use case.
 class GetDailyPrayerUseCase extends UseCase<Prayer, NoParams> {
   final HomeRepository _repository;

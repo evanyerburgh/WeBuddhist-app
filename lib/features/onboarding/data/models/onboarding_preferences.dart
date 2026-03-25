@@ -1,4 +1,8 @@
+import '../../domain/entities/onboarding_preferences.dart' as domain;
+
 /// Model for storing user preferences collected during onboarding
+///
+/// This handles conversion between JSON and the OnboardingPreferences domain entity.
 class OnboardingPreferences {
   const OnboardingPreferences({this.preferredLanguage});
 
@@ -26,6 +30,34 @@ class OnboardingPreferences {
   /// Checks if all preferences are complete
   bool get isComplete {
     return preferredLanguage != null;
+  }
+
+  /// Convert to OnboardingPreferences domain entity.
+  ///
+  /// Note: This model only stores preferredLanguage, so other fields
+  /// use default values. The full domain entity has more comprehensive fields.
+  domain.OnboardingPreferences toEntity({
+    required String userId,
+    List<String> interests = const [],
+    int dailyPracticeGoalMinutes = 30,
+    List<String> preferredPracticeTypes = const [],
+    DateTime? completedAt,
+  }) {
+    return domain.OnboardingPreferences(
+      userId: userId,
+      interests: interests,
+      primaryLanguage: preferredLanguage ?? 'en',
+      dailyPracticeGoalMinutes: dailyPracticeGoalMinutes,
+      preferredPracticeTypes: preferredPracticeTypes,
+      completedAt: completedAt ?? DateTime.now(),
+    );
+  }
+
+  /// Create OnboardingPreferences from a domain entity.
+  factory OnboardingPreferences.fromEntity(domain.OnboardingPreferences entity) {
+    return OnboardingPreferences(
+      preferredLanguage: entity.primaryLanguage,
+    );
   }
 
   @override

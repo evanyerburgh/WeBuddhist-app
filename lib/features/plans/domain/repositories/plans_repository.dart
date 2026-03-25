@@ -8,8 +8,14 @@ import 'package:flutter_pecha/shared/domain/base_classes/repository.dart';
 
 /// Plans repository interface.
 abstract class PlansRepository extends Repository {
-  /// Get all available plans.
-  Future<Either<Failure, List<Plan>>> getPlans();
+  /// Get all available plans with pagination and filtering support.
+  Future<Either<Failure, List<Plan>>> getPlans({
+    required String language,
+    String? search,
+    String? tag,
+    int? skip,
+    int? limit,
+  });
 
   /// Get a specific plan by ID.
   Future<Either<Failure, Plan?>> getPlan(String id);

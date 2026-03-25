@@ -37,6 +37,35 @@ class Plan extends BaseEntity {
     return title;
   }
 
+  /// Creates a copy with the specified fields replaced with new values
+  Plan copyWith({
+    String? id,
+    String? title,
+    String? titleTibetan,
+    String? description,
+    String? authorId,
+    String? authorName,
+    String? coverImageUrl,
+    int? totalDays,
+    DifficultyLevel? difficulty,
+    List<String>? tags,
+    List<WeekPlan>? weekPlans,
+  }) {
+    return Plan(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      titleTibetan: titleTibetan ?? this.titleTibetan,
+      description: description ?? this.description,
+      authorId: authorId ?? this.authorId,
+      authorName: authorName ?? this.authorName,
+      coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      totalDays: totalDays ?? this.totalDays,
+      difficulty: difficulty ?? this.difficulty,
+      tags: tags ?? this.tags,
+      weekPlans: weekPlans ?? this.weekPlans,
+    );
+  }
+
   @override
   List<Object?> get props => [
     id,

@@ -1,3 +1,4 @@
+import 'package:equatable/equatable.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/recitation/domain/entities/recitation.dart';
@@ -28,7 +29,10 @@ class SearchRecitationsUseCase extends UseCase<List<Recitation>, SearchRecitatio
   }
 }
 
-class SearchRecitationsParams {
+class SearchRecitationsParams extends Equatable {
   final String query;
   const SearchRecitationsParams({required this.query});
+
+  @override
+  List<Object?> get props => [query];
 }
