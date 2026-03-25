@@ -148,7 +148,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get text_toc_versions => 'Versions';
 
   @override
-  String get text_commentary => 'Commentary';
+  String get text_commentary => 'Commentaries';
 
   @override
   String get text_close_commentary => 'Close commentary';
@@ -445,6 +445,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get plans_created => 'Plan created';
+
+  @override
+  String get ask_ai => 'Ask AI';
 
   @override
   String get ai_chat_history => 'Chat History';
@@ -792,7 +795,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String enrollErrorDetail(String error) {
-    return 'Unable to enroll in plan: $error';
+    return 'Unable to enroll in plan. Please try again later';
   }
 
   @override
@@ -833,7 +836,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String shareError(String error) {
-    return 'Unable to share: $error';
+    return 'Unable to share your segment. Please try again later';
   }
 
   @override
