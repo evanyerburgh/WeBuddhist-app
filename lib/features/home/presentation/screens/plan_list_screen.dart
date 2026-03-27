@@ -4,7 +4,7 @@ import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/plans_by_tag_provider.dart';
-import 'package:flutter_pecha/features/plans/data/models/plans_model.dart';
+import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -105,7 +105,7 @@ class PlanListScreen extends ConsumerWidget {
   Widget _buildContent(
     BuildContext context,
     WidgetRef ref,
-    List<PlansModel> plans,
+    List<Plan> plans,
   ) {
     return CustomScrollView(
       physics: const BouncingScrollPhysics(
@@ -140,7 +140,7 @@ class PlanListScreen extends ConsumerWidget {
 
 /// Featured/Banner card at the top
 class _FeaturedPlanCard extends ConsumerWidget {
-  final PlansModel plan;
+  final Plan plan;
 
   const _FeaturedPlanCard({required this.plan});
 
@@ -230,9 +230,9 @@ class _FeaturedPlanCard extends ConsumerWidget {
   }
 
   Widget _buildBackgroundImage(BuildContext context) {
-    if (plan.imageUrl != null && plan.imageUrl!.isNotEmpty) {
+    if (plan.coverImageUrl != null && plan.coverImageUrl!.isNotEmpty) {
       return Image.network(
-        plan.imageUrl!,
+        plan.coverImageUrl!,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return _buildPlaceholder(context);
@@ -271,7 +271,7 @@ class _FeaturedPlanCard extends ConsumerWidget {
 
 /// List item for each plan
 class _PlanListItem extends ConsumerWidget {
-  final PlansModel plan;
+  final Plan plan;
 
   const _PlanListItem({required this.plan});
 
@@ -340,9 +340,9 @@ class _PlanListItem extends ConsumerWidget {
   }
 
   Widget _buildThumbnail(BuildContext context) {
-    if (plan.imageThumbnail != null && plan.imageThumbnail!.isNotEmpty) {
+    if (plan.coverImageUrl != null && plan.coverImageUrl!.isNotEmpty) {
       return Image.network(
-        plan.imageThumbnail!,
+        plan.coverImageUrl!,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return _buildPlaceholder(context);

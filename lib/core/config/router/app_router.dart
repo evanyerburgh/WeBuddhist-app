@@ -11,7 +11,7 @@ import 'package:flutter_pecha/features/home/presentation/screens/main_navigation
 import 'package:flutter_pecha/features/home/presentation/screens/plan_list_screen.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/providers/onboarding_datasource_providers.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_wrapper.dart';
-import 'package:flutter_pecha/features/plans/data/models/plans_model.dart';
+import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/plan_details.dart';
 import 'package:flutter_pecha/features/plans/presentation/plan_info.dart';
@@ -97,7 +97,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 name: "home-plan-preview",
                 builder: (context, state) {
                   final extra = state.extra as Map<String, dynamic>?;
-                  final plan = extra?['plan'] as PlansModel?;
+                  final plan = extra?['plan'] as Plan?;
                   if (plan == null) {
                     throw Exception('Missing required parameters');
                   }
@@ -190,7 +190,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             name: "practice-plan-preview",
             builder: (context, state) {
               final extra = state.extra as Map<String, dynamic>?;
-              final plan = extra?['plan'] as PlansModel?;
+              final plan = extra?['plan'] as Plan?;
               if (plan == null) {
                 throw Exception('Missing required parameters');
               }
@@ -203,7 +203,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             name: "practice-plan-info",
             builder: (context, state) {
               final extra = state.extra as Map<String, dynamic>?;
-              final plan = extra?['plan'] as PlansModel?;
+              final plan = extra?['plan'] as Plan?;
               if (plan == null) {
                 throw Exception('Missing required parameters');
               }

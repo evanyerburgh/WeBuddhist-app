@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter_pecha/features/plans/data/repositories/plans_repository.dart';
-import 'package:flutter_pecha/features/plans/data/models/plans_model.dart';
+import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// State for plan search with pagination
 class PlanSearchState {
   final String query;
-  final List<PlansModel> results;
+  final List<Plan> results;
   final bool isLoading;
   final bool isLoadingMore;
   final String? error;
@@ -25,7 +25,7 @@ class PlanSearchState {
 
   PlanSearchState copyWith({
     String? query,
-    List<PlansModel>? results,
+    List<Plan>? results,
     bool? isLoading,
     bool? isLoadingMore,
     String? error,
@@ -105,9 +105,10 @@ class PlanSearchNotifier extends StateNotifier<PlanSearchState> {
       if (mounted) {
         final hasMore = results.length >= _limit;
         final newSkip = skip + results.length;
+        final planEntities = results.map((model) => model.toEntity()).toList();
 
         state = state.copyWith(
-          results: reset ? results : [...state.results, ...results],
+          results: reset ? planEntities : [...state.results, ...planEntities],
           isLoading: false,
           isLoadingMore: false,
           hasMore: hasMore,

@@ -282,17 +282,13 @@ class _PlansTab extends ConsumerWidget {
         }
 
         final plan = availablePlans[index];
-        final author = plan.author;
-        final authorName =
-            author != null
-                ? '${author.firstName} ${author.lastName}'.trim()
-                : null;
+        final authorName = plan.authorName;
         final isEnrolling = enrollingItemId == plan.id;
 
         return _SessionListTile(
           title: plan.title,
           subtitle: authorName,
-          imageUrl: plan.imageThumbnail,
+          imageUrl: plan.coverImageUrl,
           isLoading: isEnrolling,
           isDisabled: enrollingItemId != null,
           onTap: () => onPlanSelected(plan),

@@ -11,14 +11,13 @@ import 'package:flutter_pecha/features/home/presentation/widgets/view_illustrati
 import 'package:flutter_pecha/features/home/presentation/widgets/youtube_video_player.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/meditation_video.dart';
 import 'package:flutter_pecha/features/meditation_of_day/presentation/meditation_of_day_screen.dart';
-import 'package:flutter_pecha/features/plans/data/models/author/author_dto_model.dart';
+import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_subtasks_dto.dart';
 import 'package:flutter_pecha/features/story_view/presentation/screens/plan_story_presenter.dart';
 import 'package:flutter_pecha/features/story_view/presentation/screens/story_feature.dart';
 import 'package:flutter_pecha/features/story_view/presentation/screens/story_presenter.dart';
 import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
-import 'package:flutter_pecha/features/plans/data/models/plans_model.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/plan_details.dart';
 import 'package:flutter_pecha/features/plans/presentation/plan_info.dart';
 import 'package:flutter_pecha/features/prayer_of_the_day/presentation/prayer_of_the_day_screen.dart';
@@ -627,8 +626,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             );
           }
           return PlanInfo(
-            plan: extra['plan'] as PlansModel,
-            author: extra['author'] as AuthorDtoModel,
+            plan: extra['plan'] as Plan,
+            author: extra['author'] as String?,
           );
         },
       ),

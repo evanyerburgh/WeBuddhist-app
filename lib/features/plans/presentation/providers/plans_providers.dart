@@ -4,13 +4,13 @@ import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/plans_repository.dart';
 import '../../data/datasource/plans_remote_datasource.dart';
-import '../../data/models/plans_model.dart';
+import '../../domain/entities/plan.dart';
 import 'plan_search_provider.dart';
 import 'find_plans_paginated_provider.dart';
 
 final _logger = AppLogger('PlansProviders');
 
-// Repository provider
+// Repository provider (using working data layer repository)
 final plansRepositoryProvider = Provider<PlansRepository>((ref) {
   return PlansRepository(
     plansRemoteDatasource: PlansRemoteDatasource(
@@ -20,17 +20,19 @@ final plansRepositoryProvider = Provider<PlansRepository>((ref) {
 });
 
 // Get all plans provider
-final plansFutureProvider = FutureProvider<List<PlansModel>>((ref) {
+final plansFutureProvider = FutureProvider<List<Plan>>((ref) async {
   final locale = ref.watch(localeProvider);
   final languageCode = locale.languageCode;
-  return ref.watch(plansRepositoryProvider).getPlans(language: languageCode);
+  final plansModels = await ref.watch(plansRepositoryProvider).getPlans(language: languageCode);
+  return plansModels.map((model) => model.toEntity()).toList();
 });
 
-final planByIdFutureProvider = FutureProvider.family<PlansModel, String>((
+final planByIdFutureProvider = FutureProvider.family<Plan, String>((
   ref,
   id,
-) {
-  return ref.watch(plansRepositoryProvider).getPlanById(id);
+) async {
+  final model = await ref.watch(plansRepositoryProvider).getPlanById(id);
+  return model.toEntity();
 });
 
 // Find plans with pagination provider

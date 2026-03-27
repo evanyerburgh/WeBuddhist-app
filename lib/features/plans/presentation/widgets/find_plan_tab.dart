@@ -92,13 +92,13 @@ class _FindPlansTabState extends ConsumerState<FindPlansTab> {
         }
 
         final plan = plansState.plans[index];
-        final author = plan.author;
+        final authorName = plan.authorName;
         return PlanCard(
           plan: plan,
           onTap: () async {
             final result = await context.push(
               '/plans/info',
-              extra: {'plan': plan, 'author': author},
+              extra: {'plan': plan, 'author': authorName},
             );
             if (result == true && context.mounted) {
               // Change tab to my plans after successful enrollment

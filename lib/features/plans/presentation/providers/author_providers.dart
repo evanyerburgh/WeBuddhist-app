@@ -1,9 +1,10 @@
 import 'package:flutter_pecha/core/di/core_providers.dart';
+import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
+import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/author_repository.dart';
 import '../../data/datasource/author_remote_datasource.dart';
 import '../../data/models/author/author_model.dart';
-import '../../data/models/plans_model.dart';
 
 // Repository provider
 final authorRepositoryProvider = Provider<AuthorRepository>((ref) {
@@ -22,10 +23,19 @@ final authorByIdFutureProvider = FutureProvider.family<AuthorModel, String>((
   return ref.watch(authorRepositoryProvider).getAuthorById(id);
 });
 
-// Get plans by author ID provider
+// Get plans by author ID provider (using repository and converting to domain entities)
 final authorPlansFutureProvider =
-    FutureProvider.family<List<PlansModel>, String>((ref, authorId) {
-      return ref.watch(authorRepositoryProvider).getPlansByAuthorId(authorId);
+    FutureProvider.family<List<Plan>, String>((ref, authorId) async {
+      // Fetch all plans and filter by author
+      final plansModels = await ref.watch(plansRepositoryProvider).getPlans(
+        language: 'en',
+        limit: 100,
+      );
+      // Convert to domain entities and filter by author
+      return plansModels
+          .map((model) => model.toEntity())
+          .where((plan) => plan.authorId == authorId)
+          .toList();
     });
 
 // Author state notifier for managing local state

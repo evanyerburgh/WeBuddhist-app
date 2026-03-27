@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
+import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/author_providers.dart';
 import 'package:flutter_pecha/features/plans/data/models/author/author_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/author/social_profile_dto.dart';
-import 'package:flutter_pecha/features/plans/data/models/plans_model.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_card.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -256,7 +256,7 @@ class AuthorDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPlansList(BuildContext context, List<PlansModel> plans) {
+  Widget _buildPlansList(BuildContext context, List<Plan> plans) {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),

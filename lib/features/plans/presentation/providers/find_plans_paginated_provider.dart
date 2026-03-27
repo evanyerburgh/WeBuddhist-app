@@ -1,13 +1,13 @@
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/plans/data/repositories/plans_repository.dart';
-import 'package:flutter_pecha/features/plans/data/models/plans_model.dart';
+import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _logger = AppLogger('FindPlansNotifier');
 
 /// State for paginated plans list
 class FindPlansState {
-  final List<PlansModel> plans;
+  final List<Plan> plans;
   final bool isLoading;
   final bool isLoadingMore;
   final String? error;
@@ -24,7 +24,7 @@ class FindPlansState {
   });
 
   FindPlansState copyWith({
-    List<PlansModel>? plans,
+    List<Plan>? plans,
     bool? isLoading,
     bool? isLoadingMore,
     String? error,
@@ -85,8 +85,9 @@ class FindPlansNotifier extends StateNotifier<FindPlansState> {
 
       if (mounted) {
         _logger.debug('📦 Updating state with ${plans.length} plans');
+        final planEntities = plans.map((model) => model.toEntity()).toList();
         final newState = state.copyWith(
-          plans: plans,
+          plans: planEntities,
           isLoading: false,
           hasMore: plans.length >= _limit,
           skip: plans.length,
@@ -124,8 +125,9 @@ class FindPlansNotifier extends StateNotifier<FindPlansState> {
       );
 
       if (mounted) {
+        final planEntities = newPlans.map((model) => model.toEntity()).toList();
         state = state.copyWith(
-          plans: [...state.plans, ...newPlans],
+          plans: [...state.plans, ...planEntities],
           isLoadingMore: false,
           hasMore: newPlans.length >= _limit,
           skip: state.skip + newPlans.length,

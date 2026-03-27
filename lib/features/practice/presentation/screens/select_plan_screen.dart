@@ -128,7 +128,7 @@ class _SelectPlanScreenState extends ConsumerState<SelectPlanScreen> {
         return _SelectablePlanCard(
           title: plan.title,
           subtitle: '${plan.totalDays} Days',
-          imageUrl: plan.imageThumbnail,
+          imageUrl: plan.coverImageUrl,
           onTap: () => Navigator.of(context).pop(plan),
         );
       },
