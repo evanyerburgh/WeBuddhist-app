@@ -12,6 +12,7 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 final _log = Logger('HomeScreen');
 
@@ -119,14 +120,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         horizontal: HomeScreenConstants.topBarHorizontalPadding,
         vertical: HomeScreenConstants.topBarVerticalPadding,
       ),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          localizations.nav_home,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            localizations.nav_home,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          GestureDetector(
+            onTap: () {
+              context.pushNamed('home-settings');
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CircleAvatar(
+                backgroundColor: const Color(0xFF272727),
+                radius: 20,
+                child: Icon(
+                  PhosphorIconsRegular.userCircle,
+                  size: 24,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
