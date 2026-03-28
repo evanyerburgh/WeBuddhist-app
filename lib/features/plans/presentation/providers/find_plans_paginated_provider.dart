@@ -1,6 +1,6 @@
 import 'package:flutter_pecha/core/utils/app_logger.dart';
-import 'package:flutter_pecha/features/plans/data/repositories/plans_repository.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
+import 'package:flutter_pecha/features/plans/domain/usecases/plans_usecases.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _logger = AppLogger('FindPlansNotifier');
@@ -44,11 +44,11 @@ class FindPlansState {
 
 /// StateNotifier for paginated find plans
 class FindPlansNotifier extends StateNotifier<FindPlansState> {
-  final PlansRepository repository;
+  final GetPlansUseCase getPlansUseCase;
   final String languageCode;
   static const int _limit = 20;
 
-  FindPlansNotifier({required this.repository, required this.languageCode})
+  FindPlansNotifier({required this.getPlansUseCase, required this.languageCode})
     : super(const FindPlansState()) {
     _logger.debug('🏗️ FindPlansNotifier CREATED with language: $languageCode');
     loadInitial();
@@ -73,38 +73,38 @@ class FindPlansNotifier extends StateNotifier<FindPlansState> {
     state = state.copyWith(isLoading: true, error: null);
     _logger.debug('📊 State after setting loading: ${state.plans.length} plans, isLoading: ${state.isLoading}');
 
-    try {
-      _logger.debug('🌐 Calling repository.getPlans(language: $languageCode, skip: 0, limit: $_limit)');
-      final plans = await repository.getPlans(
-        language: languageCode,
-        skip: 0,
-        limit: _limit,
-      );
+    final result = await getPlansUseCase(GetPlansParams(
+      language: languageCode,
+      skip: 0,
+      limit: _limit,
+    ));
 
-      _logger.debug('✅ Got ${plans.length} plans from repository');
-
-      if (mounted) {
-        _logger.debug('📦 Updating state with ${plans.length} plans');
-        final planEntities = plans.map((model) => model.toEntity()).toList();
-        final newState = state.copyWith(
-          plans: planEntities,
-          isLoading: false,
-          hasMore: plans.length >= _limit,
-          skip: plans.length,
-          error: null,
-        );
-        state = newState;
-        _logger.debug('✅ State updated: ${state.plans.length} plans, hasMore: ${state.hasMore}');
-      } else {
-        _logger.debug('⚠️ Not mounted, skipping state update');
-      }
-    } catch (e) {
-      _logger.error('❌ Error loading plans: $e');
-      if (mounted) {
-        _logger.debug('📊 Setting error state');
-        state = state.copyWith(isLoading: false, error: e.toString());
-      }
-    }
+    result.fold(
+      (failure) {
+        _logger.error('❌ Error loading plans: ${failure.message}');
+        if (mounted) {
+          _logger.debug('📊 Setting error state');
+          state = state.copyWith(isLoading: false, error: failure.message);
+        }
+      },
+      (plans) {
+        _logger.debug('✅ Got ${plans.length} plans from use case');
+        if (mounted) {
+          _logger.debug('📦 Updating state with ${plans.length} plans');
+          final newState = state.copyWith(
+            plans: plans,
+            isLoading: false,
+            hasMore: plans.length >= _limit,
+            skip: plans.length,
+            error: null,
+          );
+          state = newState;
+          _logger.debug('✅ State updated: ${state.plans.length} plans, hasMore: ${state.hasMore}');
+        } else {
+          _logger.debug('⚠️ Not mounted, skipping state update');
+        }
+      },
+    );
 
     _logger.debug('🏁 loadInitial() finished - final state: ${state.plans.length} plans, isLoading: ${state.isLoading}');
   }
@@ -117,28 +117,30 @@ class FindPlansNotifier extends StateNotifier<FindPlansState> {
 
     state = state.copyWith(isLoadingMore: true, error: null);
 
-    try {
-      final newPlans = await repository.getPlans(
-        language: languageCode,
-        skip: state.skip,
-        limit: _limit,
-      );
+    final result = await getPlansUseCase(GetPlansParams(
+      language: languageCode,
+      skip: state.skip,
+      limit: _limit,
+    ));
 
-      if (mounted) {
-        final planEntities = newPlans.map((model) => model.toEntity()).toList();
-        state = state.copyWith(
-          plans: [...state.plans, ...planEntities],
-          isLoadingMore: false,
-          hasMore: newPlans.length >= _limit,
-          skip: state.skip + newPlans.length,
-          error: null,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        state = state.copyWith(isLoadingMore: false, error: e.toString());
-      }
-    }
+    result.fold(
+      (failure) {
+        if (mounted) {
+          state = state.copyWith(isLoadingMore: false, error: failure.message);
+        }
+      },
+      (newPlans) {
+        if (mounted) {
+          state = state.copyWith(
+            plans: [...state.plans, ...newPlans],
+            isLoadingMore: false,
+            hasMore: newPlans.length >= _limit,
+            skip: state.skip + newPlans.length,
+            error: null,
+          );
+        }
+      },
+    );
   }
 
   /// Retry loading

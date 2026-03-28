@@ -1,5 +1,5 @@
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
-import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
+import 'package:flutter_pecha/features/texts/presentation/providers/use_case_providers.dart';
 import 'package:flutter_pecha/features/texts/data/models/collections/collections.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/texts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

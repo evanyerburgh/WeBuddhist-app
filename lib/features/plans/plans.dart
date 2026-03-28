@@ -54,7 +54,7 @@ export 'data/datasource/author_remote_datasource.dart';
 // Data - Providers (moved to presentation)
 
 // Data - Repositories
-export 'data/repositories/plans_repository.dart' hide PlansRepository;
+export 'data/repositories/plans_repository_impl.dart';
 export 'data/repositories/user_plans_repository.dart';
 export 'data/repositories/plan_days_repository.dart';
 export 'data/repositories/tasks_repository.dart';

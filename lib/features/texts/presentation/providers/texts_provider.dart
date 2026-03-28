@@ -1,8 +1,12 @@
-import 'package:flutter_pecha/core/di/core_providers.dart';
-import 'package:flutter_pecha/features/texts/data/datasource/text_remote_datasource.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/repositories/texts_repository.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/features/texts/domain/usecases/text_content_usecases.dart';
+import 'package:flutter_pecha/features/texts/domain/usecases/text_search_usecases.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'use_case_providers.dart';
+
+// Re-export the search param classes for backward compatibility
+export 'package:flutter_pecha/features/texts/domain/usecases/text_search_usecases.dart'
+    show TitleSearchParams, AuthorSearchParams;
 
 class TextDetailsParams {
   final String textId;
@@ -31,62 +35,78 @@ class TextDetailsParams {
   int get hashCode => key.hashCode;
 }
 
-final textsRepositoryProvider = Provider<TextsRepository>(
-  (ref) => TextsRepository(
-    remoteDatasource: TextRemoteDatasource(
-      dio: ref.watch(dioProvider),
-    ),
-  ),
-);
-
 final textsFutureProvider = FutureProvider.family((ref, String termId) {
   final locale = ref.watch(localeProvider);
   final languageCode = locale.languageCode;
-  return ref
-      .watch(textsRepositoryProvider)
-      .getTexts(termId: termId, language: languageCode);
+  final repository = ref.watch(textsRepositoryProvider);
+  return repository.getTexts(termId: termId, language: languageCode);
 });
 
-final textContentFutureProvider = FutureProvider.family((ref, String textId) {
+final textContentFutureProvider = FutureProvider.family((ref, String textId) async {
   final locale = ref.watch(localeProvider);
   final languageCode = locale.languageCode;
-  return ref
-      .watch(textsRepositoryProvider)
-      .fetchTextContent(textId: textId, language: languageCode);
+  final getTextContentUseCase = ref.watch(getTextContentUseCaseProvider);
+
+  final result = await getTextContentUseCase(GetTextContentParams(
+    textId: textId,
+    language: languageCode,
+  ));
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (result) => result,
+  );
 });
 
-final textVersionFutureProvider = FutureProvider.family((ref, String textId) {
+final textVersionFutureProvider = FutureProvider.family((ref, String textId) async {
   final locale = ref.watch(localeProvider);
   final languageCode = locale.languageCode;
-  return ref
-      .watch(textsRepositoryProvider)
-      .fetchTextVersion(textId: textId, language: languageCode);
+  final getTextVersionUseCase = ref.watch(getTextVersionUseCaseProvider);
+
+  final result = await getTextVersionUseCase(GetTextVersionParams(
+    textId: textId,
+    language: languageCode,
+  ));
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (result) => result,
+  );
 });
 
 final commentaryTextFutureProvider = FutureProvider.family((
   ref,
   String textId,
-) {
+) async {
   final locale = ref.watch(localeProvider);
   final languageCode = locale.languageCode;
-  return ref
-      .watch(textsRepositoryProvider)
-      .fetchCommentaryText(textId: textId, language: languageCode);
+  final getCommentaryTextUseCase = ref.watch(getCommentaryTextUseCaseProvider);
+
+  final result = await getCommentaryTextUseCase(GetCommentaryTextParams(
+    textId: textId,
+    language: languageCode,
+  ));
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (result) => result,
+  );
 });
 
 final textDetailsFutureProvider = FutureProvider.family((
   ref,
   TextDetailsParams params,
-) {
-  return ref
-      .watch(textsRepositoryProvider)
-      .fetchTextDetails(
-        textId: params.textId,
-        contentId: params.contentId,
-        versionId: params.versionId,
-        segmentId: params.segmentId,
-        direction: params.direction,
-      );
+) async {
+  final getTextDetailsUseCase = ref.watch(getTextDetailsUseCaseProvider);
+
+  final result = await getTextDetailsUseCase(GetTextDetailsParams(
+    textId: params.textId,
+    contentId: params.contentId,
+    versionId: params.versionId,
+    segmentId: params.segmentId,
+    direction: params.direction,
+  ));
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (result) => result,
+  );
 });
 
 class SearchTextParams {
@@ -109,11 +129,17 @@ class SearchTextParams {
 final searchTextFutureProvider = FutureProvider.family((
   ref,
   SearchTextParams params,
-) {
-  final result = ref
-      .watch(textsRepositoryProvider)
-      .searchTextRepository(query: params.query, textId: params.textId);
-  return result;
+) async {
+  final searchTextInTextUseCase = ref.watch(searchTextInTextUseCaseProvider);
+
+  final result = await searchTextInTextUseCase(SearchTextInTextParams(
+    query: params.query,
+    textId: params.textId,
+  ));
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (result) => result,
+  );
 });
 
 class LibrarySearchParams {
@@ -136,96 +162,60 @@ class LibrarySearchParams {
 final librarySearchProvider = FutureProvider.family((
   ref,
   LibrarySearchParams params,
-) {
-  final result = ref
-      .watch(textsRepositoryProvider)
-      .searchTextRepository(query: params.query, textId: params.textId);
-  return result;
+) async {
+  final searchTextInTextUseCase = ref.watch(searchTextInTextUseCaseProvider);
+
+  final result = await searchTextInTextUseCase(SearchTextInTextParams(
+    query: params.query,
+    textId: params.textId,
+  ));
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (result) => result,
+  );
 });
 
 final multilingualSearchProvider = FutureProvider.family((
   ref,
   LibrarySearchParams params,
-) {
-  final result = ref
-      .watch(textsRepositoryProvider)
-      .multilingualSearchRepository(query: params.query, textId: params.textId);
-  return result;
+) async {
+  final multilingualSearchUseCase = ref.watch(multilingualSearchUseCaseProvider);
+  final locale = ref.watch(localeProvider);
+
+  final result = await multilingualSearchUseCase(MultilingualSearchParams(
+    query: params.query,
+    language: locale.languageCode,
+    textId: params.textId,
+  ));
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (result) => result,
+  );
 });
 
-class TitleSearchParams {
-  final String? title;
-  final String? author;
-  final int limit;
-  final int offset;
-
-  const TitleSearchParams({
-    this.title,
-    this.author,
-    this.limit = 20,
-    this.offset = 0,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is TitleSearchParams &&
-          runtimeType == other.runtimeType &&
-          title == other.title &&
-          author == other.author &&
-          limit == other.limit &&
-          offset == other.offset;
-
-  @override
-  int get hashCode =>
-      title.hashCode ^ author.hashCode ^ limit.hashCode ^ offset.hashCode;
-}
-
+// Export the param classes from use cases for backward compatibility
 final titleSearchProvider = FutureProvider.family((
   ref,
   TitleSearchParams params,
-) {
-  final result = ref
-      .watch(textsRepositoryProvider)
-      .titleSearchRepository(
-        title: params.title,
-        author: params.author,
-        limit: params.limit,
-        offset: params.offset,
-      );
-  return result;
+) async {
+  final titleSearchUseCase = ref.watch(titleSearchUseCaseProvider);
+
+  final result = await titleSearchUseCase(params);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (result) => result,
+  );
 });
-
-class AuthorSearchParams {
-  final String? author;
-  final int limit;
-  final int offset;
-
-  const AuthorSearchParams({this.author, this.limit = 20, this.offset = 0});
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AuthorSearchParams &&
-          runtimeType == other.runtimeType &&
-          author == other.author &&
-          limit == other.limit &&
-          offset == other.offset;
-
-  @override
-  int get hashCode => author.hashCode ^ limit.hashCode ^ offset.hashCode;
-}
 
 final authorSearchProvider = FutureProvider.family((
   ref,
   AuthorSearchParams params,
-) {
-  final result = ref
-      .watch(textsRepositoryProvider)
-      .authorSearchRepository(
-        author: params.author,
-        limit: params.limit,
-        offset: params.offset,
-      );
-  return result;
+) async {
+  final authorSearchUseCase = ref.watch(authorSearchUseCaseProvider);
+
+  final result = await authorSearchUseCase(params);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (result) => result,
+  );
 });

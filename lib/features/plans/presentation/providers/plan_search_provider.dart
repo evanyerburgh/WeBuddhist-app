@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:flutter_pecha/features/plans/data/repositories/plans_repository.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
+import 'package:flutter_pecha/features/plans/domain/usecases/plans_usecases.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// State for plan search with pagination
@@ -46,13 +46,13 @@ class PlanSearchState {
 
 /// StateNotifier for managing search with debounce and pagination
 class PlanSearchNotifier extends StateNotifier<PlanSearchState> {
-  final PlansRepository repository;
+  final GetPlansUseCase getPlansUseCase;
   final String languageCode;
   Timer? _debounceTimer;
   static const int _limit = 20;
   static const Duration _debounceDuration = Duration(milliseconds: 500);
 
-  PlanSearchNotifier({required this.repository, required this.languageCode})
+  PlanSearchNotifier({required this.getPlansUseCase, required this.languageCode})
     : super(const PlanSearchState());
 
   /// Search with debounce
@@ -81,50 +81,52 @@ class PlanSearchNotifier extends StateNotifier<PlanSearchState> {
       return;
     }
 
-    try {
-      final skip = reset ? 0 : state.skip;
+    final skip = reset ? 0 : state.skip;
 
-      if (reset) {
-        state = state.copyWith(
-          isLoading: true,
-          error: null,
-          skip: 0,
-          hasMore: true,
-        );
-      } else {
-        state = state.copyWith(isLoadingMore: true, error: null);
-      }
-
-      final results = await repository.getPlans(
-        language: languageCode,
-        search: query.trim(),
-        skip: skip,
-        limit: _limit,
+    if (reset) {
+      state = state.copyWith(
+        isLoading: true,
+        error: null,
+        skip: 0,
+        hasMore: true,
       );
-
-      if (mounted) {
-        final hasMore = results.length >= _limit;
-        final newSkip = skip + results.length;
-        final planEntities = results.map((model) => model.toEntity()).toList();
-
-        state = state.copyWith(
-          results: reset ? planEntities : [...state.results, ...planEntities],
-          isLoading: false,
-          isLoadingMore: false,
-          hasMore: hasMore,
-          skip: newSkip,
-          error: null,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        state = state.copyWith(
-          isLoading: false,
-          isLoadingMore: false,
-          error: e.toString(),
-        );
-      }
+    } else {
+      state = state.copyWith(isLoadingMore: true, error: null);
     }
+
+    final result = await getPlansUseCase(GetPlansParams(
+      language: languageCode,
+      search: query.trim(),
+      skip: skip,
+      limit: _limit,
+    ));
+
+    result.fold(
+      (failure) {
+        if (mounted) {
+          state = state.copyWith(
+            isLoading: false,
+            isLoadingMore: false,
+            error: failure.message,
+          );
+        }
+      },
+      (results) {
+        if (mounted) {
+          final hasMore = results.length >= _limit;
+          final newSkip = skip + results.length;
+
+          state = state.copyWith(
+            results: reset ? results : [...state.results, ...results],
+            isLoading: false,
+            isLoadingMore: false,
+            hasMore: hasMore,
+            skip: newSkip,
+            error: null,
+          );
+        }
+      },
+    );
   }
 
   /// Load more results
