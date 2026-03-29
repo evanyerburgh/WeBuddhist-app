@@ -2,13 +2,15 @@ import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/home/data/datasource/featured_day_remote_datasource.dart';
+import 'package:flutter_pecha/features/home/domain/repositories/home_repository.dart';
 import 'package:flutter_pecha/features/plans/data/models/response/featured_day_response.dart';
 
-class FeaturedDayRepository {
+class FeaturedDayRepository implements FeaturedDayRepositoryInterface {
   final FeaturedDayRemoteDatasource featuredDayRemoteDatasource;
 
   FeaturedDayRepository({required this.featuredDayRemoteDatasource});
 
+  @override
   Future<Either<Failure, FeaturedDayResponse>> getFeaturedDay({String? language}) async {
     try {
       final featuredDay = await featuredDayRemoteDatasource.fetchFeaturedDay(
@@ -29,6 +31,7 @@ class FeaturedDayRepository {
   }
 
   /// Convert FeaturedDayResponse tasks to List of FeaturedDayTask
+  @override
   List<FeaturedDayTask> mapToFeaturedDayTasks(FeaturedDayResponse response) {
     return response.tasks.map((task) {
       return FeaturedDayTask(

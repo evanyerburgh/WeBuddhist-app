@@ -1,21 +1,17 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
-import 'package:flutter_pecha/features/home/domain/entities/daily_quote.dart';
-import 'package:flutter_pecha/features/home/domain/entities/featured_content.dart';
-import 'package:flutter_pecha/features/home/domain/entities/prayer.dart';
+import 'package:flutter_pecha/features/plans/data/models/response/featured_day_response.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/repository.dart';
 
-/// Home repository interface.
-abstract class HomeRepository extends Repository {
-  /// Get daily prayer.
-  Future<Either<Failure, Prayer>> getDailyPrayer();
+/// Featured day repository interface.
+abstract class FeaturedDayRepositoryInterface extends Repository {
+  Future<Either<Failure, FeaturedDayResponse>> getFeaturedDay({String? language});
 
-  /// Get daily quote/verse.
-  Future<Either<Failure, DailyQuote>> getDailyQuote();
+  /// Convert FeaturedDayResponse tasks to List of FeaturedDayTask
+  List<FeaturedDayTask> mapToFeaturedDayTasks(FeaturedDayResponse response);
+}
 
-  /// Get featured content.
-  Future<Either<Failure, List<FeaturedContent>>> getFeaturedContent();
-
-  /// Get content for a specific tag.
-  Future<Either<Failure, List<FeaturedContent>>> getContentByTag(String tagId);
+/// Tags repository interface.
+abstract class TagsRepositoryInterface extends Repository {
+  Future<Either<Failure, List<String>>> getTags({required String language});
 }

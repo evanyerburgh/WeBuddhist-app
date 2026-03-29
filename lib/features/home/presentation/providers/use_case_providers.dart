@@ -1,42 +1,45 @@
+import 'package:flutter_pecha/core/di/core_providers.dart';
+import 'package:flutter_pecha/features/home/data/datasource/featured_day_remote_datasource.dart';
+import 'package:flutter_pecha/features/home/data/datasource/tags_remote_datasource.dart';
+import 'package:flutter_pecha/features/home/data/repositories/featured_day_repository.dart';
+import 'package:flutter_pecha/features/home/data/repositories/tags_repository.dart';
+import 'package:flutter_pecha/features/home/domain/repositories/home_repository.dart';
 import 'package:flutter_pecha/features/home/domain/usecases/get_featured_day_usecase.dart';
 import 'package:flutter_pecha/features/home/domain/usecases/get_tags_usecase.dart';
-import 'package:flutter_pecha/features/home/presentation/providers/tags_provider.dart';
-import 'package:flutter_pecha/features/home/presentation/providers/featured_day_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_pecha/core/di/core_providers.dart';
-import 'package:flutter_pecha/features/home/data/datasource/tags_remote_datasource.dart';
-import 'package:flutter_pecha/features/home/data/datasource/featured_day_remote_datasource.dart';
 
-// ========== Datasource Providers ==========
+// ============ Datasources ============
 
-/// Provider for TagsRemoteDatasource.
-final tagsRemoteDatasourceProvider = Provider<TagsRemoteDatasource>((ref) {
-  return TagsRemoteDatasource(
-    dio: ref.watch(dioProvider),
-  );
-});
-
-/// Provider for FeaturedDayRemoteDatasource.
 final featuredDayRemoteDatasourceProvider = Provider<FeaturedDayRemoteDatasource>((ref) {
-  return FeaturedDayRemoteDatasource(
-    dio: ref.watch(dioProvider),
+  return FeaturedDayRemoteDatasource(dio: ref.watch(dioProvider));
+});
+
+final tagsRemoteDatasourceProvider = Provider<TagsRemoteDatasource>((ref) {
+  return TagsRemoteDatasource(dio: ref.watch(dioProvider));
+});
+
+// ============ Domain Repositories ============
+
+final featuredDayDomainRepositoryProvider = Provider<FeaturedDayRepositoryInterface>((ref) {
+  return FeaturedDayRepository(
+    featuredDayRemoteDatasource: ref.watch(featuredDayRemoteDatasourceProvider),
   );
 });
 
-// ========== Use Case Providers ==========
-
-/// Provider for GetTagsUseCase.
-final getTagsUseCaseProvider = Provider<GetTagsUseCase>((ref) {
-  final repository = ref.watch(tagsRepositoryProvider);
-  return GetTagsUseCase(
-    ({required String language}) async => repository.getTags(language: language),
+final tagsDomainRepositoryProvider = Provider<TagsRepositoryInterface>((ref) {
+  return TagsRepository(
+    tagsRemoteDatasource: ref.watch(tagsRemoteDatasourceProvider),
   );
 });
 
-/// Provider for GetFeaturedDayUseCase.
+// ============ Use Cases ============
+
 final getFeaturedDayUseCaseProvider = Provider<GetFeaturedDayUseCase>((ref) {
-  final repository = ref.watch(featuredDayRepositoryProvider);
-  return GetFeaturedDayUseCase(
-    ({String? language}) async => repository.getFeaturedDay(language: language),
-  );
+  final repository = ref.watch(featuredDayDomainRepositoryProvider);
+  return GetFeaturedDayUseCase(repository.getFeaturedDay);
+});
+
+final getTagsUseCaseProvider = Provider<GetTagsUseCase>((ref) {
+  final repository = ref.watch(tagsDomainRepositoryProvider);
+  return GetTagsUseCase(repository.getTags);
 });
