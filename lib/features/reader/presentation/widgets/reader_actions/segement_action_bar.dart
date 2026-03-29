@@ -8,6 +8,7 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Converts HTML to plain text, removing specified elements using regex
@@ -62,7 +63,7 @@ class SegmentActionBar extends ConsumerWidget {
       right: 0,
       bottom: 24,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Material(
           elevation: 8,
           borderRadius: BorderRadius.circular(18),
@@ -77,7 +78,7 @@ class SegmentActionBar extends ConsumerWidget {
                 children: [
                   // Commentary button
                   ActionButton(
-                    icon: Icons.comment_outlined,
+                    icon: PhosphorIconsRegular.chatText,
                     label: localizations.text_commentary,
                     onTap: () {
                       notifier.toggleCommentary(segment.segmentId);
@@ -85,6 +86,21 @@ class SegmentActionBar extends ConsumerWidget {
                         onOpenCommentary?.call();
                       }
                     },
+                  ),
+                  // AI button
+                  ActionButton(
+                    icon: PhosphorIconsRegular.sparkle,
+                    label: localizations.ask_ai,
+                    onTap:
+                        () => {
+                          // show a comming soon snackbar
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(localizations.comingSoonHeadline),
+                              duration: Duration(seconds: 2),
+                            ),
+                          ),
+                        },
                   ),
                   // Copy button
                   ActionButton(
@@ -178,9 +194,9 @@ class _ShareButtonState extends ConsumerState<_ShareButton> {
       widget.onClose();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.shareError(e.toString()))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.shareError(e.toString()))),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -194,7 +210,7 @@ class _ShareButtonState extends ConsumerState<_ShareButton> {
   Widget build(BuildContext context) {
     final localizations = context.l10n;
     return ActionButton(
-      icon: Icons.share,
+      icon: PhosphorIconsRegular.shareNetwork,
       label: localizations.share,
       onTap: _handleShare,
       isLoading: _isLoading,

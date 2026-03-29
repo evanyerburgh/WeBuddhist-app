@@ -15,7 +15,6 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_search
 import 'package:flutter_pecha/features/texts/presentation/providers/text_version_language_provider.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 /// Main reader screen - thin orchestrator that composes child widgets
 class ReaderScreen extends ConsumerStatefulWidget {
@@ -245,7 +244,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   Future<void> _handleSearch(BuildContext context, ReaderState state) async {
     final notifier = ref.read(readerNotifierProvider(_params).notifier);
-    final router = GoRouter.of(context); // Capture router before async gap
+    final router = ref.read(appRouterProvider);
 
     // Close selection before search
     notifier.selectSegment(null);
@@ -253,7 +252,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     final result = await showSearch<Map<String, String>?>(
       context: context,
-      delegate: ReaderSearchDelegate(ref: ref, textId: widget.textId),
+      delegate: ReaderSearchDelegate(
+        ref: ref,
+        textId: widget.textId,
+        language: state.textDetail?.language,
+      ),
     );
 
     if (result != null && mounted) {
@@ -261,10 +264,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       final selectedSegmentId = result['segmentId']!;
 
       if (selectedTextId == widget.textId) {
-        // Same text - highlight and scroll to segment
-        notifier.highlightSegment(selectedSegmentId, NavigationSource.search);
-      } else {
-        // Different text - navigate to it
         router.pushReplacement(
           '/reader/$selectedTextId',
           extra: NavigationContext(

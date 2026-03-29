@@ -145,7 +145,8 @@ final searchTextFutureProvider = FutureProvider.family((
 class LibrarySearchParams {
   final String query;
   final String? textId;
-  const LibrarySearchParams({required this.query, this.textId});
+  final String? language;
+  const LibrarySearchParams({required this.query, this.textId, this.language});
 
   @override
   bool operator ==(Object other) =>
@@ -153,10 +154,11 @@ class LibrarySearchParams {
       other is LibrarySearchParams &&
           runtimeType == other.runtimeType &&
           query == other.query &&
-          textId == other.textId;
+          textId == other.textId &&
+          language == other.language;
 
   @override
-  int get hashCode => query.hashCode ^ textId.hashCode;
+  int get hashCode => query.hashCode ^ textId.hashCode ^ language.hashCode;
 }
 
 final librarySearchProvider = FutureProvider.family((
@@ -180,11 +182,12 @@ final multilingualSearchProvider = FutureProvider.family((
   LibrarySearchParams params,
 ) async {
   final multilingualSearchUseCase = ref.watch(multilingualSearchUseCaseProvider);
-  final locale = ref.watch(localeProvider);
+  // Use provided language parameter, otherwise fall back to locale
+  final language = params.language ?? ref.watch(localeProvider).languageCode;
 
   final result = await multilingualSearchUseCase(MultilingualSearchParams(
     query: params.query,
-    language: locale.languageCode,
+    language: language,
     textId: params.textId,
   ));
   return result.fold(
