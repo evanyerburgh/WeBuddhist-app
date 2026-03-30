@@ -146,7 +146,6 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
     _logger.debug('🎨 ===== BUILD STARTED =====');
     final localizations = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context);
-    final languageCode = locale.languageCode;
 
     // Get enrolled plan IDs from paginated provider (already loaded by app)
     final myPlansState = ref.watch(myPlansPaginatedProvider);
@@ -154,7 +153,8 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
     _logger.debug('📊 My Plans: ${myPlansState.plans.length} plans');
 
     // Get saved recitation IDs from backend
-    final savedRecitationIds = ref
+    final savedRecitationIds =
+        ref
             .watch(savedRecitationsFutureProvider)
             .whenData((dataEither) => dataEither.fold(
               (failure) => <String>{},
@@ -189,13 +189,13 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
             Tab(text: localizations.routine_add_plan),
             Tab(text: localizations.routine_add_recitation),
           ],
-          labelStyle: context.languageTextStyle(
-            languageCode,
+          labelStyle: const TextStyle(
             fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
-          unselectedLabelStyle: context.languageTextStyle(
-            languageCode,
+          unselectedLabelStyle: const TextStyle(
             fontWeight: FontWeight.normal,
+            fontSize: 16,
           ),
           labelColor:
               Theme.of(context).brightness == Brightness.dark

@@ -9,6 +9,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/auth/presentation/screens/login_page.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/plan_list_screen.dart';
+import 'package:flutter_pecha/features/more/presentation/more_screen.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/providers/onboarding_datasource_providers.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_wrapper.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
@@ -105,6 +106,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 },
               ),
             ],
+          ),
+          // settings route
+          GoRoute(
+            path: "settings",
+            name: "home-settings",
+            builder: (context, state) => const MoreScreen(),
           ),
         ],
       ),
@@ -258,7 +265,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: "create-image",
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return CreateImage(text: extra?['text'] as String, imagePath: extra?['imagePath'] as String);
+          return CreateImage(
+            text: extra?['text'] as String,
+            imagePath: extra?['imagePath'] as String,
+          );
         },
       ),
 

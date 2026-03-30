@@ -42,19 +42,20 @@ class MoreScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        elevation: 0,
+        title: Text(
+          localizations.nav_settings,
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           children: [
-            // Title
-            Text(
-              localizations.nav_settings,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-
             // Profile Section
             if (authState.isLoggedIn && !authState.isGuest) ...[
               _buildProfileSection(context, ref),
