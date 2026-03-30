@@ -1,15 +1,18 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/cache/cache.dart';
+import 'package:flutter_pecha/core/error/exception_mapper.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/network/connectivity_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/texts/data/datasource/text_remote_datasource.dart';
-import 'package:flutter_pecha/features/texts/models/search/multilingual_search_response.dart';
-import 'package:flutter_pecha/features/texts/models/search/search_response.dart';
-import 'package:flutter_pecha/features/texts/models/search/title_search_response.dart';
-import 'package:flutter_pecha/features/texts/models/text/commentary_text_response.dart';
-import 'package:flutter_pecha/features/texts/models/text/detail_response.dart';
-import 'package:flutter_pecha/features/texts/models/text/reader_response.dart';
-import 'package:flutter_pecha/features/texts/models/text/toc_response.dart';
-import 'package:flutter_pecha/features/texts/models/text/version_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/search/multilingual_search_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/search/search_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/search/title_search_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/commentary_text_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/detail_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/toc_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/version_response.dart';
 
 class TextsRepository {
   final TextRemoteDatasource remoteDatasource;
@@ -25,7 +28,7 @@ class TextsRepository {
   /// Get texts (works) within a collection with cache-first strategy.
   ///
   /// Set [forceRefresh] to true to bypass cache (e.g., for pull-to-refresh).
-  Future<TextDetailResponse> getTexts({
+  Future<Either<Failure, TextDetailResponse>> getTexts({
     required String termId,
     String? language,
     int skip = 0,
@@ -56,14 +59,12 @@ class TextsRepository {
             _refreshWorksInBackground(termId, language, skip, limit, cacheKey);
           }
 
-          return cacheResult.data!;
+          return Right(cacheResult.data!);
         }
       }
 
       if (!isOnline) {
-        throw const OfflineException(
-          'No internet connection and no cached works available',
-        );
+        return const Left(NetworkFailure('No internet connection and no cached works available'));
       }
 
       _logger.debug(
@@ -71,8 +72,10 @@ class TextsRepository {
             ? 'Force refreshing works from network'
             : 'Works cache miss for: $termId',
       );
-      return await _fetchAndCacheWorks(termId, language, skip, limit, cacheKey);
+      final result = await _fetchAndCacheWorks(termId, language, skip, limit, cacheKey);
+      return Right(result);
     } catch (e) {
+      // Try fallback cache on network error
       if (e is! OfflineException) {
         final fallbackCache = _cacheService.get<TextDetailResponse>(
           key: cacheKey,
@@ -83,13 +86,12 @@ class TextsRepository {
 
         if (fallbackCache.isHit && fallbackCache.data != null) {
           _logger.debug('Returning fallback cache after network error');
-          return fallbackCache.data!;
+          return Right(fallbackCache.data!);
         }
       }
 
       _logger.error('Error fetching works', e);
-      if (e is OfflineException) rethrow;
-      throw Exception('Failed to load works: $e');
+      return Left(ExceptionMapper.map(e, context: 'Failed to load works'));
     }
   }
 
@@ -147,20 +149,25 @@ class TextsRepository {
     });
   }
 
-  Future<TocResponse> fetchTextContent({
+  Future<Either<Failure, TocResponse>> fetchTextContent({
     required String textId,
     String? language,
   }) async {
-    return remoteDatasource.fetchTextContent(
-      textId: textId,
-      language: language,
-    );
+    try {
+      final result = await remoteDatasource.fetchTextContent(
+        textId: textId,
+        language: language,
+      );
+      return Right(result);
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'Failed to fetch text content'));
+    }
   }
 
   /// Fetch text versions with cache-first strategy.
   ///
   /// Set [forceRefresh] to true to bypass cache (e.g., for pull-to-refresh).
-  Future<VersionResponse> fetchTextVersion({
+  Future<Either<Failure, VersionResponse>> fetchTextVersion({
     required String textId,
     String? language,
     bool forceRefresh = false,
@@ -189,14 +196,12 @@ class TextsRepository {
             _refreshVersionInBackground(textId, language, cacheKey);
           }
 
-          return cacheResult.data!;
+          return Right(cacheResult.data!);
         }
       }
 
       if (!isOnline) {
-        throw const OfflineException(
-          'No internet connection and no cached text versions available',
-        );
+        return const Left(NetworkFailure('No internet connection and no cached text versions available'));
       }
 
       _logger.debug(
@@ -204,8 +209,10 @@ class TextsRepository {
             ? 'Force refreshing text versions from network'
             : 'Text version cache miss for: $textId',
       );
-      return await _fetchAndCacheVersion(textId, language, cacheKey);
+      final result = await _fetchAndCacheVersion(textId, language, cacheKey);
+      return Right(result);
     } catch (e) {
+      // Try fallback cache on network error
       if (e is! OfflineException) {
         final fallbackCache = _cacheService.get<VersionResponse>(
           key: cacheKey,
@@ -216,13 +223,12 @@ class TextsRepository {
 
         if (fallbackCache.isHit && fallbackCache.data != null) {
           _logger.debug('Returning fallback cache after network error');
-          return fallbackCache.data!;
+          return Right(fallbackCache.data!);
         }
       }
 
       _logger.error('Error fetching text versions', e);
-      if (e is OfflineException) rethrow;
-      throw Exception('Failed to load text versions: $e');
+      return Left(ExceptionMapper.map(e, context: 'Failed to load text versions'));
     }
   }
 
@@ -277,7 +283,7 @@ class TextsRepository {
   /// Fetch commentary text with cache-first strategy.
   ///
   /// Set [forceRefresh] to true to bypass cache (e.g., for pull-to-refresh).
-  Future<CommentaryTextResponse> fetchCommentaryText({
+  Future<Either<Failure, CommentaryTextResponse>> fetchCommentaryText({
     required String textId,
     String? language,
     bool forceRefresh = false,
@@ -306,14 +312,12 @@ class TextsRepository {
             _refreshCommentaryInBackground(textId, language, cacheKey);
           }
 
-          return cacheResult.data!;
+          return Right(cacheResult.data!);
         }
       }
 
       if (!isOnline) {
-        throw const OfflineException(
-          'No internet connection and no cached commentary available',
-        );
+        return const Left(NetworkFailure('No internet connection and no cached commentary available'));
       }
 
       _logger.debug(
@@ -321,8 +325,10 @@ class TextsRepository {
             ? 'Force refreshing commentary from network'
             : 'Commentary cache miss for: $textId',
       );
-      return await _fetchAndCacheCommentary(textId, language, cacheKey);
+      final result = await _fetchAndCacheCommentary(textId, language, cacheKey);
+      return Right(result);
     } catch (e) {
+      // Try fallback cache on network error
       if (e is! OfflineException) {
         final fallbackCache = _cacheService.get<CommentaryTextResponse>(
           key: cacheKey,
@@ -333,13 +339,12 @@ class TextsRepository {
 
         if (fallbackCache.isHit && fallbackCache.data != null) {
           _logger.debug('Returning fallback cache after network error');
-          return fallbackCache.data!;
+          return Right(fallbackCache.data!);
         }
       }
 
       _logger.error('Error fetching commentary', e);
-      if (e is OfflineException) rethrow;
-      throw Exception('Failed to load commentary: $e');
+      return Left(ExceptionMapper.map(e, context: 'Failed to load commentary'));
     }
   }
 
@@ -402,7 +407,7 @@ class TextsRepository {
   /// 4. If offline, return cached data even if expired
   ///
   /// Set [forceRefresh] to true to bypass cache (e.g., for pull-to-refresh).
-  Future<ReaderResponse> fetchTextDetails({
+  Future<Either<Failure, ReaderResponse>> fetchTextDetails({
     required String textId,
     String? contentId,
     String? versionId,
@@ -447,15 +452,13 @@ class TextsRepository {
             );
           }
 
-          return cacheResult.data!;
+          return Right(cacheResult.data!);
         }
       }
 
-      // If offline and no cache, throw offline exception
+      // If offline and no cache, return network failure
       if (!isOnline) {
-        throw const OfflineException(
-          'No internet connection and no cached text content available',
-        );
+        return const Left(NetworkFailure('No internet connection and no cached text content available'));
       }
 
       // Cache miss or force refresh - fetch from network
@@ -464,7 +467,7 @@ class TextsRepository {
             ? 'Force refreshing text details from network'
             : 'Text details cache miss for: $textId',
       );
-      return await _fetchAndCacheTextDetails(
+      final result = await _fetchAndCacheTextDetails(
         textId,
         contentId,
         versionId,
@@ -472,6 +475,7 @@ class TextsRepository {
         direction,
         cacheKey,
       );
+      return Right(result);
     } catch (e) {
       // If network fails, try to return cached data (even expired)
       if (e is! OfflineException) {
@@ -484,13 +488,12 @@ class TextsRepository {
 
         if (fallbackCache.isHit && fallbackCache.data != null) {
           _logger.debug('Returning fallback cache after network error');
-          return fallbackCache.data!;
+          return Right(fallbackCache.data!);
         }
       }
 
       _logger.error('Error fetching text details', e);
-      if (e is OfflineException) rethrow;
-      throw Exception('Failed to load text content: $e');
+      return Left(ExceptionMapper.map(e, context: 'Failed to load text content'));
     }
   }
 
@@ -558,55 +561,71 @@ class TextsRepository {
     });
   }
 
-  Future<SearchResponse> searchTextRepository({
+  Future<Either<Failure, SearchResponse>> searchTextRepository({
     required String query,
     String? textId,
   }) async {
-    final result = await remoteDatasource.searchText(
-      query: query,
-      textId: textId,
-    );
-    return result;
+    try {
+      final result = await remoteDatasource.searchText(
+        query: query,
+        textId: textId,
+      );
+      return Right(result);
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'Failed to search text'));
+    }
   }
 
-  Future<MultilingualSearchResponse> multilingualSearchRepository({
+  Future<Either<Failure, MultilingualSearchResponse>> multilingualSearchRepository({
     required String query,
     String? language,
     String? textId,
   }) async {
-    final result = await remoteDatasource.multilingualSearch(
-      query: query,
-      language: language,
-      textId: textId,
-    );
-    return result;
+    try {
+      final result = await remoteDatasource.multilingualSearch(
+        query: query,
+        language: language,
+        textId: textId,
+      );
+      return Right(result);
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'Failed to perform multilingual search'));
+    }
   }
 
-  Future<TitleSearchResponse> titleSearchRepository({
+  Future<Either<Failure, TitleSearchResponse>> titleSearchRepository({
     String? title,
     String? author,
     int limit = 20,
     int offset = 0,
   }) async {
-    final result = await remoteDatasource.titleSearch(
-      title: title,
-      author: author,
-      limit: limit,
-      offset: offset,
-    );
-    return result;
+    try {
+      final result = await remoteDatasource.titleSearch(
+        title: title,
+        author: author,
+        limit: limit,
+        offset: offset,
+      );
+      return Right(result);
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'Failed to search by title'));
+    }
   }
 
-  Future<TitleSearchResponse> authorSearchRepository({
+  Future<Either<Failure, TitleSearchResponse>> authorSearchRepository({
     String? author,
     int limit = 20,
     int offset = 0,
   }) async {
-    final result = await remoteDatasource.authorSearch(
-      author: author,
-      limit: limit,
-      offset: offset,
-    );
-    return result;
+    try {
+      final result = await remoteDatasource.authorSearch(
+        author: author,
+        limit: limit,
+        offset: offset,
+      );
+      return Right(result);
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'Failed to search by author'));
+    }
   }
 }

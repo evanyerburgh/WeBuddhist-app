@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
-import 'package:flutter_pecha/features/ai/presentation/ai_mode_screen.dart';
+import 'package:flutter_pecha/features/ai/presentation/screens/ai_mode_screen.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/home_screen.dart';
 import 'package:flutter_pecha/features/more/presentation/more_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/practice_screen.dart';

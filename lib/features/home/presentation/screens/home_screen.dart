@@ -1,11 +1,13 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/services/service_providers.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
-import 'package:flutter_pecha/features/home/data/providers/tags_provider.dart';
+import 'package:flutter_pecha/features/home/presentation/providers/tags_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/home_screen_constants.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/tag_card.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -133,7 +135,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildSearchSection(
     AppLocalizations localizations,
-    AsyncValue<List<String>> tagsAsync,
+    AsyncValue<Either<Failure, List<String>>> tagsAsync,
   ) {
     final locale = ref.watch(localeProvider);
     final lineHeight = getLineHeight(locale.languageCode);
@@ -142,7 +144,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: tagsAsync.when(
-        data:
+        data: (tagsEither) {
+          return tagsEither.fold(
+            (failure) => const SizedBox.shrink(),
             (tags) => FocusScope(
               node: _searchFocusScopeNode,
               onFocusChange: (isFocused) {
@@ -253,6 +257,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 },
               ),
             ),
+          );
+        },
         loading:
             () => SearchBar(
               padding: const WidgetStatePropertyAll<EdgeInsets>(
@@ -302,42 +308,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Expanded(
       child: tagsAsync.when(
-        data: (tags) {
-          if (tags.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(
-                  HomeScreenConstants.emptyStatePadding,
-                ),
-                child: Text(
-                  localizations.no_feature_content,
-                  style: TextStyle(fontSize: fontSize),
-                ),
-              ),
-            );
-          }
+        data: (tagsEither) {
+          return tagsEither.fold(
+            (failure) => ErrorStateWidget(error: failure, onRetry: _refetchTags),
+            (tags) {
+              if (tags.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(
+                      HomeScreenConstants.emptyStatePadding,
+                    ),
+                    child: Text(
+                      localizations.no_feature_content,
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                  ),
+                );
+              }
 
-          // 2-column grid layout, only the grid is scrollable
-          return GridView.builder(
-            padding: const EdgeInsets.symmetric(
-              horizontal: HomeScreenConstants.bodyHorizontalPadding,
-              vertical: HomeScreenConstants.bodyVerticalPadding,
-            ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 1.4,
-            ),
-            itemCount: tags.length,
-            itemBuilder: (context, index) {
-              final tag = tags[index];
-              return TagCard(
-                tag: tag,
-                imageUrl: _getTagImagePath(tag),
-                onTap: () {
-                  _log.info('Tag tapped: $tag');
-                  _navigateToPlans(tag);
+              // 2-column grid layout, only the grid is scrollable
+              return GridView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: HomeScreenConstants.bodyHorizontalPadding,
+                  vertical: HomeScreenConstants.bodyVerticalPadding,
+                ),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 1.4,
+                ),
+                itemCount: tags.length,
+                itemBuilder: (context, index) {
+                  final tag = tags[index];
+                  return TagCard(
+                    tag: tag,
+                    imageUrl: _getTagImagePath(tag),
+                    onTap: () {
+                      _log.info('Tag tapped: $tag');
+                      _navigateToPlans(tag);
+                    },
+                  );
                 },
               );
             },
