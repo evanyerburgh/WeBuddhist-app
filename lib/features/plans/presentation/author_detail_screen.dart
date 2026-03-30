@@ -1,3 +1,4 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
@@ -37,7 +38,16 @@ class AuthorDetailScreen extends ConsumerWidget {
       ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: authorDetails.when(
-        data: (authorData) => _buildAuthorContent(context, authorData),
+        data: (authorEither) => authorEither.fold(
+          (failure) => ErrorStateWidget(
+            error: failure,
+            customMessage: 'Unable to load author details.\nPlease try again.',
+            onRetry: () {
+              ref.invalidate(authorByIdFutureProvider(authorId));
+            },
+          ),
+          (authorData) => _buildAuthorContent(context, authorData),
+        ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error:
             (error, stackTrace) => ErrorStateWidget(
@@ -233,11 +243,16 @@ class AuthorDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             plansAsync.when(
-              data: (plans) {
-                if (plans.isEmpty) {
-                  return _buildEmptyPlansState(context);
-                }
-                return _buildPlansList(context, plans);
+              data: (plansEither) {
+                return plansEither.fold(
+                  (failure) => _buildPlansErrorState(context, ref, authorId),
+                  (plans) {
+                    if (plans.isEmpty) {
+                      return _buildEmptyPlansState(context);
+                    }
+                    return _buildPlansList(context, plans);
+                  },
+                );
               },
               loading:
                   () => const Center(

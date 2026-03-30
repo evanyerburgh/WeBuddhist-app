@@ -18,15 +18,10 @@ class GetTextContentUseCase extends UseCase<TocResponse, GetTextContentParams> {
     if (params.textId.isEmpty) {
       return const Left(ValidationFailure('Text ID cannot be empty'));
     }
-    try {
-      final result = await _repository.fetchTextContent(
-        textId: params.textId,
-        language: params.language,
-      );
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure('Failed to load text content: $e'));
-    }
+    return await _repository.fetchTextContent(
+      textId: params.textId,
+      language: params.language,
+    );
   }
 }
 
@@ -51,16 +46,11 @@ class GetTextVersionUseCase extends UseCase<VersionResponse, GetTextVersionParam
     if (params.textId.isEmpty) {
       return const Left(ValidationFailure('Text ID cannot be empty'));
     }
-    try {
-      final result = await _repository.fetchTextVersion(
-        textId: params.textId,
-        language: params.language,
-        forceRefresh: params.forceRefresh,
-      );
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure('Failed to load text versions: $e'));
-    }
+    return await _repository.fetchTextVersion(
+      textId: params.textId,
+      language: params.language,
+      forceRefresh: params.forceRefresh,
+    );
   }
 }
 
@@ -87,16 +77,11 @@ class GetCommentaryTextUseCase extends UseCase<CommentaryTextResponse, GetCommen
     if (params.textId.isEmpty) {
       return const Left(ValidationFailure('Text ID cannot be empty'));
     }
-    try {
-      final result = await _repository.fetchCommentaryText(
-        textId: params.textId,
-        language: params.language,
-        forceRefresh: params.forceRefresh,
-      );
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure('Failed to load commentary: $e'));
-    }
+    return await _repository.fetchCommentaryText(
+      textId: params.textId,
+      language: params.language,
+      forceRefresh: params.forceRefresh,
+    );
   }
 }
 
@@ -123,19 +108,14 @@ class GetTextDetailsUseCase extends UseCase<ReaderResponse, GetTextDetailsParams
     if (params.textId.isEmpty) {
       return const Left(ValidationFailure('Text ID cannot be empty'));
     }
-    try {
-      final result = await _repository.fetchTextDetails(
-        textId: params.textId,
-        contentId: params.contentId,
-        versionId: params.versionId,
-        segmentId: params.segmentId,
-        direction: params.direction,
-        forceRefresh: params.forceRefresh,
-      );
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure('Failed to load text details: $e'));
-    }
+    return await _repository.fetchTextDetails(
+      textId: params.textId,
+      contentId: params.contentId,
+      versionId: params.versionId,
+      segmentId: params.segmentId,
+      direction: params.direction,
+      forceRefresh: params.forceRefresh,
+    );
   }
 }
 

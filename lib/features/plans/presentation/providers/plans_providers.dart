@@ -1,4 +1,6 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/plan.dart';
@@ -10,38 +12,23 @@ import 'find_plans_paginated_provider.dart';
 final _logger = AppLogger('PlansProviders');
 
 // Get all plans provider
-final plansFutureProvider = FutureProvider<List<Plan>>((ref) async {
+final plansFutureProvider = FutureProvider<Either<Failure, List<Plan>>>((ref) async {
   final locale = ref.watch(localeProvider);
   final languageCode = locale.languageCode;
   final getPlansUseCase = ref.watch(getPlansUseCaseProvider);
 
-  final result = await getPlansUseCase(GetPlansParams(
+  return getPlansUseCase(GetPlansParams(
     language: languageCode,
   ));
-
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (plans) => plans,
-  );
 });
 
-final planByIdFutureProvider = FutureProvider.family<Plan, String>((
+final planByIdFutureProvider = FutureProvider.family<Either<Failure, Plan?>, String>((
   ref,
   id,
 ) async {
   final getPlanDetailUseCase = ref.watch(getPlanDetailUseCaseProvider);
 
-  final result = await getPlanDetailUseCase(GetPlanDetailParams(planId: id));
-
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (plan) {
-      if (plan == null) {
-        throw Exception('Plan not found');
-      }
-      return plan;
-    },
-  );
+  return getPlanDetailUseCase(GetPlanDetailParams(planId: id));
 });
 
 // Find plans with pagination provider

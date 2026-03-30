@@ -1,33 +1,47 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
 import 'package:flutter_pecha/features/plans/domain/repositories/plan_days_repository.dart';
+import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 
 /// Use case for getting plan days by plan ID.
-class GetPlanDaysUseCase {
+class GetPlanDaysUseCase extends UseCase<List<PlanDaysModel>, GetPlanDaysParams> {
   final PlanDaysRepositoryInterface _repository;
 
   GetPlanDaysUseCase(this._repository);
 
-  Future<List<PlanDaysModel>> call(String planId) async {
-    if (planId.isEmpty) {
-      throw ArgumentError('Plan ID cannot be empty');
+  @override
+  Future<Either<Failure, List<PlanDaysModel>>> call(GetPlanDaysParams params) async {
+    if (params.planId.isEmpty) {
+      return const Left(ValidationFailure('Plan ID cannot be empty'));
     }
-    return await _repository.getPlanDaysByPlanId(planId);
+    return await _repository.getPlanDaysByPlanId(params.planId);
   }
 }
 
+class GetPlanDaysParams extends Equatable {
+  final String planId;
+
+  const GetPlanDaysParams({required this.planId});
+
+  @override
+  List<Object?> get props => [planId];
+}
+
 /// Use case for getting a specific day's content.
-class GetDayContentUseCase {
+class GetDayContentUseCase extends UseCase<PlanDaysModel, DayContentParams> {
   final PlanDaysRepositoryInterface _repository;
 
   GetDayContentUseCase(this._repository);
 
-  Future<PlanDaysModel> call(DayContentParams params) async {
+  @override
+  Future<Either<Failure, PlanDaysModel>> call(DayContentParams params) async {
     if (params.planId.isEmpty) {
-      throw ArgumentError('Plan ID cannot be empty');
+      return const Left(ValidationFailure('Plan ID cannot be empty'));
     }
     if (params.dayNumber < 1) {
-      throw ArgumentError('Day number must be positive');
+      return const Left(ValidationFailure('Day number must be positive'));
     }
     return await _repository.getDayContent(params.planId, params.dayNumber);
   }

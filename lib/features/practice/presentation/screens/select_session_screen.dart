@@ -1,4 +1,6 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
@@ -73,16 +75,24 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
     if (_enrollingItemId != null) return;
     setState(() => _enrollingItemId = plan.id);
     try {
-      final success = await ref.read(
+      final resultEither = await ref.read(
         userPlanSubscribeFutureProvider(plan.id).future,
       );
       if (!mounted) return;
+
+      final success = resultEither.fold(
+        (failure) {
+          _showErrorSnackbar('Unable to enroll in plan. Please try again.');
+          return false;
+        },
+        (success) => success,
+      );
+
       if (success) {
         ref.invalidate(myPlansPaginatedProvider);
         Navigator.of(context).pop(PlanSessionSelection(plan));
       } else {
         setState(() => _enrollingItemId = null);
-        _showErrorSnackbar('Unable to enroll in plan. Please try again.');
       }
     } catch (e) {
       if (!mounted) return;
@@ -95,16 +105,24 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
     if (_enrollingItemId != null) return;
     setState(() => _enrollingItemId = recitation.textId);
     try {
-      final success = await ref.read(
+      final resultEither = await ref.read(
         saveRecitationProvider(recitation.textId).future,
       );
       if (!mounted) return;
+
+      final success = resultEither.fold(
+        (failure) {
+          _showErrorSnackbar('Unable to save recitation. Please try again.');
+          return false;
+        },
+        (success) => success,
+      );
+
       if (success) {
         ref.invalidate(savedRecitationsFutureProvider);
         Navigator.of(context).pop(RecitationSessionSelection(recitation));
       } else {
         setState(() => _enrollingItemId = null);
-        _showErrorSnackbar('Unable to save recitation. Please try again.');
       }
     } catch (e) {
       if (!mounted) return;
@@ -138,7 +156,10 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
     // Get saved recitation IDs from backend
     final savedRecitationIds = ref
             .watch(savedRecitationsFutureProvider)
-            .whenData((data) => data.map((e) => e.textId).toSet())
+            .whenData((dataEither) => dataEither.fold(
+              (failure) => <String>{},
+              (data) => data.map((e) => e.textId).toSet(),
+            ))
             .valueOrNull ??
         <String>{};
 
@@ -325,37 +346,47 @@ class _RecitationsTab extends ConsumerWidget {
               style: TextStyle(color: AppColors.textSecondary),
             ),
           ),
-      data: (recitations) {
-        // Filter out saved recitations and recitations already in routine
-        final availableRecitations =
-            recitations
-                .where((r) => !excludedRecitationIds.contains(r.textId))
-                .toList();
-
-        if (availableRecitations.isEmpty) {
-          return Center(
+      data: (recitationsEither) {
+        return recitationsEither.fold(
+          (failure) => Center(
             child: Text(
               localizations.recitations_no_content,
               style: TextStyle(color: AppColors.textSecondary),
             ),
-          );
-        }
+          ),
+          (recitations) {
+            // Filter out saved recitations and recitations already in routine
+            final availableRecitations =
+                recitations
+                    .where((r) => !excludedRecitationIds.contains(r.textId))
+                    .toList();
 
-        return ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          itemCount: availableRecitations.length,
-          separatorBuilder: (_, __) => const Divider(height: 1),
-          itemBuilder: (context, index) {
-            final recitation = availableRecitations[index];
-            final isEnrolling = enrollingItemId == recitation.textId;
+            if (availableRecitations.isEmpty) {
+              return Center(
+                child: Text(
+                  localizations.recitations_no_content,
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              );
+            }
 
-            return _SessionListTile(
-              title: recitation.title,
-              subtitle: null,
-              imageUrl: null,
-              isLoading: isEnrolling,
-              isDisabled: enrollingItemId != null,
-              onTap: () => onRecitationSelected(recitation),
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              itemCount: availableRecitations.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final recitation = availableRecitations[index];
+                final isEnrolling = enrollingItemId == recitation.textId;
+
+                return _SessionListTile(
+                  title: recitation.title,
+                  subtitle: null,
+                  imageUrl: null,
+                  isLoading: isEnrolling,
+                  isDisabled: enrollingItemId != null,
+                  onTap: () => onRecitationSelected(recitation),
+                );
+              },
             );
           },
         );

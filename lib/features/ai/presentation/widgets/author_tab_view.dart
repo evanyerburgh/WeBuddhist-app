@@ -67,7 +67,15 @@ class _AuthorTabViewState extends ConsumerState<AuthorTabView> {
         offset: _currentOffset,
       );
 
-      await ref.read(authorSearchProvider(params).future);
+      final result = await ref.read(authorSearchProvider(params).future);
+      result.fold(
+        (failure) {
+          // Error handling - silently ignore for pagination
+        },
+        (_) {
+          // Success - provider will invalidate and refresh
+        },
+      );
     } catch (e) {
       // Error handling is done in the provider
     } finally {

@@ -126,7 +126,11 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       direction: direction,
     );
 
-    return await _ref.read(textDetailsFutureProvider(params).future);
+    final result = await _ref.read(textDetailsFutureProvider(params).future);
+    return result.fold(
+      (failure) => throw Exception('Failed to fetch content: ${failure.message}'),
+      (response) => response,
+    );
   }
 
   /// Load the next page of content

@@ -1,5 +1,7 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
@@ -29,11 +31,19 @@ class PlanListScreen extends ConsumerWidget {
             // Main content
             Expanded(
               child: plansAsync.when(
-                data: (plans) {
-                  if (plans.isEmpty) {
-                    return _buildEmptyState(context, localizations, ref);
-                  }
-                  return _buildContent(context, ref, plans);
+                data: (plansEither) {
+                  return plansEither.fold(
+                    (failure) => ErrorStateWidget(
+                      error: failure,
+                      onRetry: () => ref.refresh(plansByTagProvider(tag)),
+                    ),
+                    (plans) {
+                      if (plans.isEmpty) {
+                        return _buildEmptyState(context, localizations, ref);
+                      }
+                      return _buildContent(context, ref, plans);
+                    },
+                  );
                 },
                 loading: () => const PlanListSkeleton(),
                 error:

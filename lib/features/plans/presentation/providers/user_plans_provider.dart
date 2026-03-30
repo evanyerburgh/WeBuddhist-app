@@ -1,4 +1,6 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_progress_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/response/user_plan_day_detail_response.dart';
@@ -11,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _logger = AppLogger('UserPlansProvider');
 
-final userPlansFutureProvider = FutureProvider<UserPlanListResponseModel>((
+final userPlansFutureProvider = FutureProvider<Either<Failure, UserPlanListResponseModel>>((
   ref,
 ) {
   final locale = ref.watch(localeProvider);
@@ -21,50 +23,51 @@ final userPlansFutureProvider = FutureProvider<UserPlanListResponseModel>((
 });
 
 final userPlanProgressDetailsFutureProvider =
-    FutureProvider.autoDispose.family<List<PlanProgressModel>, String>((
+    FutureProvider.autoDispose.family<Either<Failure, List<PlanProgressModel>>, String>((
       ref,
       planId,
     ) {
       final useCase = ref.watch(getUserPlanProgressUseCaseProvider);
-      return useCase(planId);
+      return useCase(GetUserPlanProgressParams(planId: planId));
     });
 
-final userPlanSubscribeFutureProvider = FutureProvider.autoDispose.family<bool, String>((
-  ref,
-  planId,
-) {
-  final useCase = ref.watch(subscribeToPlanUseCaseProvider);
-  return useCase(planId);
-});
+final userPlanSubscribeFutureProvider =
+    FutureProvider.autoDispose.family<Either<Failure, bool>, String>((
+      ref,
+      planId,
+    ) {
+      final useCase = ref.watch(subscribeToPlanUseCaseProvider);
+      return useCase(SubscribeToPlanParams(planId: planId));
+    });
 
 final userPlanUnsubscribeFutureProvider =
-    FutureProvider.autoDispose.family<bool, String>((ref, planId) {
+    FutureProvider.autoDispose.family<Either<Failure, bool>, String>((ref, planId) {
       final useCase = ref.watch(unsubscribeFromPlanUseCaseProvider);
-      return useCase(planId);
+      return useCase(UnsubscribeFromPlanParams(planId: planId));
     });
 
-final completeTaskFutureProvider = FutureProvider.autoDispose.family<bool, String>((
+final completeTaskFutureProvider = FutureProvider.autoDispose.family<Either<Failure, bool>, String>((
   ref,
   taskId,
 ) {
   final useCase = ref.watch(completeTaskUseCaseProvider);
-  return useCase(taskId);
+  return useCase(CompleteTaskParams(taskId: taskId));
 });
 
-final deleteTaskFutureProvider = FutureProvider.autoDispose.family<bool, String>((
+final deleteTaskFutureProvider = FutureProvider.autoDispose.family<Either<Failure, bool>, String>((
   ref,
   taskId,
 ) {
   final useCase = ref.watch(deleteTaskUseCaseProvider);
-  return useCase(taskId);
+  return useCase(DeleteTaskParams(taskId: taskId));
 });
 
-final completeSubTaskFutureProvider = FutureProvider.autoDispose.family<bool, String>((
+final completeSubTaskFutureProvider = FutureProvider.autoDispose.family<Either<Failure, bool>, String>((
   ref,
   subTaskId,
 ) {
   final useCase = ref.watch(completeSubTaskUseCaseProvider);
-  return useCase(subTaskId);
+  return useCase(CompleteSubTaskParams(subTaskId: subTaskId));
 });
 
 // My plans with pagination provider
@@ -80,7 +83,8 @@ final myPlansPaginatedProvider =
 
 // User plan day content provider
 final userPlanDayContentFutureProvider =
-    FutureProvider.autoDispose.family<UserPlanDayDetailResponse, PlanDaysParams>((
+    FutureProvider.autoDispose
+        .family<Either<Failure, UserPlanDayDetailResponse>, PlanDaysParams>((
       ref,
       params,
     ) {
@@ -92,17 +96,11 @@ final userPlanDayContentFutureProvider =
     });
 
 /// Provider that fetches completion status for all days in a plan using bulk endpoint
-/// Returns a Map where key is dayNumber and value is isCompleted status
+/// Returns Either<Failure, Map> where key is dayNumber and value is isCompleted status
 ///
 /// This uses a single API call instead of N separate calls (N+1 problem fixed)
 final userPlanDaysCompletionStatusProvider =
-    FutureProvider.autoDispose.family<Map<int, bool>, String>((ref, planId) async {
+    FutureProvider.autoDispose.family<Either<Failure, Map<int, bool>>, String>((ref, planId) {
       final useCase = ref.watch(getPlanDaysCompletionStatusUseCaseProvider);
-
-      try {
-        return await useCase(planId);
-      } catch (e) {
-        _logger.error('Error fetching plan days completion status', e);
-        return {};
-      }
+      return useCase(GetPlanDaysCompletionStatusParams(planId: planId));
     });

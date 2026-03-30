@@ -183,7 +183,12 @@ class _ShareButtonState extends ConsumerState<_ShareButton> {
         segmentId: widget.segmentId,
         language: widget.language,
       );
-      final shortUrl = await ref.read(shareUrlProvider(params).future);
+      final result = await ref.read(shareUrlProvider(params).future);
+
+      final shortUrl = result.fold(
+        (failure) => throw Exception('Failed to generate share URL: ${failure.message}'),
+        (url) => url,
+      );
 
       if (!mounted) return;
 

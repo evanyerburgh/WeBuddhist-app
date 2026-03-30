@@ -1,4 +1,6 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/use_case_providers.dart';
 import 'package:flutter_pecha/features/texts/data/models/collections/collections.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/texts.dart';
@@ -62,11 +64,16 @@ class PaginatedTextsNotifier extends StateNotifier<PaginatedTextsState> {
     try {
       final locale = ref.read(localeProvider);
       final repository = ref.read(textsRepositoryProvider);
-      final response = await repository.getTexts(
+      final responseEither = await repository.getTexts(
         termId: collectionId,
         language: locale.languageCode,
         skip: 0,
         limit: state.limit,
+      );
+
+      final response = responseEither.fold(
+        (failure) => throw Exception(failure.message),
+        (response) => response,
       );
 
       state = state.copyWith(
@@ -95,11 +102,16 @@ class PaginatedTextsNotifier extends StateNotifier<PaginatedTextsState> {
       final repository = ref.read(textsRepositoryProvider);
       final nextSkip = state.texts.length;
 
-      final response = await repository.getTexts(
+      final responseEither = await repository.getTexts(
         termId: collectionId,
         language: locale.languageCode,
         skip: nextSkip,
         limit: state.limit,
+      );
+
+      final response = responseEither.fold(
+        (failure) => throw Exception(failure.message),
+        (response) => response,
       );
 
       final updatedTexts = [...state.texts, ...response.texts];

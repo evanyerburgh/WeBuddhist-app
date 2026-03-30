@@ -548,11 +548,17 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
   Future<void> _unenrollItem(RoutineItem item) async {
     try {
       if (item.type == RoutineItemType.plan) {
-        await ref.read(userPlanUnsubscribeFutureProvider(item.id).future);
-        ref.invalidate(myPlansPaginatedProvider);
+        final result = await ref.read(userPlanUnsubscribeFutureProvider(item.id).future);
+        result.fold(
+          (failure) => throw Exception('Failed to unenroll: ${failure.message}'),
+          (_) => ref.invalidate(myPlansPaginatedProvider),
+        );
       } else {
-        await ref.read(unsaveRecitationProvider(item.id).future);
-        ref.invalidate(savedRecitationsFutureProvider);
+        final result = await ref.read(unsaveRecitationProvider(item.id).future);
+        result.fold(
+          (failure) => throw Exception('Failed to unsave: ${failure.message}'),
+          (_) => ref.invalidate(savedRecitationsFutureProvider),
+        );
       }
     } catch (e) {
       _logger.error('Failed to unenroll/unsave item: ${item.title}', e);
@@ -580,9 +586,17 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     for (final item in items) {
       try {
         if (item.type == RoutineItemType.plan) {
-          await ref.read(userPlanUnsubscribeFutureProvider(item.id).future);
+          final result = await ref.read(userPlanUnsubscribeFutureProvider(item.id).future);
+          result.fold(
+            (failure) => throw Exception('Failed to unenroll: ${failure.message}'),
+            (_) => {},
+          );
         } else {
-          await ref.read(unsaveRecitationProvider(item.id).future);
+          final result = await ref.read(unsaveRecitationProvider(item.id).future);
+          result.fold(
+            (failure) => throw Exception('Failed to unsave: ${failure.message}'),
+            (_) => {},
+          );
         }
       } catch (e) {
         _logger.error('Failed to unenroll/unsave item: ${item.title}', e);

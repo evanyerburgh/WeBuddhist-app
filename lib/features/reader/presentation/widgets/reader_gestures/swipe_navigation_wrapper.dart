@@ -169,8 +169,11 @@ class _SwipeNavigationWrapperState
 
     Future.microtask(() async {
       try {
-        await ref.read(completeSubTaskFutureProvider(subtaskId).future);
-        _logger.info('Marked subtask $subtaskId as complete on navigation');
+        final result = await ref.read(completeSubTaskFutureProvider(subtaskId).future);
+        result.fold(
+          (failure) => _logger.error('Failed to complete subtask: ${failure.message}'),
+          (_) => _logger.info('Marked subtask $subtaskId as complete on navigation'),
+        );
       } catch (e) {
         _logger.error('Failed to complete subtask $subtaskId', e);
       }

@@ -63,12 +63,20 @@ class RecitationSaveController {
 
   /// Saves a recitation.
   Future<void> _saveRecitation(String textId) async {
-    await ref.read(saveRecitationProvider(textId).future);
+    final result = await ref.read(saveRecitationProvider(textId).future);
+    result.fold(
+      (failure) => throw Exception('Failed to save recitation: ${failure.message}'),
+      (_) => {},
+    );
   }
 
   /// Unsaves a recitation.
   Future<void> _unsaveRecitation(String textId) async {
-    await ref.read(unsaveRecitationProvider(textId).future);
+    final result = await ref.read(unsaveRecitationProvider(textId).future);
+    result.fold(
+      (failure) => throw Exception('Failed to unsave recitation: ${failure.message}'),
+      (_) => {},
+    );
   }
 
   /// Shows the login drawer for guest users.

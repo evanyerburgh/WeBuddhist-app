@@ -17,15 +17,10 @@ class SearchTextInTextUseCase extends UseCase<SearchResponse, SearchTextInTextPa
     if (params.query.trim().isEmpty) {
       return const Left(ValidationFailure('Search query cannot be empty'));
     }
-    try {
-      final result = await _repository.searchTextRepository(
-        query: params.query,
-        textId: params.textId,
-      );
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure('Failed to search text: $e'));
-    }
+    return await _repository.searchTextRepository(
+      query: params.query,
+      textId: params.textId,
+    );
   }
 }
 
@@ -50,16 +45,11 @@ class MultilingualSearchUseCase extends UseCase<MultilingualSearchResponse, Mult
     if (params.query.trim().isEmpty) {
       return const Left(ValidationFailure('Search query cannot be empty'));
     }
-    try {
-      final result = await _repository.multilingualSearchRepository(
-        query: params.query,
-        language: params.language,
-        textId: params.textId,
-      );
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure('Failed to perform multilingual search: $e'));
-    }
+    return await _repository.multilingualSearchRepository(
+      query: params.query,
+      language: params.language,
+      textId: params.textId,
+    );
   }
 }
 
@@ -83,17 +73,12 @@ class TitleSearchUseCase extends UseCase<TitleSearchResponse, TitleSearchParams>
 
   @override
   Future<Either<Failure, TitleSearchResponse>> call(TitleSearchParams params) async {
-    try {
-      final result = await _repository.titleSearchRepository(
-        title: params.title,
-        author: params.author,
-        limit: params.limit,
-        offset: params.offset,
-      );
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure('Failed to search by title: $e'));
-    }
+    return await _repository.titleSearchRepository(
+      title: params.title,
+      author: params.author,
+      limit: params.limit,
+      offset: params.offset,
+    );
   }
 }
 
@@ -119,16 +104,11 @@ class AuthorSearchUseCase extends UseCase<TitleSearchResponse, AuthorSearchParam
 
   @override
   Future<Either<Failure, TitleSearchResponse>> call(AuthorSearchParams params) async {
-    try {
-      final result = await _repository.authorSearchRepository(
-        author: params.author,
-        limit: params.limit,
-        offset: params.offset,
-      );
-      return Right(result);
-    } catch (e) {
-      return Left(ServerFailure('Failed to search by author: $e'));
-    }
+    return await _repository.authorSearchRepository(
+      author: params.author,
+      limit: params.limit,
+      offset: params.offset,
+    );
   }
 }
 

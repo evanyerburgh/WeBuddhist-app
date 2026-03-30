@@ -1,4 +1,7 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/cache/cache.dart';
+import 'package:flutter_pecha/core/error/exception_mapper.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/network/connectivity_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/texts/data/datasource/collections_remote_datasource.dart';
@@ -25,7 +28,7 @@ class CollectionsRepository implements CollectionsRepositoryInterface {
   ///
   /// Set [forceRefresh] to true to bypass cache (e.g., for pull-to-refresh).
   @override
-  Future<CollectionsResponse> getCollections({
+  Future<Either<Failure, CollectionsResponse>> getCollections({
     String? parentId,
     String? language,
     bool forceRefresh = false,
@@ -53,15 +56,13 @@ class CollectionsRepository implements CollectionsRepositoryInterface {
             _refreshInBackground(parentId, language, cacheKey);
           }
 
-          return cacheResult.data!;
+          return Right(cacheResult.data!);
         }
       }
 
-      // If offline and no cache, throw offline exception
+      // If offline and no cache, return network failure
       if (!isOnline) {
-        throw const OfflineException(
-          'No internet connection and no cached collections available',
-        );
+        return const Left(NetworkFailure('No internet connection and no cached collections available'));
       }
 
       // Cache miss or force refresh - fetch from network
@@ -70,7 +71,8 @@ class CollectionsRepository implements CollectionsRepositoryInterface {
             ? 'Force refreshing collections from network'
             : 'Collections cache miss',
       );
-      return await _fetchAndCache(parentId, language, cacheKey);
+      final result = await _fetchAndCache(parentId, language, cacheKey);
+      return Right(result);
     } catch (e) {
       // If network fails, try to return cached data (even expired)
       if (e is! OfflineException) {
@@ -83,13 +85,12 @@ class CollectionsRepository implements CollectionsRepositoryInterface {
 
         if (fallbackCache.isHit && fallbackCache.data != null) {
           _logger.debug('Returning fallback cache after network error');
-          return fallbackCache.data!;
+          return Right(fallbackCache.data!);
         }
       }
 
       _logger.error('Error fetching collections', e);
-      if (e is OfflineException) rethrow;
-      throw Exception('Failed to load collections: $e');
+      return Left(ExceptionMapper.map(e, context: 'Failed to load collections'));
     }
   }
 

@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/plans/domain/usecases/user_plans_usecases.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/use_case_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
@@ -261,7 +264,11 @@ class _PlanStoryPresenterState extends ConsumerState<PlanStoryPresenter> {
       final useCase = ref.read(completeSubTaskUseCaseProvider);
 
       // Make API call
-      final success = await useCase(subtaskId);
+      final resultEither = await useCase(CompleteSubTaskParams(subTaskId: subtaskId));
+      final success = resultEither.fold(
+        (failure) => false,
+        (success) => success,
+      );
 
       // Only update state if still mounted and not disposing
       if (mounted && !_isDisposing) {

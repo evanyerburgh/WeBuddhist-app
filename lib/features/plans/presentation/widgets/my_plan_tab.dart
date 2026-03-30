@@ -1,3 +1,4 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
@@ -51,8 +52,13 @@ class _MyPlansTabState extends ConsumerState<MyPlansTab> {
   ) async {
     try {
       // Call the provider to unenroll
-      final success = await ref.read(
+      final resultEither = await ref.read(
         userPlanUnsubscribeFutureProvider(plan.id).future,
+      );
+
+      final success = resultEither.fold(
+        (failure) => false,
+        (success) => success,
       );
 
       if (success) {

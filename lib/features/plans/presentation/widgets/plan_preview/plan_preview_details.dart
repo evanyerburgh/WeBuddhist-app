@@ -1,4 +1,6 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
@@ -64,11 +66,16 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
     final planDays = ref.watch(planDaysByPlanIdFutureProvider(widget.plan.id));
 
     return planDays.when(
-      data: (days) {
-        if (days.isEmpty) {
-          return _buildEmptyDayCarouselState(context);
-        }
-        return _buildDayCarousel(language, days);
+      data: (daysEither) {
+        return daysEither.fold(
+          (failure) => _buildEmptyDayCarouselState(context),
+          (days) {
+            if (days.isEmpty) {
+              return _buildEmptyDayCarouselState(context);
+            }
+            return _buildDayCarousel(language, days);
+          },
+        );
       },
       loading: () => const DayCarouselSkeleton(),
       error: (error, stackTrace) => const SizedBox.shrink(),
@@ -104,7 +111,9 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
         children: [
           _buildDayTitle(context, language, selectedDay),
           dayContent.when(
-            data:
+            data: (contentEither) {
+              return contentEither.fold(
+                (failure) => _buildDayContentError(context),
                 (content) => PreviewActivityList(
                   language: language,
                   tasks: content.tasks ?? [],
@@ -113,6 +122,8 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
                   planId: widget.plan.id,
                   dayNumber: selectedDay,
                 ),
+              );
+            },
             loading: () => const DayContentSkeleton(),
             error: (error, stackTrace) => _buildDayContentError(context),
           ),

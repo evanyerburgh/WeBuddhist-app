@@ -1,4 +1,6 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/domain/usecases/plans_usecases.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/use_case_providers.dart';
@@ -17,7 +19,7 @@ final authorRepositoryProvider = Provider<AuthorRepository>((ref) {
 });
 
 // Get author by ID provider
-final authorByIdFutureProvider = FutureProvider.family<AuthorModel, String>((
+final authorByIdFutureProvider = FutureProvider.family<Either<Failure, AuthorModel>, String>((
   ref,
   id,
 ) {
@@ -26,7 +28,7 @@ final authorByIdFutureProvider = FutureProvider.family<AuthorModel, String>((
 
 // Get plans by author ID provider (using use case)
 final authorPlansFutureProvider =
-    FutureProvider.family<List<Plan>, String>((ref, authorId) async {
+    FutureProvider.family<Either<Failure, List<Plan>>, String>((ref, authorId) async {
       final getPlansUseCase = ref.watch(getPlansUseCaseProvider);
 
       final result = await getPlansUseCase(const GetPlansParams(
@@ -35,8 +37,8 @@ final authorPlansFutureProvider =
       ));
 
       return result.fold(
-        (failure) => throw Exception(failure.message),
-        (plans) => plans.where((plan) => plan.authorId == authorId).toList(),
+        (failure) => Left(failure),
+        (plans) => Right(plans.where((plan) => plan.authorId == authorId).toList()),
       );
     });
 

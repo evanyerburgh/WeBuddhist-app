@@ -11,8 +11,10 @@ import 'package:flutter_pecha/features/texts/presentation/widgets/collections_se
 import 'package:flutter_pecha/features/texts/presentation/widgets/loading_state_widget.dart';
 import 'package:flutter_pecha/features/texts/presentation/widgets/search_result_card.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fpdart/fpdart.dart';
 
 class CollectionsScreen extends ConsumerWidget {
   const CollectionsScreen({super.key});
@@ -173,7 +175,7 @@ class _SearchFieldState extends ConsumerState<_SearchField> {
 
 /// Collections list view
 class _CollectionsListView extends ConsumerWidget {
-  final AsyncValue<CollectionsResponse> collectionsResponse;
+  final AsyncValue<Either<Failure, CollectionsResponse>> collectionsResponse;
 
   const _CollectionsListView({required this.collectionsResponse});
 
@@ -181,39 +183,48 @@ class _CollectionsListView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     return collectionsResponse.when(
-      data: (response) {
-        final collections = response.collections;
-        if (collections.isEmpty) {
-          return Center(child: Text(l10n.noCollections));
-        }
-        return ListView.builder(
-          itemCount: collections.length + 1, // +1 for share button
-          itemBuilder: (context, index) {
-            // If this is the last item, show share button
-            if (index == collections.length) {
-              return const _ShareButtonsWidget();
+      data: (eitherResponse) {
+        return eitherResponse.fold(
+          (failure) => ErrorStateWidget(
+            error: failure,
+            customMessage: 'Unable to load collections.\nPlease try again.',
+          ),
+          (response) {
+            final collections = response.collections;
+            if (collections.isEmpty) {
+              return Center(child: Text(l10n.noCollections));
             }
-            final collection = collections[index];
-            final colorIndex = index % 9;
-            return GestureDetector(
-              onTap: () {
-                context.push(
-                  TextRoutes.works,
-                  extra: {'collection': collection, 'colorIndex': colorIndex},
+            return ListView.builder(
+              itemCount: collections.length + 1, // +1 for share button
+              itemBuilder: (context, index) {
+                // If this is the last item, show share button
+                if (index == collections.length) {
+                  return const _ShareButtonsWidget();
+                }
+                final collection = collections[index];
+                final colorIndex = index % 9;
+                return GestureDetector(
+                  onTap: () {
+                    context.push(
+                      TextRoutes.works,
+                      extra: {'collection': collection, 'colorIndex': colorIndex},
+                    );
+                  },
+                  child: CollectionsSection(
+                    collection: collection,
+                    dividerColor:
+                        TextScreenConstants.collectionCyclingColors[colorIndex],
+                  ),
                 );
               },
-              child: CollectionsSection(
-                collection: collection,
-                dividerColor:
-                    TextScreenConstants.collectionCyclingColors[colorIndex],
-              ),
             );
           },
         );
       },
       loading: () => const LoadingStateWidget(),
-      error: (error, stackTrace) => Center(
-        child: Text(context.l10n.loadCollectionsError),
+      error: (error, stackTrace) => ErrorStateWidget(
+        error: error,
+        customMessage: 'Unable to load collections.\nPlease try again.',
       ),
     );
   }
@@ -253,18 +264,26 @@ class _SearchResultsView extends ConsumerWidget {
             error: error,
             customMessage: 'Unable to perform search.\nPlease try again.',
           ),
-      data: (searchResponse) {
-        if (searchResponse.sources.isEmpty) {
-          return _buildNoResults(query);
-        }
+      data: (eitherResponse) {
+        return eitherResponse.fold(
+          (failure) => ErrorStateWidget(
+            error: failure,
+            customMessage: 'Unable to perform search.\nPlease try again.',
+          ),
+          (searchResponse) {
+            if (searchResponse.sources.isEmpty) {
+              return _buildNoResults(query);
+            }
 
-        final groupedResults = _groupSearchResults(searchResponse.sources);
+            final groupedResults = _groupSearchResults(searchResponse.sources);
 
-        if (groupedResults.isEmpty) {
-          return _buildNoResults(query);
-        }
+            if (groupedResults.isEmpty) {
+              return _buildNoResults(query);
+            }
 
-        return _buildSearchResultsList(groupedResults, query, ref);
+            return _buildSearchResultsList(groupedResults, query, ref);
+          },
+        );
       },
     );
   }

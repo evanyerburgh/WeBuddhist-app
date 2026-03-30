@@ -1,3 +1,5 @@
+import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/texts/domain/repositories/share_repository.dart';
 
 /// Use case for generating a share URL.
@@ -6,9 +8,9 @@ class GetShareUrlUseCase {
 
   GetShareUrlUseCase(this._repository);
 
-  Future<String> call(ShareUrlParams params) async {
+  Future<Either<Failure, String>> call(ShareUrlParams params) async {
     if (params.textId.isEmpty || params.segmentId.isEmpty || params.language.isEmpty) {
-      throw ArgumentError('All share parameters must be non-empty');
+      return const Left(ValidationFailure('All share parameters must be non-empty'));
     }
     return await _repository.getShareUrl(
       textId: params.textId,

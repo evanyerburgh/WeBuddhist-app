@@ -1,4 +1,6 @@
+import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -28,15 +30,16 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
     final authState = ref.watch(authProvider);
     final isGuest = authState.isGuest;
     final isLoggedIn = authState.isLoggedIn;
-    var subscribedPlans = AsyncValue<UserPlanListResponseModel>.data(
-      UserPlanListResponseModel(userPlans: [], total: 0, skip: 0, limit: 0),
-    );
 
+    // Get enrolled plan IDs
+    List<String> enrolledPlanIds = [];
     if (!isGuest && isLoggedIn) {
-      subscribedPlans = ref.watch(userPlansFutureProvider);
+      final subscribedPlans = ref.watch(userPlansFutureProvider);
+      enrolledPlanIds = subscribedPlans.valueOrNull?.fold(
+        (failure) => <String>[],
+        (response) => response.userPlans.map((e) => e.id).toList(),
+      ) ?? <String>[];
     }
-    final subscribedPlansIds =
-        subscribedPlans.valueOrNull?.userPlans.map((e) => e.id).toList() ?? [];
 
     final language = widget.plan.language.toLowerCase();
     final localizations = context.l10n;
@@ -65,9 +68,8 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: _buildActionButtons(
                   context,
-                  subscribedPlansIds,
+                  enrolledPlanIds,
                   isGuest,
-                  subscribedPlans,
                   language,
                   localizations,
                 ),
@@ -162,13 +164,12 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
 
   Widget _buildActionButtons(
     BuildContext context,
-    List<String> subscribedPlansIds,
+    List<String> enrolledPlanIds,
     bool isGuest,
-    AsyncValue<UserPlanListResponseModel> subscribedPlans,
     String language,
     AppLocalizations localizations,
   ) {
-    final isSubscribed = subscribedPlansIds.contains(widget.plan.id);
+    final isSubscribed = enrolledPlanIds.contains(widget.plan.id);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
