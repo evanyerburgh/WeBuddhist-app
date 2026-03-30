@@ -379,7 +379,7 @@ abstract class AppLocalizations {
   /// No description provided for @text_commentary.
   ///
   /// In en, this message translates to:
-  /// **'Commentary'**
+  /// **'Commentaries'**
   String get text_commentary;
 
   /// No description provided for @text_close_commentary.
@@ -963,6 +963,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Plan created'**
   String get plans_created;
+
+  /// No description provided for @ask_ai.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask AI'**
+  String get ask_ai;
 
   /// No description provided for @ai_chat_history.
   ///
@@ -1609,7 +1615,7 @@ abstract class AppLocalizations {
   /// No description provided for @enrollErrorDetail.
   ///
   /// In en, this message translates to:
-  /// **'Unable to enroll in plan: {error}'**
+  /// **'Unable to enroll in plan. Please try again later'**
   String enrollErrorDetail(String error);
 
   /// No description provided for @unenrollSuccess.
@@ -1669,7 +1675,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareError.
   ///
   /// In en, this message translates to:
-  /// **'Unable to share: {error}'**
+  /// **'Unable to share your segment. Please try again later'**
   String shareError(String error);
 
   /// No description provided for @updateOrderError.
@@ -1719,6 +1725,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'QR Code'**
   String get text_qrCode;
+
+  /// No description provided for @missedDaysCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{0 missed days} =1{1 missed day} other{{count} missed days}}'**
+  String missedDaysCount(int count);
 }
 
 class _AppLocalizationsDelegate
