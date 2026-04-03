@@ -54,7 +54,7 @@ List<SessionRequest> _sessionsForBlock(RoutineBlock block) {
 
 CreateTimeBlockRequest routineBlockToCreateRequest(RoutineBlock block) {
   return CreateTimeBlockRequest(
-    time: formatRoutineTime(block.time),
+    time: formatRoutineTime24h(block.time),
     timeInt: timeToHHMM(block.time),
     notificationEnabled: block.notificationEnabled,
     sessions: _sessionsForBlock(block),
@@ -63,7 +63,7 @@ CreateTimeBlockRequest routineBlockToCreateRequest(RoutineBlock block) {
 
 UpdateTimeBlockRequest routineBlockToUpdateRequest(RoutineBlock block) {
   return UpdateTimeBlockRequest(
-    time: formatRoutineTime(block.time),
+    time: formatRoutineTime24h(block.time),
     timeInt: timeToHHMM(block.time),
     notificationEnabled: block.notificationEnabled,
     sessions: _sessionsForBlock(block),
