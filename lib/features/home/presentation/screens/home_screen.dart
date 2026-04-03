@@ -92,6 +92,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final tagLower = tag.toLowerCase();
     if (tagLower == 'abhidhamma in a year') {
       return 'assets/images/tag_cover/abhidhamma.png';
+    } else if (tagLower == 'ultimate reality') {
+      return 'assets/images/tag_cover/ultimate_reality.png';
+    } else if (tagLower == 'anger') {
+      return 'assets/images/tag_cover/anger.jpg';
+    } else if (tagLower == 'jealousy') {
+      return 'assets/images/tag_cover/jealousy.jpg';
+    } else if (tagLower == 'prayer & praise') {
+      return 'assets/images/tag_cover/prayer_praise.jpg';
+    } else if (tagLower == 'end-of-life') {
+      return 'assets/images/tag_cover/eol.jpg';
+    } else if (tagLower == 'patience') {
+      return 'assets/images/tag_cover/patience.png';
+    } else if (tagLower == 'fear') {
+      return 'assets/images/tag_cover/fear.jpg';
     }
     return null;
   }
@@ -330,7 +344,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: tagsAsync.when(
         data: (tagsEither) {
           return tagsEither.fold(
-            (failure) => ErrorStateWidget(error: failure, onRetry: _refetchTags),
+            (failure) =>
+                ErrorStateWidget(error: failure, onRetry: _refetchTags),
             (tags) {
               if (tags.isEmpty) {
                 return Center(
