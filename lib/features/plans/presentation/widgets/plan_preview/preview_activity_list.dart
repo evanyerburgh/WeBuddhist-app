@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_tasks_model.dart';
+import 'package:flutter_pecha/features/plans/plans.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:go_router/go_router.dart';
 
@@ -79,14 +80,16 @@ class PreviewActivityList extends StatelessWidget {
     );
 
     // Get sourceTextId from the first subtask that has it
-    final subtaskWithText = task.subtasks.cast<dynamic>().firstWhere(
-      (s) => s.sourceTextId != null && s.sourceTextId!.isNotEmpty,
-      orElse: () => null,
-    );
+    final PlanSubtasksModel? subtaskWithText = task.subtasks
+        .cast<dynamic>()
+        .firstWhere(
+          (s) => s.sourceTextId != null && s.sourceTextId!.isNotEmpty,
+          orElse: () => null,
+        );
 
     if (subtaskWithText != null) {
-      final sourceTextId = subtaskWithText.sourceTextId as String;
-      final segmentId = subtaskWithText.segmentId as String?;
+      final sourceTextId = subtaskWithText.sourceTextId;
+      final segmentId = subtaskWithText.segmentIds?.first;
 
       // Create navigation context for plan navigation
       final navigationContext = NavigationContext(
@@ -113,7 +116,7 @@ class PreviewActivityList extends StatelessWidget {
         items.add(
           PlanTextItem(
             textId: subtask.sourceTextId!,
-            segmentId: subtask.segmentId,
+            segmentId: subtask.segmentIds?.first,
             title: task.title,
           ),
         );
