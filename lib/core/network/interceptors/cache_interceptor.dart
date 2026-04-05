@@ -51,10 +51,22 @@ class CacheInterceptor extends Interceptor {
     Response response,
     ResponseInterceptorHandler handler,
   ) {
-    // Cache successful GET responses
     final request = response.requestOptions;
-    if (request.method.toUpperCase() == 'GET' &&
-        response.statusCode == 200 &&
+    final method = request.method.toUpperCase();
+    final statusCode = response.statusCode ?? 0;
+
+    // Auto-invalidate related GET cache when mutations succeed
+    if (_isMutationMethod(method) && _isSuccessStatus(statusCode)) {
+      final relatedPaths = _extractRelatedPaths(request.path);
+      for (final path in relatedPaths) {
+        invalidate(path);
+      }
+      _logger.info('🗑️ Auto-invalidated cache for mutation on: $relatedPaths');
+    }
+
+    // Cache successful GET responses
+    if (method == 'GET' &&
+        statusCode == 200 &&
         !response.extra.containsKey('cached')) {
       final cacheKey = _generateCacheKey(request);
       final ttl = request.extra['cache_ttl'] as Duration? ?? defaultTTL;
@@ -68,6 +80,62 @@ class CacheInterceptor extends Interceptor {
     }
 
     handler.next(response);
+  }
+
+  /// Check if HTTP method is a mutation (modifies data)
+  bool _isMutationMethod(String method) {
+    return method == 'POST' ||
+        method == 'PUT' ||
+        method == 'PATCH' ||
+        method == 'DELETE';
+  }
+
+  /// Check if status code indicates success
+  bool _isSuccessStatus(int statusCode) {
+    return statusCode >= 200 && statusCode < 300;
+  }
+
+  /// Extract base paths for cache invalidation.
+  /// Returns list of paths to invalidate for comprehensive cache clearing.
+  List<String> _extractRelatedPaths(String path) {
+    final paths = <String>[];
+    final segments = path.split('/').where((s) => s.isNotEmpty).toList();
+    
+    // Remove trailing action segments like "complete"
+    if (segments.isNotEmpty && _isActionSegment(segments.last)) {
+      segments.removeLast();
+    }
+    
+    // If last segment looks like an ID, remove it for the base path
+    if (segments.isNotEmpty && _looksLikeId(segments.last)) {
+      segments.removeLast();
+    }
+    
+    paths.add('/${segments.join('/')}');
+    
+    // For task/subtask mutations, also invalidate plan-related caches
+    // This handles: /users/me/tasks/..., /users/me/task/..., /users/me/sub-tasks/...
+    if (path.contains('/task') || path.contains('/sub-task')) {
+      paths.add('/users/me/plan');
+      paths.add('/users/me/plans');
+    }
+    
+    return paths;
+  }
+
+  /// Check if a segment is an action (not data to be cached)
+  bool _isActionSegment(String value) {
+    const actions = ['complete', 'incomplete', 'toggle', 'delete', 'archive'];
+    return actions.contains(value.toLowerCase());
+  }
+
+  /// Check if a string looks like an ID (UUID or numeric)
+  bool _looksLikeId(String value) {
+    // Check for UUID format
+    if (RegExp(r'^[0-9a-fA-F-]{36}$').hasMatch(value)) return true;
+    // Check for numeric ID
+    if (RegExp(r'^\d+$').hasMatch(value)) return true;
+    return false;
   }
 
   @override
