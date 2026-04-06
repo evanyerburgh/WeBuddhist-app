@@ -169,9 +169,10 @@ class ChatController extends StateNotifier<ChatState> {
             _ref.read(threadListControllerProvider.notifier).refreshThreads();
           } else if (event is DoneEvent) {
             // Check if AI returned empty content (no answer found)
-            final content = state.currentStreamingContent.trim().isEmpty
-                ? AiConfig.noAnswerFoundMessage
-                : state.currentStreamingContent;
+            final content =
+                state.currentStreamingContent.trim().isEmpty
+                    ? AiConfig.noAnswerFoundMessage
+                    : state.currentStreamingContent;
 
             // Finalize the AI message with search results
             final aiMessage = ChatMessage(

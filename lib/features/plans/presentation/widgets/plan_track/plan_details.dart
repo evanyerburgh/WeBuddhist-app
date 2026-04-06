@@ -201,7 +201,9 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       data: (completionStatusEither) {
         return completionStatusEither.fold(
           (failure) {
-            _logger.error('Error loading completion status: ${failure.message}');
+            _logger.error(
+              'Error loading completion status: ${failure.message}',
+            );
             return _buildDayCarousel(language, days, null);
           },
           (completionStatus) {
@@ -283,10 +285,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Unable to load tasks',
-          style: TextStyle(color: Colors.red[600]),
-        ),
+        Text('Unable to load tasks', style: TextStyle(color: Colors.red[600])),
         const SizedBox(height: 8),
         ElevatedButton(
           onPressed: () {
@@ -369,9 +368,10 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     });
 
     try {
-      final resultEither = task.isCompleted
-          ? await ref.read(deleteTaskFutureProvider(taskId).future)
-          : await ref.read(completeTaskFutureProvider(taskId).future);
+      final resultEither =
+          task.isCompleted
+              ? await ref.read(deleteTaskFutureProvider(taskId).future)
+              : await ref.read(completeTaskFutureProvider(taskId).future);
 
       resultEither.fold(
         (failure) {
@@ -388,7 +388,9 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
               ),
             );
             // Also invalidate completion status to refresh checkmarks
-            ref.invalidate(userPlanDaysCompletionStatusProvider(widget.plan.id));
+            ref.invalidate(
+              userPlanDaysCompletionStatusProvider(widget.plan.id),
+            );
           } else if (!success && mounted) {
             _showErrorSnackbar(context.l10n.updateTaskError);
           }
@@ -521,7 +523,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         items.add(
           PlanTextItem(
             textId: subtask.sourceTextId!,
-            segmentId: subtask.segmentId,
+            segmentId: subtask.segmentIds?.first,
             title: task.title,
             subtaskId: subtask.id,
             isCompleted: subtask.isCompleted,
@@ -587,7 +589,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         child: SizedBox(
           width: double.infinity,
           child: FilledButton(
-            onPressed: hasReadableContent ? () => _startReading(tasks ?? []) : null,
+            onPressed: hasReadableContent ? () => _startReading(tasks) : null,
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.onSurface,
               foregroundColor: Theme.of(context).colorScheme.surface,

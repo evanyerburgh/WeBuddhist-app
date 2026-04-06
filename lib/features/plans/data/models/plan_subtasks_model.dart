@@ -7,7 +7,7 @@ class PlanSubtasksModel {
   final String? duration;
   final String? sourceTextId;
   final String? pechaSegmentId;
-  final String? segmentId;
+  final List<String>? segmentIds;
 
   PlanSubtasksModel({
     required this.id,
@@ -18,7 +18,7 @@ class PlanSubtasksModel {
     this.duration,
     this.sourceTextId,
     this.pechaSegmentId,
-    this.segmentId,
+    this.segmentIds,
   });
 
   factory PlanSubtasksModel.fromJson(Map<String, dynamic> json) {
@@ -31,7 +31,10 @@ class PlanSubtasksModel {
       duration: json['duration'] as String?,
       sourceTextId: json['source_text_id'] as String?,
       pechaSegmentId: json['pecha_segment_id'] as String?,
-      segmentId: json['segment_id'] as String?,
+      segmentIds:
+          (json['segment_ids'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList(),
     );
   }
 
@@ -45,7 +48,7 @@ class PlanSubtasksModel {
       'duration': duration,
       'source_text_id': sourceTextId,
       'pecha_segment_id': pechaSegmentId,
-      'segment_id': segmentId,
+      'segment_ids': segmentIds,
     };
   }
 
@@ -59,7 +62,7 @@ class PlanSubtasksModel {
     String? duration,
     String? sourceTextId,
     String? pechaSegmentId,
-    String? segmentId,
+    List<String>? segmentIds,
   }) {
     return PlanSubtasksModel(
       id: id ?? this.id,
@@ -70,7 +73,7 @@ class PlanSubtasksModel {
       duration: duration ?? this.duration,
       sourceTextId: sourceTextId ?? this.sourceTextId,
       pechaSegmentId: pechaSegmentId ?? this.pechaSegmentId,
-      segmentId: segmentId ?? this.segmentId,
+      segmentIds: segmentIds ?? this.segmentIds,
     );
   }
 }
