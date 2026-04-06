@@ -1,4 +1,4 @@
-import 'package:flutter_pecha/core/network/api_client_provider.dart';
+import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/routine_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_api_models.dart';
@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // ─── Infrastructure providers ───
 
 final routineRemoteDatasourceProvider = Provider<RoutineRemoteDatasource>((ref) {
-  return RoutineRemoteDatasource(client: ref.watch(apiClientProvider));
+  return RoutineRemoteDatasource(dio: ref.watch(dioProvider));
 });
 
 final routineRepositoryProvider = Provider<RoutineRepository>((ref) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
@@ -124,12 +125,11 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
   String _mapRoutineError(Object e) {
     if (e is RoutineValidationException) return e.message;
-    if (e is RoutineAlreadyExistsException) {
-      return e.message;
-    }
+    if (e is RoutineAlreadyExistsException) return e.message;
     if (e is RoutineTimeConflictException) return e.message;
     if (e is RoutineNotFoundException) return e.message;
     if (e is RoutineApiException) return e.message;
+    if (e is AppException) return e.message;
     return 'Something went wrong. Please try again.';
   }
 

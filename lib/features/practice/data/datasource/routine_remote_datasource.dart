@@ -1,55 +1,25 @@
-import 'dart:convert';
-
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_api_models.dart';
-import 'package:http/http.dart' as http;
 
 class RoutineRemoteDatasource {
-  final http.Client client;
-  final String baseUrl = dotenv.env['BASE_API_URL']!;
+  final Dio _dio;
   final _logger = AppLogger('RoutineRemoteDatasource');
 
-  RoutineRemoteDatasource({required this.client});
+  RoutineRemoteDatasource({required Dio dio}) : _dio = dio;
 
   /// POST /routines
   /// Creates a new routine for the user with the first time block.
   Future<RoutineWithTimeBlocksResponse> createRoutineWithTimeBlock(
     CreateTimeBlockRequest request,
   ) async {
-    final uri = Uri.parse('$baseUrl/routines');
-    _logger.info('POST $uri');
-
-    final response = await client.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(request.toJson()),
-    );
-
-    if (response.statusCode == 201) {
-      final decoded = utf8.decode(response.bodyBytes);
+    try {
+      final response = await _dio.post('/routines', data: request.toJson());
       return RoutineWithTimeBlocksResponse.fromJson(
-        jsonDecode(decoded) as Map<String, dynamic>,
+        response.data as Map<String, dynamic>,
       );
-    }
-
-    final errorBody = _tryParseError(response);
-    switch (response.statusCode) {
-      case 401:
-        throw RoutineApiException('Unauthorized', response.statusCode);
-      case 409:
-        throw RoutineAlreadyExistsException(
-          errorBody?.message ?? 'Routine already exists for this user',
-        );
-      case 422:
-        throw RoutineValidationException(
-          errorBody?.message ?? 'Validation error',
-        );
-      default:
-        throw RoutineApiException(
-          errorBody?.message ?? 'Failed to create routine: ${response.statusCode}',
-          response.statusCode,
-        );
+    } on DioException catch (e) {
+      throw _mapCreateRoutineError(e);
     }
   }
 
@@ -59,45 +29,14 @@ class RoutineRemoteDatasource {
     String routineId,
     CreateTimeBlockRequest request,
   ) async {
-    final uri = Uri.parse('$baseUrl/routines/$routineId/time-blocks');
-    _logger.info('POST $uri');
-
-    final response = await client.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(request.toJson()),
-    );
-
-    if (response.statusCode == 201) {
-      final decoded = utf8.decode(response.bodyBytes);
-      return TimeBlockDTO.fromJson(
-        jsonDecode(decoded) as Map<String, dynamic>,
+    try {
+      final response = await _dio.post(
+        '/routines/$routineId/time-blocks',
+        data: request.toJson(),
       );
-    }
-
-    final errorBody = _tryParseError(response);
-    switch (response.statusCode) {
-      case 401:
-        throw RoutineApiException('Unauthorized', response.statusCode);
-      case 403:
-        throw RoutineApiException('Forbidden', response.statusCode);
-      case 404:
-        throw RoutineNotFoundException(
-          errorBody?.message ?? 'Routine not found',
-        );
-      case 409:
-        throw RoutineTimeConflictException(
-          errorBody?.message ?? 'Time block with this time already exists',
-        );
-      case 422:
-        throw RoutineValidationException(
-          errorBody?.message ?? 'Validation error',
-        );
-      default:
-        throw RoutineApiException(
-          errorBody?.message ?? 'Failed to create time block: ${response.statusCode}',
-          response.statusCode,
-        );
+      return TimeBlockDTO.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _mapTimeBlockMutationError(e, 'create');
     }
   }
 
@@ -108,47 +47,14 @@ class RoutineRemoteDatasource {
     String timeBlockId,
     UpdateTimeBlockRequest request,
   ) async {
-    final uri = Uri.parse(
-      '$baseUrl/routines/$routineId/time-blocks/$timeBlockId',
-    );
-    _logger.info('PUT $uri');
-
-    final response = await client.put(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(request.toJson()),
-    );
-
-    if (response.statusCode == 201) {
-      final decoded = utf8.decode(response.bodyBytes);
-      return TimeBlockDTO.fromJson(
-        jsonDecode(decoded) as Map<String, dynamic>,
+    try {
+      final response = await _dio.put(
+        '/routines/$routineId/time-blocks/$timeBlockId',
+        data: request.toJson(),
       );
-    }
-
-    final errorBody = _tryParseError(response);
-    switch (response.statusCode) {
-      case 401:
-        throw RoutineApiException('Unauthorized', response.statusCode);
-      case 403:
-        throw RoutineApiException('Forbidden', response.statusCode);
-      case 404:
-        throw RoutineNotFoundException(
-          errorBody?.message ?? 'Routine or time block not found',
-        );
-      case 409:
-        throw RoutineTimeConflictException(
-          errorBody?.message ?? 'Time block with this time already exists',
-        );
-      case 422:
-        throw RoutineValidationException(
-          errorBody?.message ?? 'Validation error',
-        );
-      default:
-        throw RoutineApiException(
-          errorBody?.message ?? 'Failed to update time block: ${response.statusCode}',
-          response.statusCode,
-        );
+      return TimeBlockDTO.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _mapTimeBlockMutationError(e, 'update');
     }
   }
 
@@ -158,99 +64,91 @@ class RoutineRemoteDatasource {
     String routineId,
     String timeBlockId,
   ) async {
-    final uri = Uri.parse(
-      '$baseUrl/routines/$routineId/time-blocks/$timeBlockId',
-    );
-    _logger.info('DELETE $uri');
-
-    final response = await client.delete(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode == 204) return;
-
-    final errorBody = _tryParseError(response);
-    switch (response.statusCode) {
-      case 401:
-        throw RoutineApiException('Unauthorized', response.statusCode);
-      case 403:
-        throw RoutineApiException('Forbidden', response.statusCode);
-      case 404:
+    try {
+      await _dio.delete('/routines/$routineId/time-blocks/$timeBlockId');
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == 404) {
         throw RoutineNotFoundException(
-          errorBody?.message ?? 'Routine or time block not found',
+          _extractMessage(e) ?? 'Routine or time block not found',
         );
-      default:
-        throw RoutineApiException(
-          errorBody?.message ?? 'Failed to delete time block: ${response.statusCode}',
-          response.statusCode,
-        );
+      }
+      if (e.error is Exception) throw e.error! as Exception;
+      throw e;
     }
   }
 
   /// GET /users/me/routine
-  /// Fetches the authenticated user's routine, or null if none exists (404).
+  /// Fetches the authenticated user's routine, or null if none exists.
   Future<RoutineResponse?> getUserRoutine({
     int skip = 0,
     int limit = 20,
   }) async {
-    final uri = Uri.parse('$baseUrl/users/me/routine').replace(
-      queryParameters: {
-        'skip': skip.toString(),
-        'limit': limit.toString(),
-      },
-    );
-    _logger.info('GET $uri');
-
-    final response = await client.get(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode == 200) {
-      final decoded = utf8.decode(response.bodyBytes);
-      return RoutineResponse.fromJson(
-        jsonDecode(decoded) as Map<String, dynamic>,
+    try {
+      final response = await _dio.get(
+        '/users/me/routine',
+        queryParameters: {'skip': skip, 'limit': limit},
       );
-    }
+      return RoutineResponse.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
 
-    if (response.statusCode == 404) {
-      return null;
-    }
+      if (status == 404) return null;
 
-    final errorBody = _tryParseError(response);
-
-    // Backend returns 400 when no routine has been created yet.
-    // Treat this as "no routine" (same as 404) so the UI shows the
-    // empty / build-routine state instead of an error + Retry.
-    if (response.statusCode == 400 && errorBody != null) {
-      final msg = errorBody.message.toLowerCase();
-      if (msg.contains('no routine')) {
-        _logger.info('No routine for user – treating as empty');
-        return null;
+      // Backend returns 400 when no routine has been created yet.
+      if (status == 400) {
+        final msg = _extractMessage(e)?.toLowerCase() ?? '';
+        if (msg.contains('no routine')) {
+          _logger.info('No routine for user – treating as empty');
+          return null;
+        }
       }
-    }
 
-    switch (response.statusCode) {
-      case 401:
-        throw RoutineApiException('Unauthorized', response.statusCode);
-      default:
-        throw RoutineApiException(
-          errorBody?.message ?? 'Failed to fetch routine: ${response.statusCode}',
-          response.statusCode,
-        );
+      if (e.error is Exception) throw e.error! as Exception;
+      throw e;
     }
   }
 
-  ErrorResponse? _tryParseError(http.Response response) {
-    try {
-      final decoded = utf8.decode(response.bodyBytes);
-      return ErrorResponse.fromJson(
-        jsonDecode(decoded) as Map<String, dynamic>,
-      );
-    } catch (_) {
-      return null;
+  // ─── Error mapping helpers ───
+
+  /// Maps errors specific to routine creation (409 = already exists).
+  Exception _mapCreateRoutineError(DioException e) {
+    final status = e.response?.statusCode;
+    final message = _extractMessage(e);
+    return switch (status) {
+      409 => RoutineAlreadyExistsException(
+          message ?? 'Routine already exists for this user'),
+      422 => RoutineValidationException(message ?? 'Validation error'),
+      _ => e.error is Exception ? e.error! as Exception : e,
+    };
+  }
+
+  /// Maps errors for time-block mutations (409 = time conflict).
+  Exception _mapTimeBlockMutationError(DioException e, String action) {
+    final status = e.response?.statusCode;
+    final message = _extractMessage(e);
+    return switch (status) {
+      404 => RoutineNotFoundException(
+          message ?? 'Routine or time block not found'),
+      409 => RoutineTimeConflictException(
+          message ?? 'Time block with this time already exists'),
+      422 => RoutineValidationException(message ?? 'Validation error'),
+      _ => e.error is Exception ? e.error! as Exception : e,
+    };
+  }
+
+  /// Extracts a human-readable message from the Dio error response.
+  /// Handles both flat `{ "message": "..." }` and nested `{ "detail": { "message": "..." } }`.
+  String? _extractMessage(DioException e) {
+    final data = e.response?.data;
+    if (data is Map<String, dynamic>) {
+      final detail = data['detail'];
+      if (detail is Map<String, dynamic>) {
+        return detail['message'] as String?;
+      }
+      return (data['message'] ?? data['error']) as String?;
     }
+    return null;
   }
 }
 
