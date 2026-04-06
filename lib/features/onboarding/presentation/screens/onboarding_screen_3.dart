@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/features/onboarding/application/onboarding_provider.dart';
-import 'package:flutter_pecha/features/onboarding/data/models/onboarding_preferences.dart';
+import 'package:flutter_pecha/features/onboarding/domain/entities/onboarding_preferences.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/widgets/onboarding_back_button.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/widgets/onboarding_continue_button.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/widgets/onboarding_question_title.dart';
@@ -59,7 +59,7 @@ class OnboardingScreen3 extends ConsumerWidget {
                       Center(
                         child: OnboardingContinueButton(
                           onPressed: () => _handleContinue(ref),
-                          isEnabled: selectedLanguage != null,
+                          isEnabled: selectedLanguage.isNotEmpty,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -97,11 +97,9 @@ class OnboardingScreen3 extends ConsumerWidget {
   }
 
   void _handleContinue(WidgetRef ref) {
-    final selectedLanguage = ref
-        .read(onboardingProvider)
-        .preferences
-        .primaryLanguage;
-    if (selectedLanguage != null) {
+    final selectedLanguage =
+        ref.read(onboardingProvider).preferences.primaryLanguage;
+    if (selectedLanguage.isNotEmpty) {
       onNext();
     }
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/features/plans/data/models/author/author_dto_model.dart';
-import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
+import 'package:flutter_pecha/features/plans/plans.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:go_router/go_router.dart';
 
@@ -82,14 +82,16 @@ class ActivityList extends StatelessWidget {
     );
 
     // Get sourceTextId from the first subtask that has it
-    final subtaskWithText = task.subTasks.cast<dynamic>().firstWhere(
-      (s) => s.sourceTextId != null && s.sourceTextId!.isNotEmpty,
-      orElse: () => null,
-    );
+    final UserSubtasksDto? subtaskWithText = task.subTasks
+        .cast<dynamic>()
+        .firstWhere(
+          (s) => s.sourceTextId != null && s.sourceTextId!.isNotEmpty,
+          orElse: () => null,
+        );
 
     if (subtaskWithText != null) {
       final sourceTextId = subtaskWithText.sourceTextId as String;
-      final segmentId = subtaskWithText.segmentId as String?;
+      final segmentId = subtaskWithText.segmentIds?.first;
 
       // Create navigation context for plan navigation with swipe support
       final navigationContext = NavigationContext(
@@ -119,7 +121,7 @@ class ActivityList extends StatelessWidget {
         items.add(
           PlanTextItem(
             textId: subtask.sourceTextId!,
-            segmentId: subtask.segmentId,
+            segmentId: subtask.segmentIds?.first,
             title: task.title,
             subtaskId: subtask.id,
             isCompleted: subtask.isCompleted,
