@@ -3,6 +3,7 @@ import 'package:flutter_pecha/features/plans/data/models/author/author_dto_model
 import 'package:flutter_pecha/features/plans/plans.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:go_router/go_router.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ActivityList extends StatelessWidget {
   final String language;
@@ -157,21 +158,18 @@ class _TaskCheckbox extends StatelessWidget {
         child: Container(
           width: 24,
           height: 24,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color:
-                  isCompleted
-                      ? const Color(0xFF1E3A8A)
-                      : Theme.of(context).iconTheme.color!,
-              width: 1,
-            ),
-            color: isCompleted ? const Color(0xFF1E3A8A) : Colors.transparent,
-          ),
-          child:
+          decoration:
               isCompleted
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
-                  : null,
+                  ? null
+                  : BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context).iconTheme.color!,
+                      width: 1,
+                    ),
+                    color: Colors.transparent,
+                  ),
+          child: isCompleted ? Icon(PhosphorIconsBold.check, size: 20) : null,
         ),
       ),
     );

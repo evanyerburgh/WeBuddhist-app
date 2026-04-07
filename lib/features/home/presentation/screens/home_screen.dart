@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
@@ -115,8 +116,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
     final tagsAsync = ref.watch(tagsFutureProvider);
+    final l10n = context.l10n;
 
     // Check for app updates (only show once per app session)
     final updateAvailable = ref.watch(updateAvailableProvider);
@@ -136,14 +137,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: Text(
+          l10n.nav_home,
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          GestureDetector(
+            onTap: () {
+              context.pushNamed('home-settings');
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: CircleAvatar(
+                backgroundColor: const Color(0xFF272727),
+                radius: 20,
+                child: Icon(
+                  PhosphorIconsRegular.userCircle,
+                  size: 24,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Stack(
           children: [
             Column(
               children: [
-                _buildTopBar(localizations),
-                _buildSearchSection(localizations, tagsAsync),
-                _buildBody(context, localizations),
+                _buildSearchSection(l10n, tagsAsync),
+                _buildBody(context, l10n),
               ],
             ),
             if (_showUpdateBanner)
@@ -164,44 +194,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
           ],
         ),
-      ),
-    );
-  }
-
-  // Build the top bar
-  Widget _buildTopBar(AppLocalizations localizations) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: HomeScreenConstants.topBarHorizontalPadding,
-        vertical: HomeScreenConstants.topBarVerticalPadding,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            localizations.nav_home,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          GestureDetector(
-            onTap: () {
-              context.pushNamed('home-settings');
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: CircleAvatar(
-                backgroundColor: const Color(0xFF272727),
-                radius: 20,
-                child: Icon(
-                  PhosphorIconsRegular.userCircle,
-                  size: 24,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
