@@ -34,17 +34,17 @@ class MainNavigationScreen extends ConsumerWidget {
       ),
       AppBottomBarItemModel(
         type: 2,
-        label: localizations.nav_learn,
-        selectedWidget: const LearnScreen(),
-        selectedIconData: AppAssets.textsSelected,
-        unSelectedIconData: AppAssets.textsUnselected,
-      ),
-      AppBottomBarItemModel(
-        type: 3,
         label: localizations.nav_practice,
         selectedWidget: const PracticeScreen(),
         selectedIconData: AppAssets.practiceSelected,
         unSelectedIconData: AppAssets.practiceUnselected,
+      ),
+      AppBottomBarItemModel(
+        type: 3,
+        label: localizations.nav_learn,
+        selectedWidget: const LearnScreen(),
+        selectedIconData: AppAssets.textsSelected,
+        unSelectedIconData: AppAssets.textsUnselected,
       ),
       AppBottomBarItemModel(
         type: 4,
