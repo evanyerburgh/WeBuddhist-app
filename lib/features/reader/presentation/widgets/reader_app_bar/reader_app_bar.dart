@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
@@ -57,7 +56,7 @@ class ReaderAppBarOverlay extends ConsumerWidget {
             ReaderSearchButton(onPressed: onSearchPressed),
             const SizedBox(width: 4),
             ReaderFontSizeButton(
-              onPressed: () => _showFontSizeBottomSheet(context, ref),
+              onPressed: () => _showFontSizeBottomSheet(context),
             ),
             if (state.textDetail != null) ...[
               const SizedBox(width: 4),
@@ -78,10 +77,8 @@ class ReaderAppBarOverlay extends ConsumerWidget {
     );
   }
 
-  void _showFontSizeBottomSheet(BuildContext context, WidgetRef ref) {
-    final locale = ref.read(localeProvider);
-    final language = locale.languageCode;
-    showFontSizeBottomSheet(context, language);
+  void _showFontSizeBottomSheet(BuildContext context) {
+    showFontSizeBottomSheet(context);
   }
 }
 
@@ -133,7 +130,7 @@ class ReaderAppBar extends ConsumerWidget {
         ),
         const SizedBox(width: 4),
         ReaderFontSizeButton(
-          onPressed: () => _showFontSizeBottomSheet(context, ref),
+          onPressed: () => _showFontSizeBottomSheet(context),
         ),
         if (state.textDetail != null) ...[
           const SizedBox(width: 4),
@@ -167,10 +164,8 @@ class ReaderAppBar extends ConsumerWidget {
     notifier.selectSegment(null);
   }
 
-  void _showFontSizeBottomSheet(BuildContext context, WidgetRef ref) {
-    final locale = ref.read(localeProvider);
-    final language = locale.languageCode;
-    showFontSizeBottomSheet(context, language);
+  void _showFontSizeBottomSheet(BuildContext context) {
+    showFontSizeBottomSheet(context);
   }
 
   void _handleLanguageSelection(BuildContext context, WidgetRef ref) {
