@@ -4,35 +4,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Bottom sheet for adjusting font size with increase/decrease buttons
 class ReaderFontSizeBottomSheet extends ConsumerWidget {
-  const ReaderFontSizeBottomSheet({super.key, required this.language});
+  const ReaderFontSizeBottomSheet({super.key});
 
-  final String language;
+  // Font size steps: 12, 14, 18, 22, 28, 36, 44
+  // Default is step 3 (index 2) = 18
+  static const List<double> fontSizeSteps = [12, 14, 18, 22, 28, 36, 44];
+  static const int defaultStepIndex = 2; // Step 3 = 18
+  static const double defaultFontSize = 18.0;
 
-  // Base font size for calculations
-  double get baseFontSize => language == 'bo' ? 22.0 : 18.0;
-
-  // Font size steps (percentages): 100%, 150%, 200%, 250%
-  static const List<double> fontSizePercentages = [100, 150, 200, 250];
-
-  double percentageToFontSize(double percentage) {
-    return baseFontSize * (percentage / 100);
-  }
-
-  double fontSizeToPercentage(double fontSize) {
-    return (fontSize / baseFontSize) * 100;
-  }
-
-  int _getCurrentStepIndex(double currentPercentage) {
-    for (int i = 0; i < fontSizePercentages.length; i++) {
-      if ((currentPercentage - fontSizePercentages[i]).abs() < 1) {
+  int _getCurrentStepIndex(double currentFontSize) {
+    for (int i = 0; i < fontSizeSteps.length; i++) {
+      if ((currentFontSize - fontSizeSteps[i]).abs() < 0.5) {
         return i;
       }
     }
     // Find closest step
-    int closestIndex = 0;
+    int closestIndex = defaultStepIndex;
     double minDiff = double.infinity;
-    for (int i = 0; i < fontSizePercentages.length; i++) {
-      final diff = (currentPercentage - fontSizePercentages[i]).abs();
+    for (int i = 0; i < fontSizeSteps.length; i++) {
+      final diff = (currentFontSize - fontSizeSteps[i]).abs();
       if (diff < minDiff) {
         minDiff = diff;
         closestIndex = i;
@@ -44,11 +34,10 @@ class ReaderFontSizeBottomSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fontSize = ref.watch(fontSizeProvider);
-    final currentPercentage = fontSizeToPercentage(fontSize);
-    final currentStepIndex = _getCurrentStepIndex(currentPercentage);
+    final currentStepIndex = _getCurrentStepIndex(fontSize);
 
     final canDecrease = currentStepIndex > 0;
-    final canIncrease = currentStepIndex < fontSizePercentages.length - 1;
+    final canIncrease = currentStepIndex < fontSizeSteps.length - 1;
 
     return SafeArea(
       child: Container(
@@ -82,13 +71,11 @@ class ReaderFontSizeBottomSheet extends ConsumerWidget {
                     onTap:
                         canDecrease
                             ? () {
-                              final newPercentage =
-                                  fontSizePercentages[currentStepIndex - 1];
+                              final newFontSize =
+                                  fontSizeSteps[currentStepIndex - 1];
                               ref
                                   .read(fontSizeProvider.notifier)
-                                  .setFontSize(
-                                    percentageToFontSize(newPercentage),
-                                  );
+                                  .setFontSize(newFontSize);
                             }
                             : null,
                   ),
@@ -103,13 +90,11 @@ class ReaderFontSizeBottomSheet extends ConsumerWidget {
                     onTap:
                         canIncrease
                             ? () {
-                              final newPercentage =
-                                  fontSizePercentages[currentStepIndex + 1];
+                              final newFontSize =
+                                  fontSizeSteps[currentStepIndex + 1];
                               ref
                                   .read(fontSizeProvider.notifier)
-                                  .setFontSize(
-                                    percentageToFontSize(newPercentage),
-                                  );
+                                  .setFontSize(newFontSize);
                             }
                             : null,
                   ),
@@ -179,10 +164,10 @@ class _FontSizeButton extends StatelessWidget {
 }
 
 /// Shows the font size bottom sheet
-void showFontSizeBottomSheet(BuildContext context, String language) {
+void showFontSizeBottomSheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
-    builder: (context) => ReaderFontSizeBottomSheet(language: language),
+    builder: (context) => const ReaderFontSizeBottomSheet(),
   );
 }
