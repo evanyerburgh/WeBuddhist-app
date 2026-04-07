@@ -138,9 +138,9 @@ class _RoutineBlockSection extends ConsumerWidget {
 
       if (userPlan == null) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.notFound)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(context.l10n.notFound)));
         }
         return;
       }
@@ -193,9 +193,10 @@ class _RoutineBlockSection extends ConsumerWidget {
         for (int i = 0; i < block.items.length; i++) ...[
           RoutineItemCard(
             title: block.items[i].title,
-            imageUrl: block.items[i].imageUrl ??
+            imageUrl:
+                block.items[i].imageUrl ??
                 (block.items[i].type == RoutineItemType.plan
-                    ? userPlansMap[block.items[i].id]?.imageUrl
+                    ? block.items[i].imageUrl
                     : null),
             type: block.items[i].type,
             onTap: () => _onItemTap(context, ref, block.items[i], userPlansMap),

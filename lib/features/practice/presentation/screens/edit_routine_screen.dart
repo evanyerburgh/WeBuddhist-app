@@ -15,7 +15,6 @@ import 'package:flutter_pecha/features/practice/data/utils/routine_api_mapper.da
 import 'package:flutter_pecha/features/practice/data/utils/routine_time_utils.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/select_session_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/routine_time_block.dart';
-import 'package:flutter_pecha/features/recitation/presentation/providers/recitations_providers.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -502,9 +501,6 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     await RoutineNotificationService().cancelBlockNotification(routineBlock);
 
     setState(() => _blocks.removeAt(index));
-
-    // Unenroll all items with error aggregation
-    await _unenrollItems(items);
   }
 
   /// Whether the maximum number of blocks has been reached.
@@ -587,9 +583,6 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       );
       RoutineNotificationService().cancelBlockNotification(routineBlock);
     }
-
-    // Unenroll/unsave immediately in background
-    _unenrollItem(item);
   }
 
   /// Collects all item IDs currently in the routine to prevent duplicates.
@@ -600,8 +593,6 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       for (final item in block.items) {
         if (item.type == RoutineItemType.plan) {
           planIds.add(item.id);
-        } else {
-          recitationIds.add(item.id);
         }
       }
     }
@@ -620,10 +611,8 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       final excluded = _collectRoutineItemIds();
       final result = await Navigator.of(context).push<SessionSelection>(
         MaterialPageRoute(
-          builder: (_) => SelectSessionScreen(
-            excludedPlanIds: excluded.planIds,
-            excludedRecitationIds: excluded.recitationIds,
-          ),
+          builder:
+              (_) => SelectSessionScreen(excludedPlanIds: excluded.planIds),
         ),
       );
 
@@ -632,9 +621,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
         final (newItemId, newItemType) = switch (result) {
           PlanSessionSelection(:final plan) => (plan.id, RoutineItemType.plan),
           RecitationSessionSelection(:final recitation) => (
-              recitation.textId,
-              RoutineItemType.recitation
-            ),
+            recitation.textId,
+            RoutineItemType.recitation,
+          ),
         };
 
         // Double-check for duplicates (race condition protection)
@@ -683,69 +672,6 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     }
   }
 
-  /// Unsaves a recitation in the background.
-  /// Plan enrollment/unenrollment is handled by the backend.
-  Future<void> _unenrollItem(RoutineItem item) async {
-    if (item.type == RoutineItemType.plan) return;
-    try {
-      final result = await ref.read(unsaveRecitationProvider(item.id).future);
-      result.fold(
-        (failure) => throw Exception('Failed to unsave: ${failure.message}'),
-        (_) => ref.invalidate(savedRecitationsFutureProvider),
-      );
-    } catch (e) {
-      _logger.error('Failed to unsave item: ${item.title}', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to unsave "${item.title}". Please try again.',
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
-  /// Unsaves multiple recitation items and shows single error if any fail.
-  /// Plan enrollment/unenrollment is handled by the backend.
-  Future<void> _unenrollItems(List<RoutineItem> items) async {
-    final recitations = items.where((i) => i.type == RoutineItemType.recitation).toList();
-    if (recitations.isEmpty) return;
-
-    final failedItems = <String>[];
-
-    for (final item in recitations) {
-      try {
-        final result = await ref.read(unsaveRecitationProvider(item.id).future);
-        result.fold(
-          (failure) => throw Exception('Failed to unsave: ${failure.message}'),
-          (_) => {},
-        );
-      } catch (e) {
-        _logger.error('Failed to unsave item: ${item.title}', e);
-        failedItems.add(item.title);
-      }
-    }
-
-    ref.invalidate(savedRecitationsFutureProvider);
-
-    if (failedItems.isNotEmpty && mounted) {
-      final message = failedItems.length == 1
-          ? 'Failed to unsave "${failedItems.first}"'
-          : 'Failed to unsave ${failedItems.length} items';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
@@ -755,49 +681,52 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
     if (!_hydratedFromApi) {
       return routineAsync.when(
-        loading: () => PopScope(
-          canPop: false,
-          child: Scaffold(
-            body: SafeArea(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(
-                      localizations.routine_edit_title,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+        loading:
+            () => PopScope(
+              canPop: false,
+              child: Scaffold(
+                body: SafeArea(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 16),
+                        Text(
+                          localizations.routine_edit_title,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        error: (e, _) => PopScope(
-          canPop: false,
-          child: Scaffold(
-            body: SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('$e', textAlign: TextAlign.center),
-                      const SizedBox(height: 16),
-                      FilledButton(
-                        onPressed: () => ref.invalidate(userRoutineProvider),
-                        child: const Text('Retry'),
-                      ),
-                    ],
                   ),
                 ),
               ),
             ),
-          ),
-        ),
+        error:
+            (e, _) => PopScope(
+              canPop: false,
+              child: Scaffold(
+                body: SafeArea(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('$e', textAlign: TextAlign.center),
+                          const SizedBox(height: 16),
+                          FilledButton(
+                            onPressed:
+                                () => ref.invalidate(userRoutineProvider),
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         data: (response) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted || _hydratedFromApi) return;
@@ -860,7 +789,8 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                   child: ListView.separated(
                     itemCount: _calculateListItemCount(),
                     separatorBuilder: (_, index) {
-                      final isLastItem = index == _blocks.length - 1 ||
+                      final isLastItem =
+                          index == _blocks.length - 1 ||
                           (_shouldShowAddButton && index == _blocks.length);
                       if (isLastItem) {
                         return const SizedBox(height: 16);
