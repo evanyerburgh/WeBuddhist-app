@@ -4,7 +4,6 @@ import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
-import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/routine_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_api_models.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
@@ -684,30 +683,23 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     }
   }
 
-  /// Unenrolls a plan or unsaves a recitation in the background.
-  /// Shows error snackbar if the API call fails.
+  /// Unsaves a recitation in the background.
+  /// Plan enrollment/unenrollment is handled by the backend.
   Future<void> _unenrollItem(RoutineItem item) async {
+    if (item.type == RoutineItemType.plan) return;
     try {
-      if (item.type == RoutineItemType.plan) {
-        final result = await ref.read(userPlanUnsubscribeFutureProvider(item.id).future);
-        result.fold(
-          (failure) => throw Exception('Failed to unenroll: ${failure.message}'),
-          (_) => ref.invalidate(myPlansPaginatedProvider),
-        );
-      } else {
-        final result = await ref.read(unsaveRecitationProvider(item.id).future);
-        result.fold(
-          (failure) => throw Exception('Failed to unsave: ${failure.message}'),
-          (_) => ref.invalidate(savedRecitationsFutureProvider),
-        );
-      }
+      final result = await ref.read(unsaveRecitationProvider(item.id).future);
+      result.fold(
+        (failure) => throw Exception('Failed to unsave: ${failure.message}'),
+        (_) => ref.invalidate(savedRecitationsFutureProvider),
+      );
     } catch (e) {
-      _logger.error('Failed to unenroll/unsave item: ${item.title}', e);
+      _logger.error('Failed to unsave item: ${item.title}', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Failed to unenroll "${item.title}". Please try again.',
+              'Failed to unsave "${item.title}". Please try again.',
             ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
@@ -717,43 +709,33 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     }
   }
 
-  /// Unenrolls multiple items and shows single error if any fail.
-  /// This is used when deleting a block with multiple items.
+  /// Unsaves multiple recitation items and shows single error if any fail.
+  /// Plan enrollment/unenrollment is handled by the backend.
   Future<void> _unenrollItems(List<RoutineItem> items) async {
-    if (items.isEmpty) return;
+    final recitations = items.where((i) => i.type == RoutineItemType.recitation).toList();
+    if (recitations.isEmpty) return;
 
     final failedItems = <String>[];
 
-    for (final item in items) {
+    for (final item in recitations) {
       try {
-        if (item.type == RoutineItemType.plan) {
-          final result = await ref.read(userPlanUnsubscribeFutureProvider(item.id).future);
-          result.fold(
-            (failure) => throw Exception('Failed to unenroll: ${failure.message}'),
-            (_) => {},
-          );
-        } else {
-          final result = await ref.read(unsaveRecitationProvider(item.id).future);
-          result.fold(
-            (failure) => throw Exception('Failed to unsave: ${failure.message}'),
-            (_) => {},
-          );
-        }
+        final result = await ref.read(unsaveRecitationProvider(item.id).future);
+        result.fold(
+          (failure) => throw Exception('Failed to unsave: ${failure.message}'),
+          (_) => {},
+        );
       } catch (e) {
-        _logger.error('Failed to unenroll/unsave item: ${item.title}', e);
+        _logger.error('Failed to unsave item: ${item.title}', e);
         failedItems.add(item.title);
       }
     }
 
-    // Invalidate providers once after all operations
-    ref.invalidate(myPlansPaginatedProvider);
     ref.invalidate(savedRecitationsFutureProvider);
 
-    // Show single aggregated error message if any failed
     if (failedItems.isNotEmpty && mounted) {
       final message = failedItems.length == 1
-          ? 'Failed to unenroll "${failedItems.first}"'
-          : 'Failed to unenroll ${failedItems.length} items';
+          ? 'Failed to unsave "${failedItems.first}"'
+          : 'Failed to unsave ${failedItems.length} items';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),

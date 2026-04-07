@@ -6,7 +6,6 @@ import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
-import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/practice/data/models/session_selection.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitations_providers.dart';
 import 'package:flutter_pecha/features/recitation/presentation/widgets/recitation_list_skeleton.dart';
@@ -68,34 +67,9 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
     }
   }
 
-  Future<void> _onPlanSelected(dynamic plan) async {
+  void _onPlanSelected(dynamic plan) {
     if (_enrollingItemId != null) return;
-    setState(() => _enrollingItemId = plan.id);
-    try {
-      final resultEither = await ref.read(
-        userPlanSubscribeFutureProvider(plan.id).future,
-      );
-      if (!mounted) return;
-
-      final success = resultEither.fold(
-        (failure) {
-          _showErrorSnackbar('Unable to enroll in plan. Please try again.');
-          return false;
-        },
-        (success) => success,
-      );
-
-      if (success) {
-        ref.invalidate(myPlansPaginatedProvider);
-        Navigator.of(context).pop(PlanSessionSelection(plan));
-      } else {
-        setState(() => _enrollingItemId = null);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _enrollingItemId = null);
-      _showErrorSnackbar('Unable to enroll in plan. Please try again.');
-    }
+    Navigator.of(context).pop(PlanSessionSelection(plan));
   }
 
   Future<void> _onRecitationSelected(dynamic recitation) async {
@@ -143,11 +117,6 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
     _logger.debug('🎨 ===== BUILD STARTED =====');
     final localizations = AppLocalizations.of(context)!;
 
-    // Get enrolled plan IDs from paginated provider (already loaded by app)
-    final myPlansState = ref.watch(myPlansPaginatedProvider);
-    final enrolledPlanIds = myPlansState.plans.map<String>((e) => e.id).toSet();
-    _logger.debug('📊 My Plans: ${myPlansState.plans.length} plans');
-
     // Get saved recitation IDs from backend
     final savedRecitationIds =
         ref
@@ -159,8 +128,8 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
             .valueOrNull ??
         <String>{};
 
-    // Combine backend enrolled/saved + items already in routine blocks
-    final allExcludedPlanIds = {...enrolledPlanIds, ...widget.excludedPlanIds};
+    // Plans: only exclude items already in routine blocks (enrollment handled by backend)
+    final allExcludedPlanIds = widget.excludedPlanIds;
     final allExcludedRecitationIds = {
       ...savedRecitationIds,
       ...widget.excludedRecitationIds,
@@ -168,8 +137,6 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
 
     _logger.debug('📊 Excluded Plan IDs: ${allExcludedPlanIds.length}');
     _logger.debug('📊 Excluded Recitation IDs: ${allExcludedRecitationIds.length}');
-    _logger.debug('📊 Enrolled Plan IDs (being filtered out): ${enrolledPlanIds.length}');
-    _logger.debug('📊 Routine Plan IDs (being filtered out): ${widget.excludedPlanIds.length}');
 
     return Scaffold(
       appBar: AppBar(
