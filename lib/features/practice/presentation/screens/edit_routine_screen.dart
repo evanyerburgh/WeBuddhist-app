@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/error/exceptions.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
-import 'package:flutter_pecha/features/practice/data/datasource/routine_remote_datasource.dart';
-import 'package:flutter_pecha/features/practice/data/models/routine_api_models.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:flutter_pecha/features/practice/data/models/session_selection.dart';
-import 'package:flutter_pecha/features/practice/data/providers/routine_api_providers.dart';
-import 'package:flutter_pecha/features/practice/data/repositories/routine_repository.dart';
-import 'package:flutter_pecha/features/practice/data/services/routine_notification_service.dart';
 import 'package:flutter_pecha/features/practice/data/utils/routine_api_mapper.dart';
 import 'package:flutter_pecha/features/practice/data/utils/routine_time_utils.dart';
+import 'package:flutter_pecha/features/practice/presentation/providers/practice_providers.dart';
+import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/select_session_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/routine_time_block.dart';
-import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
@@ -36,8 +33,8 @@ class _EditableBlock {
     required this.time,
     required this.notificationEnabled,
     List<RoutineItem>? items,
-  }) : id = id ?? _uuid.v4(),
-       items = items ?? [];
+  })  : id = id ?? _uuid.v4(),
+        items = items ?? [];
 }
 
 class EditRoutineScreen extends ConsumerStatefulWidget {
@@ -58,11 +55,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
   bool _hydratedFromApi = false;
 
-  /// Check if the last block in the list is empty (has no items)
   bool get _isLastBlockEmpty =>
       _blocks.isNotEmpty && _blocks.last.items.isEmpty;
 
-  /// Check if there are any empty blocks
   bool get _hasEmptyBlocks => _blocks.any((b) => b.items.isEmpty);
 
   @override
@@ -76,26 +71,31 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     ];
   }
 
-  void _applyInitialResponse(RoutineResponse? response) {
-    final data = routineDataFromApiResponse(response);
-    _apiRoutineId = response?.id;
+  // ─── Hydration ───
+
+  /// Populates local editable state from the API response (already mapped
+  /// to [RoutineData] by [userRoutineProvider] — no mapper calls in UI).
+  void _applyInitialData(RoutineData? routineData) {
+    _apiRoutineId = routineData?.apiRoutineId;
     _initialApiTimeBlockIds = {
-      if (response != null) ...response.timeBlocks.map((t) => t.id),
+      if (routineData != null)
+        ...routineData.blocks
+            .map((b) => b.apiTimeBlockId)
+            .whereType<String>(),
     };
 
-    if (data.blocks.isNotEmpty) {
-      _blocks =
-          data.blocks
-              .map(
-                (b) => _EditableBlock(
-                  id: b.id,
-                  apiTimeBlockId: b.apiTimeBlockId,
-                  time: b.time,
-                  notificationEnabled: b.notificationEnabled,
-                  items: List.from(b.items),
-                ),
-              )
-              .toList();
+    if (routineData != null && routineData.blocks.isNotEmpty) {
+      _blocks = routineData.blocks
+          .map(
+            (b) => _EditableBlock(
+              id: b.id,
+              apiTimeBlockId: b.apiTimeBlockId,
+              time: b.time,
+              notificationEnabled: b.notificationEnabled,
+              items: List.from(b.items),
+            ),
+          )
+          .toList();
     } else {
       _blocks = [
         _EditableBlock(
@@ -105,6 +105,8 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       ];
     }
   }
+
+  // ─── Helpers ───
 
   RoutineBlock _toRoutineBlock(_EditableBlock b) {
     return RoutineBlock(
@@ -116,145 +118,174 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     );
   }
 
-  Future<void> _syncNotificationsFromEditable() async {
+  Future<void> _syncNotifications() async {
     final blocks = _blocks.map(_toRoutineBlock).toList();
-    await RoutineNotificationService().syncNotifications(blocks);
+    await ref.read(routineNotificationServiceProvider).syncNotifications(blocks);
   }
 
-  String _mapRoutineError(Object e) {
-    if (e is RoutineValidationException) return e.message;
-    if (e is RoutineAlreadyExistsException) return e.message;
-    if (e is RoutineTimeConflictException) return e.message;
-    if (e is RoutineNotFoundException) return e.message;
-    if (e is RoutineApiException) return e.message;
-    if (e is AppException) return e.message;
+  // ─── Error handling ───
+
+  /// Maps any thrown value to a user-facing error message.
+  /// Handles both [Failure] objects (from use cases) and legacy exception types.
+  String _mapError(Object e) {
+    if (e is Failure) return e.message;
+    if (e is Exception) return e.toString().replaceFirst('Exception: ', '');
     return 'Something went wrong. Please try again.';
   }
 
+  // ─── Server sync ───
+
+  /// Deletes all remaining server-side time blocks when the user clears the
+  /// entire routine.
   Future<void> _syncEmptyRoutineToServer() async {
     final routineId = _apiRoutineId;
     if (routineId == null) return;
-    final repo = ref.read(routineRepositoryProvider);
+
+    final deleteUseCase = ref.read(deleteTimeBlockUseCaseProvider);
     for (final blockId in _initialApiTimeBlockIds) {
-      await repo.deleteTimeBlock(routineId, blockId);
+      final result = await deleteUseCase(routineId, blockId);
+      result.fold((failure) => throw failure, (_) {});
     }
   }
 
-  Future<void> _persistBlocksToServer(RoutineRepository repo) async {
+  /// Syncs the current [_blocks] state to the server.
+  ///
+  /// - If no routine exists yet: creates the routine with the first block,
+  ///   then creates all remaining blocks.
+  /// - If a routine already exists: deletes removed blocks, then
+  ///   creates/updates each remaining block.
+  Future<void> _persistBlocksToServer() async {
     var routineId = _apiRoutineId;
 
+    final createRoutineUseCase =
+        ref.read(createRoutineWithTimeBlockUseCaseProvider);
+    final createBlockUseCase = ref.read(createTimeBlockUseCaseProvider);
+    final updateBlockUseCase = ref.read(updateTimeBlockUseCaseProvider);
+    final deleteBlockUseCase = ref.read(deleteTimeBlockUseCaseProvider);
+
     if (routineId == null) {
+      // ── First save: create the routine ──
       final firstEditable = _blocks.first;
-      final created = await repo.createRoutineWithTimeBlock(
-        routineBlockToCreateRequest(_toRoutineBlock(firstEditable)),
+      final createResult = await createRoutineUseCase(
+        routineBlockToRequest(_toRoutineBlock(firstEditable)),
       );
-      routineId = created.id;
-      _apiRoutineId = routineId;
+      createResult.fold(
+        (failure) => throw failure,
+        (created) {
+          routineId = created.routineId;
+          _apiRoutineId = routineId;
+          firstEditable.apiTimeBlockId = created.timeBlockId;
+          firstEditable.id = created.timeBlockId;
+        },
+      );
 
-      final firstDto = created.timeBlocks.first;
-      firstEditable.apiTimeBlockId = firstDto.id;
-      firstEditable.id = firstDto.id;
-
+      // Create any additional blocks beyond the first
       for (var i = 1; i < _blocks.length; i++) {
         final editable = _blocks[i];
-        final dto = await repo.createTimeBlock(
-          routineId,
-          routineBlockToCreateRequest(_toRoutineBlock(editable)),
+        final blockResult = await createBlockUseCase(
+          routineId!,
+          routineBlockToRequest(_toRoutineBlock(editable)),
         );
-        editable.apiTimeBlockId = dto.id;
-        editable.id = dto.id;
+        blockResult.fold(
+          (failure) => throw failure,
+          (timeBlockId) {
+            editable.apiTimeBlockId = timeBlockId;
+            editable.id = timeBlockId;
+          },
+        );
       }
     } else {
-      final currentIds =
+      // ── Subsequent saves: diff and sync ──
+
+      // 1. Delete blocks that were removed during editing
+      final currentApiIds =
           _blocks.map((b) => b.apiTimeBlockId).whereType<String>().toSet();
       for (final oldId in _initialApiTimeBlockIds) {
-        if (!currentIds.contains(oldId)) {
-          await repo.deleteTimeBlock(routineId, oldId);
+        if (!currentApiIds.contains(oldId)) {
+          final result = await deleteBlockUseCase(routineId, oldId);
+          result.fold((failure) => throw failure, (_) {});
         }
       }
 
+      // 2. Create new blocks / update existing ones
       for (final editable in _blocks) {
         final block = _toRoutineBlock(editable);
         final apiId = editable.apiTimeBlockId;
         if (apiId != null) {
-          await repo.updateTimeBlock(
+          final result = await updateBlockUseCase(
             routineId,
             apiId,
-            routineBlockToUpdateRequest(block),
+            routineBlockToRequest(block),
           );
+          result.fold((failure) => throw failure, (_) {});
         } else {
-          final dto = await repo.createTimeBlock(
+          final result = await createBlockUseCase(
             routineId,
-            routineBlockToCreateRequest(block),
+            routineBlockToRequest(block),
           );
-          editable.apiTimeBlockId = dto.id;
-          editable.id = dto.id;
+          result.fold(
+            (failure) => throw failure,
+            (timeBlockId) {
+              editable.apiTimeBlockId = timeBlockId;
+              editable.id = timeBlockId;
+            },
+          );
         }
       }
     }
 
+    // Track new canonical set of API ids for any further saves in this session
     _initialApiTimeBlockIds = {
       for (final b in _blocks)
         if (b.apiTimeBlockId != null) b.apiTimeBlockId!,
     };
   }
 
+  // ─── Save flow ───
+
   Future<void> _saveAndPop() async {
-    // If there are empty blocks, show validation dialog
     if (_hasEmptyBlocks) {
       final shouldDelete = await _showEmptyBlockDialog();
       if (!mounted) return;
 
       if (shouldDelete == true) {
-        // Remove empty blocks from state
-        setState(() {
-          _blocks.removeWhere((b) => b.items.isEmpty);
-        });
+        setState(() => _blocks.removeWhere((b) => b.items.isEmpty));
 
-        // If all blocks were empty, save empty list and pop
         if (_blocks.isEmpty) {
           try {
             await _syncEmptyRoutineToServer();
-            await _syncNotificationsFromEditable();
+            await _syncNotifications();
             ref.invalidate(userRoutineProvider);
             if (mounted) Navigator.of(context).pop();
           } catch (e, st) {
             _logger.error('Failed to clear routine', e, st);
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(_mapRoutineError(e)),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
+            if (mounted) _showErrorSnackBar(_mapError(e));
           }
           return;
         }
       } else {
-        // User chose to add items, don't save yet
-        return;
+        return; // User chose to add items instead
       }
     }
 
-    final repo = ref.read(routineRepositoryProvider);
     try {
-      await _persistBlocksToServer(repo);
-      await _syncNotificationsFromEditable();
+      await _persistBlocksToServer();
+      await _syncNotifications();
       ref.invalidate(userRoutineProvider);
       if (mounted) Navigator.of(context).pop();
     } catch (e, st) {
       _logger.error('Failed to save routine', e, st);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_mapRoutineError(e)),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (mounted) _showErrorSnackBar(_mapError(e));
     }
   }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
+  // ─── Dialogs ───
 
   Future<bool?> _showEmptyBlockDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -270,8 +301,10 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
           ),
           content: Text(
             hasMultipleEmpty
-                ? 'You have $emptyCount time blocks without any items. Would you like to add items or delete these blocks?'
-                : 'This time block has no items. Would you like to add an item or delete the block?',
+                ? 'You have $emptyCount time blocks without any items. '
+                    'Would you like to add items or delete these blocks?'
+                : 'This time block has no items. '
+                    'Would you like to add an item or delete the block?',
           ),
           actions: [
             TextButton(
@@ -279,10 +312,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
               child: Text(
                 'Add Items',
                 style: TextStyle(
-                  color:
-                      isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimary,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimary,
                 ),
               ),
             ),
@@ -301,28 +333,28 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     );
   }
 
+  // ─── Block operations ───
+
   Future<void> _pickTime(int index) async {
     final picked = await showTimePicker(
       context: context,
       initialTime: _blocks[index].time,
     );
     if (picked != null) {
-      final otherTimes =
-          _blocks
-              .asMap()
-              .entries
-              .where((e) => e.key != index)
-              .map((e) => e.value.time)
-              .toList();
+      final otherTimes = _blocks
+          .asMap()
+          .entries
+          .where((e) => e.key != index)
+          .map((e) => e.value.time)
+          .toList();
       final adjusted = adjustTimeForMinimumGap(picked, otherTimes);
 
-      // Handle case where no valid time slot is available
       if (adjusted == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(context.l10n.noTimeSlot),
-              duration: Duration(seconds: 3),
+              duration: const Duration(seconds: 3),
             ),
           );
         }
@@ -337,7 +369,8 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Adjusted to ${formatRoutineTime(adjusted)} ($kMinBlockGapMinutes-min minimum gap)',
+              'Adjusted to ${formatRoutineTime(adjusted)} '
+              '($kMinBlockGapMinutes-min minimum gap)',
             ),
             duration: const Duration(seconds: 2),
           ),
@@ -353,15 +386,11 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
   }
 
   Future<void> _toggleNotification(int index) async {
-    // If currently enabled, just disable — no permission check needed
     if (_blocks[index].notificationEnabled) {
-      setState(() {
-        _blocks[index].notificationEnabled = false;
-      });
+      setState(() => _blocks[index].notificationEnabled = false);
       return;
     }
 
-    // Enabling: check notification permission first
     final enabled = await NotificationService().areNotificationsEnabled();
     if (!enabled && mounted) {
       final granted = await _showNotificationPermissionModal();
@@ -369,9 +398,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     }
 
     if (mounted) {
-      setState(() {
-        _blocks[index].notificationEnabled = true;
-      });
+      setState(() => _blocks[index].notificationEnabled = true);
     }
   }
 
@@ -393,10 +420,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                 Icon(
                   Icons.notifications_outlined,
                   size: 48,
-                  color:
-                      isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimary,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimary,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -404,10 +430,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color:
-                        isDark
-                            ? AppColors.textPrimaryDark
-                            : AppColors.textPrimary,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -416,10 +441,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color:
-                        isDark
-                            ? AppColors.textTertiaryDark
-                            : AppColors.textSecondary,
+                    color: isDark
+                        ? AppColors.textTertiaryDark
+                        : AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -430,22 +454,18 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                       final nav = Navigator.of(context);
                       final granted =
                           await NotificationService().requestPermission();
-                      if (!granted) {
-                        await openAppSettings();
-                      }
+                      if (!granted) await openAppSettings();
                       final nowEnabled =
                           await NotificationService().areNotificationsEnabled();
                       nav.pop(nowEnabled);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          isDark
-                              ? AppColors.textPrimaryDark
-                              : AppColors.textPrimary,
-                      foregroundColor:
-                          isDark
-                              ? AppColors.textPrimary
-                              : AppColors.textPrimaryDark,
+                      backgroundColor: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                      foregroundColor: isDark
+                          ? AppColors.textPrimary
+                          : AppColors.textPrimaryDark,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -469,10 +489,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                       'Skip',
                       style: TextStyle(
                         fontSize: 16,
-                        color:
-                            isDark
-                                ? AppColors.textTertiaryDark
-                                : AppColors.textSecondary,
+                        color: isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -486,40 +505,29 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
   }
 
   Future<void> _deleteBlock(int index) async {
-    // Confirmation dialog is already handled in RoutineTimeBlock._confirmDeleteBlock
     final block = _blocks[index];
-    final items = List<RoutineItem>.from(block.items);
-
-    // Cancel notification for this block immediately
     final routineBlock = RoutineBlock(
       id: block.id,
       time: block.time,
       notificationEnabled: block.notificationEnabled,
       apiTimeBlockId: block.apiTimeBlockId,
-      items: items,
+      items: List.from(block.items),
     );
-    await RoutineNotificationService().cancelBlockNotification(routineBlock);
+    await ref
+        .read(routineNotificationServiceProvider)
+        .cancelBlockNotification(routineBlock);
 
     setState(() => _blocks.removeAt(index));
   }
 
-  /// Whether the maximum number of blocks has been reached.
   bool get _isAtMaxBlocks => !canAddBlock(_blocks.length);
-
-  /// Whether to show the "Add Block" button in the list.
-  /// Hidden when last block is empty OR when at max blocks.
   bool get _shouldShowAddButton => !_isLastBlockEmpty && !_isAtMaxBlocks;
 
-  /// Calculate the total item count for the list.
   int _calculateListItemCount() {
-    if (_shouldShowAddButton) {
-      return _blocks.length + 1; // +1 for add block button
-    }
-    return _blocks.length;
+    return _shouldShowAddButton ? _blocks.length + 1 : _blocks.length;
   }
 
   void _addBlock() {
-    // Enforce max block limit
     if (_isAtMaxBlocks) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -531,15 +539,14 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     }
 
     final otherTimes = _blocks.map((b) => b.time).toList();
-    final defaultTime = const TimeOfDay(hour: 12, minute: 0);
-    final adjusted = adjustTimeForMinimumGap(defaultTime, otherTimes);
+    final adjusted =
+        adjustTimeForMinimumGap(const TimeOfDay(hour: 12, minute: 0), otherTimes);
 
-    // Handle case where no valid time slot is available
     if (adjusted == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.l10n.noTimeSlot),
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 3),
         ),
       );
       return;
@@ -560,50 +567,40 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
   }
 
   void _onDeleteItem(int blockIndex, int itemIndex) {
-    final item = _blocks[blockIndex].items[itemIndex];
     final block = _blocks[blockIndex];
     final wasNotEmpty = block.items.isNotEmpty;
 
-    setState(() {
-      _blocks[blockIndex].items.removeAt(itemIndex);
-    });
+    setState(() => _blocks[blockIndex].items.removeAt(itemIndex));
 
-    // Cancel notification when block becomes empty
-    // We cancel regardless of notificationEnabled state because:
-    // 1. The notification might have been scheduled when notifications were enabled
-    // 2. It's safe to cancel a notification that doesn't exist
-    // 3. This ensures cleanup even if the user toggled notifications off after scheduling
+    // Cancel notification when the block becomes empty
     if (wasNotEmpty && _blocks[blockIndex].items.isEmpty) {
       final routineBlock = RoutineBlock(
         id: block.id,
         time: block.time,
         notificationEnabled: block.notificationEnabled,
         apiTimeBlockId: block.apiTimeBlockId,
-        items: [], // empty after deletion
+        items: const [],
       );
-      RoutineNotificationService().cancelBlockNotification(routineBlock);
+      ref
+          .read(routineNotificationServiceProvider)
+          .cancelBlockNotification(routineBlock);
     }
   }
 
-  /// Collects all item IDs currently in the routine to prevent duplicates.
   ({Set<String> planIds, Set<String> recitationIds}) _collectRoutineItemIds() {
     final planIds = <String>{};
     final recitationIds = <String>{};
     for (final block in _blocks) {
       for (final item in block.items) {
-        if (item.type == RoutineItemType.plan) {
-          planIds.add(item.id);
-        }
+        if (item.type == RoutineItemType.plan) planIds.add(item.id);
       }
     }
     return (planIds: planIds, recitationIds: recitationIds);
   }
 
-  /// Flag to prevent concurrent navigation to session selection.
   bool _isSelectingSession = false;
 
   Future<void> _navigateToSelectSession(int blockIndex) async {
-    // Prevent rapid concurrent navigation that could lead to duplicates
     if (_isSelectingSession) return;
     _isSelectingSession = true;
 
@@ -611,22 +608,20 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       final excluded = _collectRoutineItemIds();
       final result = await Navigator.of(context).push<SessionSelection>(
         MaterialPageRoute(
-          builder:
-              (_) => SelectSessionScreen(excludedPlanIds: excluded.planIds),
+          builder: (_) =>
+              SelectSessionScreen(excludedPlanIds: excluded.planIds),
         ),
       );
 
       if (result != null && mounted) {
-        // Extract the item ID to check for duplicates
         final (newItemId, newItemType) = switch (result) {
           PlanSessionSelection(:final plan) => (plan.id, RoutineItemType.plan),
           RecitationSessionSelection(:final recitation) => (
-            recitation.textId,
-            RoutineItemType.recitation,
-          ),
+              recitation.textId,
+              RoutineItemType.recitation,
+            ),
         };
 
-        // Double-check for duplicates (race condition protection)
         final isDuplicate = _blocks[blockIndex].items.any(
           (item) => item.id == newItemId && item.type == newItemType,
         );
@@ -637,7 +632,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(context.l10n.duplicateItem),
-                duration: Duration(seconds: 2),
+                duration: const Duration(seconds: 2),
               ),
             );
           }
@@ -672,6 +667,8 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     }
   }
 
+  // ─── Build ───
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
@@ -679,82 +676,21 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
     final routineAsync = ref.watch(userRoutineProvider);
 
+    // Show loading/error until the API data is hydrated into local editable state.
     if (!_hydratedFromApi) {
       return routineAsync.when(
-        loading:
-            () => PopScope(
-              canPop: false,
-              child: Scaffold(
-                body: SafeArea(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 16),
-                        Text(
-                          localizations.routine_edit_title,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        error:
-            (e, _) => PopScope(
-              canPop: false,
-              child: Scaffold(
-                body: SafeArea(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('$e', textAlign: TextAlign.center),
-                          const SizedBox(height: 16),
-                          FilledButton(
-                            onPressed:
-                                () => ref.invalidate(userRoutineProvider),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        data: (response) {
+        loading: () => _buildLoadingScaffold(localizations),
+        error: (e, _) => _buildErrorScaffold(e, localizations),
+        data: (routineData) {
+          // Use a post-frame callback to avoid calling setState during build.
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted || _hydratedFromApi) return;
             setState(() {
               _hydratedFromApi = true;
-              _applyInitialResponse(response);
+              _applyInitialData(routineData);
             });
           });
-          return PopScope(
-            canPop: false,
-            child: Scaffold(
-              body: SafeArea(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 16),
-                      Text(
-                        localizations.routine_edit_title,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
+          return _buildLoadingScaffold(localizations);
         },
       );
     }
@@ -789,26 +725,17 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                   child: ListView.separated(
                     itemCount: _calculateListItemCount(),
                     separatorBuilder: (_, index) {
-                      final isLastItem =
-                          index == _blocks.length - 1 ||
+                      final isLastItem = index == _blocks.length - 1 ||
                           (_shouldShowAddButton && index == _blocks.length);
-                      if (isLastItem) {
-                        return const SizedBox(height: 16);
-                      }
+                      if (isLastItem) return const SizedBox(height: 16);
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
                         child: Divider(height: 1),
                       );
                     },
                     itemBuilder: (context, index) {
-                      // Show add block button only if:
-                      // 1. Last block is not empty
-                      // 2. We haven't reached max blocks
                       if (_shouldShowAddButton && index == _blocks.length) {
-                        return _AddBlockButton(
-                          onTap: _addBlock,
-                          isDark: isDark,
-                        );
+                        return _AddBlockButton(onTap: _addBlock, isDark: isDark);
                       }
                       final block = _blocks[index];
                       return RoutineTimeBlock(
@@ -816,14 +743,14 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                         notificationEnabled: block.notificationEnabled,
                         items: block.items,
                         onTimeChanged: () => _pickTime(index),
-                        onNotificationToggle: () => _toggleNotification(index),
+                        onNotificationToggle: () =>
+                            _toggleNotification(index),
                         onDelete: () => _deleteBlock(index),
                         onAddSession: () => _navigateToSelectSession(index),
-                        onReorderItems:
-                            (oldIdx, newIdx) =>
-                                _onReorderItems(index, oldIdx, newIdx),
-                        onDeleteItem:
-                            (itemIdx) => _onDeleteItem(index, itemIdx),
+                        onReorderItems: (oldIdx, newIdx) =>
+                            _onReorderItems(index, oldIdx, newIdx),
+                        onDeleteItem: (itemIdx) =>
+                            _onDeleteItem(index, itemIdx),
                       );
                     },
                   ),
@@ -835,7 +762,58 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       ),
     );
   }
+
+  Widget _buildLoadingScaffold(AppLocalizations localizations) {
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  localizations.routine_edit_title,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorScaffold(Object e, AppLocalizations localizations) {
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('$e', textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () => ref.invalidate(userRoutineProvider),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
+
+// ─── Private widgets ───
 
 class _DoneButton extends StatelessWidget {
   final VoidCallback onTap;
@@ -891,8 +869,9 @@ class _AddBlockButton extends StatelessWidget {
               Icon(
                 Icons.add,
                 size: 16,
-                color:
-                    isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimary,
               ),
               const SizedBox(width: 6),
               Text(
@@ -900,10 +879,9 @@ class _AddBlockButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color:
-                      isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimary,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimary,
                 ),
               ),
             ],
