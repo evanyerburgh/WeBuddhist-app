@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 
 /// Fifth onboarding screen: "You're all set up"
 class OnboardingScreen5 extends ConsumerStatefulWidget {
@@ -23,7 +24,6 @@ class _OnboardingScreen5State extends ConsumerState<OnboardingScreen5>
   void initState() {
     super.initState();
     _initializeAnimations();
-
   }
 
   void _initializeAnimations() {
@@ -38,14 +38,10 @@ class _OnboardingScreen5State extends ConsumerState<OnboardingScreen5>
       begin: const Offset(0, 0.1),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOutCubic,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
     _animationController.forward();
   }
-
 
   @override
   void dispose() {
@@ -78,10 +74,10 @@ class _OnboardingScreen5State extends ConsumerState<OnboardingScreen5>
                   Text(
                     l10n.pechaHeading,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: getFontFamily('en'),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -89,12 +85,11 @@ class _OnboardingScreen5State extends ConsumerState<OnboardingScreen5>
                   Text(
                     l10n.onboarding_all_set,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w400,
                       fontStyle: FontStyle.italic,
-                      letterSpacing: -0.544,
-                      fontFamily: 'EB Garamond',
+                      fontFamily: getFontFamily('en'),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -104,7 +99,7 @@ class _OnboardingScreen5State extends ConsumerState<OnboardingScreen5>
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w400,
+                      fontWeight: FontWeight.w500,
                       letterSpacing: -0.2,
                       height: 1.6,
                       color: Theme.of(

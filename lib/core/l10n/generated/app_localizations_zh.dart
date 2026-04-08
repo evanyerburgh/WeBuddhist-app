@@ -36,14 +36,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logout => '登出';
 
   @override
-  String get onboarding_welcome => '歡迎來到 WeBuddhist';
+  String get onboarding_welcome => '歡迎來到';
 
   @override
   String get onboarding_description => '在這裡每天學習、生活與分享佛教智慧';
 
   @override
   String get onboarding_quote =>
-      'Approximatey 500 million people worldwide practice Buddhism, making it the world\'s fourth largest religion';
+      'Drop by drop is the water pot filled. Likewise, the wise person, gathering it little by little, fills themselves with good.';
 
   @override
   String get onboarding_find_peace => '立即開始';

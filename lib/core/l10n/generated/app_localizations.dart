@@ -157,7 +157,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_welcome.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to WeBuddhist'**
+  /// **'Welcome to'**
   String get onboarding_welcome;
 
   /// No description provided for @onboarding_description.
@@ -169,7 +169,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_quote.
   ///
   /// In en, this message translates to:
-  /// **'Approximatey 500 million people worldwide practice Buddhism, making it the world\'s fourth largest religion'**
+  /// **'Drop by drop is the water pot filled. Likewise, the wise person, gathering it little by little, fills themselves with good.'**
   String get onboarding_quote;
 
   /// No description provided for @onboarding_find_peace.

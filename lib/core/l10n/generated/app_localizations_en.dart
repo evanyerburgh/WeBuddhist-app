@@ -36,7 +36,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logout => 'Logout';
 
   @override
-  String get onboarding_welcome => 'Welcome to WeBuddhist';
+  String get onboarding_welcome => 'Welcome to';
 
   @override
   String get onboarding_description =>
@@ -44,7 +44,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_quote =>
-      'Approximatey 500 million people worldwide practice Buddhism, making it the world\'s fourth largest religion';
+      'Drop by drop is the water pot filled. Likewise, the wise person, gathering it little by little, fills themselves with good.';
 
   @override
   String get onboarding_find_peace => 'Get Started';
