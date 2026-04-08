@@ -47,24 +47,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'Approximatey 500 million people worldwide practice Buddhism, making it the world\'s fourth largest religion';
 
   @override
-  String get onboarding_find_peace => 'Find your Peace';
+  String get onboarding_find_peace => 'Get Started';
 
   @override
   String get onboarding_continue => 'Continue';
 
   @override
-  String get onboarding_first_question =>
-      'In which language would you like to access core texts?';
+  String get onboarding_first_question => 'Choose your language:';
 
   @override
   String get onboarding_second_question =>
       'Which path or school do you feel drawn to?';
 
   @override
-  String get onboarding_choose_option => 'Choose upto 3 options';
+  String get onboarding_choose_option => 'Choose at least one:';
 
   @override
-  String get onboarding_all_set => 'You are All Setup';
+  String get onboarding_all_set => 'You\'re all set up';
+
+  @override
+  String get onboarding_all_set_description =>
+      'We\'ve tailored your experience to your tradition. Show up each day — even for a moment — and watch your practice grow.';
+
+  @override
+  String get onboarding_begin_practice => 'Begin Your Practice';
 
   @override
   String get home_today => 'Today';

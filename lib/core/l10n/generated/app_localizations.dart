@@ -175,7 +175,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_find_peace.
   ///
   /// In en, this message translates to:
-  /// **'Find your Peace'**
+  /// **'Get Started'**
   String get onboarding_find_peace;
 
   /// No description provided for @onboarding_continue.
@@ -187,7 +187,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_first_question.
   ///
   /// In en, this message translates to:
-  /// **'In which language would you like to access core texts?'**
+  /// **'Choose your language:'**
   String get onboarding_first_question;
 
   /// No description provided for @onboarding_second_question.
@@ -199,14 +199,26 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_choose_option.
   ///
   /// In en, this message translates to:
-  /// **'Choose upto 3 options'**
+  /// **'Choose at least one:'**
   String get onboarding_choose_option;
 
   /// No description provided for @onboarding_all_set.
   ///
   /// In en, this message translates to:
-  /// **'You are All Setup'**
+  /// **'You\'re all set up'**
   String get onboarding_all_set;
+
+  /// No description provided for @onboarding_all_set_description.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ve tailored your experience to your tradition. Show up each day — even for a moment — and watch your practice grow.'**
+  String get onboarding_all_set_description;
+
+  /// No description provided for @onboarding_begin_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Begin Your Practice'**
+  String get onboarding_begin_practice;
 
   /// No description provided for @home_today.
   ///

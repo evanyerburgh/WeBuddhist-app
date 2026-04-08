@@ -46,24 +46,30 @@ class AppLocalizationsZh extends AppLocalizations {
       'Approximatey 500 million people worldwide practice Buddhism, making it the world\'s fourth largest religion';
 
   @override
-  String get onboarding_find_peace => '尋找你本有的平靜';
+  String get onboarding_find_peace => '立即開始';
 
   @override
   String get onboarding_continue => '下一步';
 
   @override
-  String get onboarding_first_question =>
-      'In which language would you like to access core texts?';
+  String get onboarding_first_question => '选择您的语言：';
 
   @override
   String get onboarding_second_question =>
       'Which path or school do you feel drawn to?';
 
   @override
-  String get onboarding_choose_option => 'Choose upto 3 options';
+  String get onboarding_choose_option => '至少选择一项：';
 
   @override
-  String get onboarding_all_set => '你已設定完成';
+  String get onboarding_all_set => '您已準備就緒';
+
+  @override
+  String get onboarding_all_set_description =>
+      '我們已根據您的傳承為您量身打造體驗。每天出現——哪怕片刻——見證您的修行成長。';
+
+  @override
+  String get onboarding_begin_practice => '開始您的修行';
 
   @override
   String get home_today => '今天';
