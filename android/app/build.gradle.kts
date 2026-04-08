@@ -55,6 +55,21 @@ android {
         )
     }
 
+    signingConfigs {
+        fun createSigningConfig(flavor: String) {
+            create("${flavor}Release") {
+                keyAlias = keystoreProperties["${flavor}.keyAlias"]?.toString()
+                keyPassword = keystoreProperties["${flavor}.keyPassword"]?.toString()
+                storeFile = keystoreProperties["${flavor}.storeFile"]?.toString()?.let { file(it) }
+                storePassword = keystoreProperties["${flavor}.storePassword"]?.toString()
+            }
+        }
+
+        createSigningConfig("dev")
+        createSigningConfig("staging")
+        createSigningConfig("prod")
+    }
+
     flavorDimensions += "environment"
 
     productFlavors {
@@ -63,41 +78,27 @@ android {
             applicationId = "org.pecha.app.dev"
             resValue("string", "app_name", "[Dev] WeBuddhist")
             versionNameSuffix = "-dev"
+            signingConfig = signingConfigs.getByName("devRelease")
         }
 
         create("staging") {
             dimension = "environment"
             applicationId = "org.pecha.app.staging"
-            resValue("string", "app_name", "[Staging] WeBuddhist")
+            resValue("string", "app_name", "[Stage] WeBuddhist")
             versionNameSuffix = "-staging"
+            signingConfig = signingConfigs.getByName("stagingRelease")
         }
 
         create("prod") {
             dimension = "environment"
             applicationId = "org.pecha.app"
             resValue("string", "app_name", "WeBuddhist")
-        }
-    }
-
-    signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"]?.toString()
-            keyPassword = keystoreProperties["keyPassword"]?.toString()
-            storeFile = if (keystoreProperties["storeFile"] != null) {
-                file(keystoreProperties["storeFile"].toString())
-            } else {
-                null
-            }
-            storePassword = keystoreProperties["storePassword"]?.toString()
+            signingConfig = signingConfigs.getByName("prodRelease")
         }
     }
 
     buildTypes {
         getByName("release") {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("release")
-            
             // Enable ProGuard for release builds
             isMinifyEnabled = true
             isShrinkResources = true
