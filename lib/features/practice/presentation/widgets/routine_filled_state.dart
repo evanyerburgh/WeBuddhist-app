@@ -28,10 +28,9 @@ class RoutineFilledState extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 16),
         // Header with Edit button
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
           child: _RoutineHeader(
             title: localizations.routine_title,
             editLabel: localizations.routine_edit,

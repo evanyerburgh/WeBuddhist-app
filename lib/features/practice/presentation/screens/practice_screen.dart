@@ -39,38 +39,40 @@ class PracticeScreen extends ConsumerWidget {
     final routineAsync = ref.watch(userRoutineProvider);
 
     return routineAsync.when(
-      loading: () => const Scaffold(
-        body: SafeArea(child: Center(child: CircularProgressIndicator())),
-      ),
-      error: (error, _) => Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    localizations.routine_empty_title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
+      loading:
+          () => const Scaffold(
+            body: SafeArea(child: Center(child: CircularProgressIndicator())),
+          ),
+      error:
+          (error, _) => Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        localizations.routine_empty_title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text('$error', textAlign: TextAlign.center),
+                      const SizedBox(height: 24),
+                      FilledButton(
+                        onPressed: () => ref.invalidate(userRoutineProvider),
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  Text('$error', textAlign: TextAlign.center),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: () => ref.invalidate(userRoutineProvider),
-                    child: const Text('Retry'),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
       // userRoutineProvider already maps RoutineResponse → RoutineData, so
       // the screen never touches API models or mapper functions.
       data: (routineData) {
@@ -101,9 +103,11 @@ class PracticeScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 24),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8,
+              ),
               child: Text(
                 localizations.routine_empty_title,
                 style: const TextStyle(

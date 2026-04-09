@@ -155,12 +155,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Padding(
               padding: const EdgeInsets.only(right: 16.0),
               child: CircleAvatar(
-                backgroundColor: const Color(0xFF272727),
+                backgroundColor: Theme.of(context).cardColor,
                 radius: 20,
                 child: Icon(
-                  PhosphorIconsRegular.userCircle,
-                  size: 24,
-                  color: Colors.white,
+                  PhosphorIconsFill.userCircle,
+                  size: 26,
+                  color: const Color(0xFF7E7683),
                 ),
               ),
             ),
