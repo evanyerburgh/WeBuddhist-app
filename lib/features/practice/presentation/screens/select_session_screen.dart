@@ -1,6 +1,4 @@
-import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
@@ -8,11 +6,9 @@ import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
-import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/practice/data/models/session_selection.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitations_providers.dart';
 import 'package:flutter_pecha/features/recitation/presentation/widgets/recitation_list_skeleton.dart';
-import 'package:flutter_pecha/shared/extensions/typography_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _logger = AppLogger('SelectSessionScreen');
@@ -26,14 +22,7 @@ class SelectSessionScreen extends ConsumerStatefulWidget {
   /// IDs of plans already in the routine (across all blocks).
   final Set<String> excludedPlanIds;
 
-  /// IDs of recitations already in the routine (across all blocks).
-  final Set<String> excludedRecitationIds;
-
-  const SelectSessionScreen({
-    super.key,
-    this.excludedPlanIds = const {},
-    this.excludedRecitationIds = const {},
-  });
+  const SelectSessionScreen({super.key, this.excludedPlanIds = const {}});
 
   @override
   ConsumerState<SelectSessionScreen> createState() =>
@@ -71,109 +60,25 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
     }
   }
 
-  Future<void> _onPlanSelected(dynamic plan) async {
+  void _onPlanSelected(dynamic plan) {
     if (_enrollingItemId != null) return;
-    setState(() => _enrollingItemId = plan.id);
-    try {
-      final resultEither = await ref.read(
-        userPlanSubscribeFutureProvider(plan.id).future,
-      );
-      if (!mounted) return;
-
-      final success = resultEither.fold(
-        (failure) {
-          _showErrorSnackbar('Unable to enroll in plan. Please try again.');
-          return false;
-        },
-        (success) => success,
-      );
-
-      if (success) {
-        ref.invalidate(myPlansPaginatedProvider);
-        Navigator.of(context).pop(PlanSessionSelection(plan));
-      } else {
-        setState(() => _enrollingItemId = null);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _enrollingItemId = null);
-      _showErrorSnackbar('Unable to enroll in plan. Please try again.');
-    }
+    Navigator.of(context).pop(PlanSessionSelection(plan));
   }
 
   Future<void> _onRecitationSelected(dynamic recitation) async {
     if (_enrollingItemId != null) return;
-    setState(() => _enrollingItemId = recitation.textId);
-    try {
-      final resultEither = await ref.read(
-        saveRecitationProvider(recitation.textId).future,
-      );
-      if (!mounted) return;
-
-      final success = resultEither.fold(
-        (failure) {
-          _showErrorSnackbar('Unable to save recitation. Please try again.');
-          return false;
-        },
-        (success) => success,
-      );
-
-      if (success) {
-        ref.invalidate(savedRecitationsFutureProvider);
-        Navigator.of(context).pop(RecitationSessionSelection(recitation));
-      } else {
-        setState(() => _enrollingItemId = null);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _enrollingItemId = null);
-      _showErrorSnackbar('Unable to save recitation. Please try again.');
-    }
-  }
-
-  void _showErrorSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    Navigator.of(context).pop(RecitationSessionSelection(recitation));
   }
 
   @override
   Widget build(BuildContext context) {
     _logger.debug('🎨 ===== BUILD STARTED =====');
     final localizations = AppLocalizations.of(context)!;
-    final locale = Localizations.localeOf(context);
 
-    // Get enrolled plan IDs from paginated provider (already loaded by app)
-    final myPlansState = ref.watch(myPlansPaginatedProvider);
-    final enrolledPlanIds = myPlansState.plans.map<String>((e) => e.id).toSet();
-    _logger.debug('📊 My Plans: ${myPlansState.plans.length} plans');
-
-    // Get saved recitation IDs from backend
-    final savedRecitationIds =
-        ref
-            .watch(savedRecitationsFutureProvider)
-            .whenData((dataEither) => dataEither.fold(
-              (failure) => <String>{},
-              (data) => data.map((e) => e.textId).toSet(),
-            ))
-            .valueOrNull ??
-        <String>{};
-
-    // Combine backend enrolled/saved + items already in routine blocks
-    final allExcludedPlanIds = {...enrolledPlanIds, ...widget.excludedPlanIds};
-    final allExcludedRecitationIds = {
-      ...savedRecitationIds,
-      ...widget.excludedRecitationIds,
-    };
+    // Plans: only exclude items already in routine blocks (enrollment handled by backend)
+    final allExcludedPlanIds = widget.excludedPlanIds;
 
     _logger.debug('📊 Excluded Plan IDs: ${allExcludedPlanIds.length}');
-    _logger.debug('📊 Excluded Recitation IDs: ${allExcludedRecitationIds.length}');
-    _logger.debug('📊 Enrolled Plan IDs (being filtered out): ${enrolledPlanIds.length}');
-    _logger.debug('📊 Routine Plan IDs (being filtered out): ${widget.excludedPlanIds.length}');
 
     return Scaffold(
       appBar: AppBar(
@@ -217,7 +122,6 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
             onPlanSelected: _onPlanSelected,
           ),
           _RecitationsTab(
-            excludedRecitationIds: allExcludedRecitationIds,
             enrollingItemId: _enrollingItemId,
             onRecitationSelected: _onRecitationSelected,
           ),
@@ -247,7 +151,9 @@ class _PlansTab extends ConsumerWidget {
     final localizations = AppLocalizations.of(context)!;
     final plansState = ref.watch(findPlansPaginatedProvider);
 
-    _logger.debug('📋 _PlansTab BUILD: ${plansState.plans.length} plans, isLoading: ${plansState.isLoading}, error: ${plansState.error}');
+    _logger.debug(
+      '📋 _PlansTab BUILD: ${plansState.plans.length} plans, isLoading: ${plansState.isLoading}, error: ${plansState.error}',
+    );
     _logger.debug('🚫 Excluded IDs: ${excludedPlanIds.length}');
 
     if (plansState.isLoading && plansState.plans.isEmpty) {
@@ -271,7 +177,9 @@ class _PlansTab extends ConsumerWidget {
             .where((plan) => !excludedPlanIds.contains(plan.id))
             .toList();
 
-    _logger.debug('✅ Available plans after filtering (routine only): ${availablePlans.length}');
+    _logger.debug(
+      '✅ Available plans after filtering (routine only): ${availablePlans.length}',
+    );
 
     if (availablePlans.isEmpty && !plansState.isLoading) {
       _logger.debug('📭 SHOWING: Empty state (no available plans)');
@@ -322,12 +230,10 @@ class _PlansTab extends ConsumerWidget {
 /// Tab content for displaying and selecting recitations.
 /// Filters out recitations that are already saved or in the routine.
 class _RecitationsTab extends ConsumerWidget {
-  final Set<String> excludedRecitationIds;
   final String? enrollingItemId;
   final void Function(dynamic recitation) onRecitationSelected;
 
   const _RecitationsTab({
-    required this.excludedRecitationIds,
     required this.enrollingItemId,
     required this.onRecitationSelected,
   });
@@ -355,13 +261,7 @@ class _RecitationsTab extends ConsumerWidget {
             ),
           ),
           (recitations) {
-            // Filter out saved recitations and recitations already in routine
-            final availableRecitations =
-                recitations
-                    .where((r) => !excludedRecitationIds.contains(r.textId))
-                    .toList();
-
-            if (availableRecitations.isEmpty) {
+            if (recitations.isEmpty) {
               return Center(
                 child: Text(
                   localizations.recitations_no_content,
@@ -371,11 +271,14 @@ class _RecitationsTab extends ConsumerWidget {
             }
 
             return ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-              itemCount: availableRecitations.length,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 16.0,
+              ),
+              itemCount: recitations.length,
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final recitation = availableRecitations[index];
+                final recitation = recitations[index];
                 final isEnrolling = enrollingItemId == recitation.textId;
 
                 return _SessionListTile(

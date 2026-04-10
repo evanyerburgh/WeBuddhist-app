@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:flutter_pecha/features/practice/data/utils/routine_time_utils.dart';
@@ -230,7 +231,7 @@ class _NotificationIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => {HapticFeedback.mediumImpact(), onTap()},
       child: Icon(
         enabled ? PhosphorIconsRegular.bell : PhosphorIconsRegular.bellSlash,
         size: 22,

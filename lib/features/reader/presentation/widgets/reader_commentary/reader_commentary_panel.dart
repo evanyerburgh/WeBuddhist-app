@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/commentary_skeleton.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/segment_provider.dart';
 import 'package:flutter_pecha/features/texts/data/models/commentary/segment_commentary.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/features/reader/reader.dart';
 
 /// Constants for commentary panel styling
 class _CommentaryPanelConstants {
@@ -56,7 +56,7 @@ class ReaderCommentaryPanel extends ConsumerWidget {
       child: Column(
         children: [
           // Header with close button and resizable divider
-          _CommentaryPanelHeader(
+          CommentaryPanelHeader(
             params: params,
             availableHeight: availableHeight,
             onClose: () {
@@ -103,73 +103,6 @@ class ReaderCommentaryPanel extends ConsumerWidget {
   }
 }
 
-/// Header for the commentary panel with resizable divider
-class _CommentaryPanelHeader extends ConsumerWidget {
-  final VoidCallback onClose;
-  final ReaderParams params;
-  final double availableHeight;
-
-  const _CommentaryPanelHeader({
-    required this.onClose,
-    required this.params,
-    required this.availableHeight,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final localizations = context.l10n;
-    final notifier = ref.read(readerNotifierProvider(params).notifier);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Resizable divider handle
-        GestureDetector(
-          onVerticalDragUpdate: (details) {
-            final state = ref.read(readerNotifierProvider(params));
-            final currentMainHeight = availableHeight * state.splitRatio;
-            final newRatio =
-                (currentMainHeight + details.delta.dy) / availableHeight;
-            notifier.updateSplitRatio(newRatio);
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              border: Border.symmetric(
-                horizontal: BorderSide(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.greyDark
-                      : AppColors.greyLight,
-                  width: 2,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                const SizedBox(width: 8),
-                Text(
-                  localizations.text_commentary,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: onClose,
-                  icon: const Icon(Icons.close),
-                  tooltip: localizations.text_close_commentary,
-                  iconSize: 20,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// Content list for commentaries
 class _CommentaryPanelContent extends StatelessWidget {
   final List<SegmentCommentary> commentaries;
@@ -191,12 +124,14 @@ class _CommentaryPanelContent extends StatelessWidget {
     if (commentaries.isEmpty) {
       return const _EmptyState();
     }
+
     final sortedCommentaries = List<SegmentCommentary>.from(commentaries)
       ..sort((a, b) {
         final aFirst = a.language == textLanguage ? 0 : 1;
         final bFirst = b.language == textLanguage ? 0 : 1;
         return aFirst.compareTo(bFirst);
       });
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(
         horizontal: _CommentaryPanelConstants.horizontalPadding,
@@ -258,8 +193,7 @@ class _CommentaryCard extends StatelessWidget {
             final content = segment.content;
             final isTruncated =
                 !isExpanded &&
-                content.length >
-                    _CommentaryPanelConstants.previewMaxLength;
+                content.length > _CommentaryPanelConstants.previewMaxLength;
             final displayContent =
                 isExpanded
                     ? content
@@ -267,39 +201,30 @@ class _CommentaryCard extends StatelessWidget {
                         _CommentaryPanelConstants.previewMaxLength
                     ? content
                     : content.substring(
-                        0,
-                        _CommentaryPanelConstants.previewMaxLength,
-                      );
-            return Text(
-              isTruncated ? '$displayContent...' : displayContent,
-              style: TextStyle(
-                fontFamily: fontFamily,
-                height: lineHeight,
-                fontSize: fontSize,
-              ),
-            );
-          }),
-          // Expand/collapse button
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () {
+                      0,
+                      _CommentaryPanelConstants.previewMaxLength,
+                    );
+            return InkWell(
+              onTap: () {
                 onExpansionChanged(isExpanded ? null : index);
               },
               child: Text(
-                isExpanded
-                    ? context.l10n.show_less
-                    : context.l10n.show_more,
-                style: Theme.of(context).textTheme.bodySmall,
+                isTruncated ? '$displayContent...' : displayContent,
+                style: TextStyle(
+                  fontFamily: fontFamily,
+                  height: lineHeight,
+                  fontSize: fontSize,
+                ),
               ),
-            ),
-          ),
+            );
+          }),
           // divider
           Container(
             height: _CommentaryPanelConstants.dividerHeight,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? AppColors.greyDark
-                : AppColors.greyLight,
+            color:
+                Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.greyDark
+                    : AppColors.greyLight,
           ),
         ],
       ),

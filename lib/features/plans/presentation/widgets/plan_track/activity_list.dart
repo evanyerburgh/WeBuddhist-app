@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/features/plans/data/models/author/author_dto_model.dart';
-import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
+import 'package:flutter_pecha/features/plans/plans.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:go_router/go_router.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class ActivityList extends StatelessWidget {
   final String language;
@@ -82,14 +83,16 @@ class ActivityList extends StatelessWidget {
     );
 
     // Get sourceTextId from the first subtask that has it
-    final subtaskWithText = task.subTasks.cast<dynamic>().firstWhere(
-      (s) => s.sourceTextId != null && s.sourceTextId!.isNotEmpty,
-      orElse: () => null,
-    );
+    final UserSubtasksDto? subtaskWithText = task.subTasks
+        .cast<dynamic>()
+        .firstWhere(
+          (s) => s.sourceTextId != null && s.sourceTextId!.isNotEmpty,
+          orElse: () => null,
+        );
 
     if (subtaskWithText != null) {
       final sourceTextId = subtaskWithText.sourceTextId as String;
-      final segmentId = subtaskWithText.segmentId as String?;
+      final segmentId = subtaskWithText.segmentIds?.first;
 
       // Create navigation context for plan navigation with swipe support
       final navigationContext = NavigationContext(
@@ -119,7 +122,7 @@ class ActivityList extends StatelessWidget {
         items.add(
           PlanTextItem(
             textId: subtask.sourceTextId!,
-            segmentId: subtask.segmentId,
+            segmentId: subtask.segmentIds?.first,
             title: task.title,
             subtaskId: subtask.id,
             isCompleted: subtask.isCompleted,
@@ -155,21 +158,18 @@ class _TaskCheckbox extends StatelessWidget {
         child: Container(
           width: 24,
           height: 24,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color:
-                  isCompleted
-                      ? const Color(0xFF1E3A8A)
-                      : Theme.of(context).iconTheme.color!,
-              width: 1,
-            ),
-            color: isCompleted ? const Color(0xFF1E3A8A) : Colors.transparent,
-          ),
-          child:
+          decoration:
               isCompleted
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
-                  : null,
+                  ? null
+                  : BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context).iconTheme.color!,
+                      width: 1,
+                    ),
+                    color: Colors.transparent,
+                  ),
+          child: isCompleted ? Icon(PhosphorIconsBold.check, size: 20) : null,
         ),
       ),
     );
