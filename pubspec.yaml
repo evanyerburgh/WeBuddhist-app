@@ -147,6 +147,9 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   mockito: ^5.4.4
   build_runner: ^2.4.13
+  firebase_core: ^4.6.0
+  firebase_analytics: ^12.2.0
+  firebase_crashlytics: ^5.1.0
 
 flutter_launcher_icons:
   android: "launcher_icon"
