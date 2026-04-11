@@ -378,7 +378,7 @@ packages:
     source: hosted
     version: "7.0.1"
   firebase_analytics:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: firebase_analytics
       sha256: e5679ed436d5554e230013287bbe993e41b97850e34972962d62140908e7b4ae
@@ -402,7 +402,7 @@ packages:
     source: hosted
     version: "0.6.1+4"
   firebase_core:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: firebase_core
       sha256: "2f988dab915efde3b3105268dbd69efce0e8570d767a218ccd914afd0c10c8cc"
@@ -426,7 +426,7 @@ packages:
     source: hosted
     version: "3.5.1"
   firebase_crashlytics:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: firebase_crashlytics
       sha256: "9f9831b4ca1282421f4387181bfb8e6c4ee82049e616e433272c4fd13dfd5484"
