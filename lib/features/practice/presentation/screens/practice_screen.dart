@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
-import 'package:flutter_pecha/features/practice/data/providers/routine_api_providers.dart';
-import 'package:flutter_pecha/features/practice/data/utils/routine_api_mapper.dart';
+import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/routine_empty_state.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/routine_filled_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,44 +25,14 @@ class PracticeScreen extends ConsumerWidget {
     final localizations = AppLocalizations.of(context)!;
     final authState = ref.watch(authProvider);
 
+    // Show empty state for guests without hitting the API.
     if (authState.isGuest) {
-      return Scaffold(
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Text(
-                  localizations.routine_empty_title,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.0),
-                child: Divider(height: 1),
-              ),
-              Expanded(
-                child: RoutineEmptyState(
-                  onBuildRoutine: () => _onBuildRoutine(context, ref),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _buildEmptyScaffold(context, ref, localizations);
     }
 
     if (authState.isLoading) {
       return const Scaffold(
-        body: SafeArea(
-          child: Center(child: CircularProgressIndicator()),
-        ),
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
       );
     }
 
@@ -71,9 +40,7 @@ class PracticeScreen extends ConsumerWidget {
 
     return routineAsync.when(
       loading: () => const Scaffold(
-        body: SafeArea(
-          child: Center(child: CircularProgressIndicator()),
-        ),
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
       ),
       error: (error, _) => Scaffold(
         body: SafeArea(
@@ -92,10 +59,7 @@ class PracticeScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    '$error',
-                    textAlign: TextAlign.center,
-                  ),
+                  Text('$error', textAlign: TextAlign.center),
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: () => ref.invalidate(userRoutineProvider),
@@ -107,9 +71,10 @@ class PracticeScreen extends ConsumerWidget {
           ),
         ),
       ),
-      data: (response) {
-        final routineData = routineDataFromApiResponse(response);
-        if (routineData.hasItems) {
+      // userRoutineProvider already maps RoutineResponse → RoutineData, so
+      // the screen never touches API models or mapper functions.
+      data: (routineData) {
+        if (routineData != null && routineData.hasItems) {
           return Scaffold(
             body: SafeArea(
               child: RoutineFilledState(
@@ -119,38 +84,47 @@ class PracticeScreen extends ConsumerWidget {
             ),
           );
         }
-
-        return Scaffold(
-          body: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Text(
-                    localizations.routine_empty_title,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Divider(height: 1),
-                ),
-                Expanded(
-                  child: RoutineEmptyState(
-                    onBuildRoutine: () => _onBuildRoutine(context, ref),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        return _buildEmptyScaffold(context, ref, localizations);
       },
+    );
+  }
+
+  /// Shared scaffold for the "no routine yet" state, used both for guests
+  /// and for logged-in users whose routine is empty.
+  Widget _buildEmptyScaffold(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations localizations,
+  ) {
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Text(
+                localizations.routine_empty_title,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.0),
+              child: Divider(height: 1),
+            ),
+            Expanded(
+              child: RoutineEmptyState(
+                onBuildRoutine: () => _onBuildRoutine(context, ref),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
