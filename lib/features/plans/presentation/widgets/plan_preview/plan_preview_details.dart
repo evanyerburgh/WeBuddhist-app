@@ -6,9 +6,8 @@ import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.da
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
-import 'package:flutter_pecha/features/practice/data/providers/routine_api_providers.dart';
+import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
-import 'package:flutter_pecha/features/practice/data/utils/routine_api_mapper.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:go_router/go_router.dart';
@@ -220,9 +219,9 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
     final routineAsync = ref.watch(userRoutineProvider);
 
     return routineAsync.when(
-      data: (response) {
-        final routineData = routineDataFromApiResponse(response);
-        final alreadyInRoutine = _isPlanInRoutine(routineData);
+      data: (routineData) {
+        final alreadyInRoutine =
+            routineData != null && _isPlanInRoutine(routineData);
 
         if (alreadyInRoutine) {
           return _AddToRoutineButton(

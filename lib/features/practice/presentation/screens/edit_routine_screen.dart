@@ -726,7 +726,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
             if (!mounted || _hydratedFromApi) return;
             setState(() {
               _hydratedFromApi = true;
-              _applyInitialResponse(response);
+              _applyInitialData(routineData);
               if (widget.initialPlan != null) {
                 _injectInitialPlan(widget.initialPlan!);
               }
