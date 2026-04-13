@@ -658,6 +658,12 @@ class AppLocalizationsBo extends AppLocalizations {
   String get routine_add_recitation => 'ཞལ་འདོན་ཁ་སྣོན།';
 
   @override
+  String get routine_add_plan_to_routine => 'Add Plan to Routine';
+
+  @override
+  String get routine_go_to_practice => 'Go to Practice';
+
+  @override
   String get continueWithGoogle => 'Google བརྒྱུད་ནས་མུ་མཐུད།';
 
   @override

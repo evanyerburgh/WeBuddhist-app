@@ -656,6 +656,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routine_add_recitation => 'Add Recitation';
 
   @override
+  String get routine_add_plan_to_routine => 'Add Plan to Routine';
+
+  @override
+  String get routine_go_to_practice => 'Go to Practice';
+
+  @override
   String get continueWithGoogle => 'Continue with Google';
 
   @override

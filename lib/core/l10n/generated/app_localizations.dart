@@ -1336,6 +1336,18 @@ abstract class AppLocalizations {
   /// **'Add Recitation'**
   String get routine_add_recitation;
 
+  /// No description provided for @routine_add_plan_to_routine.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Plan to Routine'**
+  String get routine_add_plan_to_routine;
+
+  /// No description provided for @routine_go_to_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Practice'**
+  String get routine_go_to_practice;
+
   /// No description provided for @continueWithGoogle.
   ///
   /// In en, this message translates to:

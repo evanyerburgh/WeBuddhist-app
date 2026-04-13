@@ -262,6 +262,8 @@
   "routine_delete_block": "Delete Time Block",
   "routine_add_plan": "Add Plan",
   "routine_add_recitation": "Add Recitation",
+  "routine_add_plan_to_routine": "Add Plan to Routine",
+  "routine_go_to_practice": "Go to Practice",
   "continueWithGoogle": "Continue with Google",
   "continueWithApple": "Continue with Apple",
   "continueAsGuest": "Continue as Guest",

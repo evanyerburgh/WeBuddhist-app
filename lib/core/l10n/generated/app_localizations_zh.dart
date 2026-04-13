@@ -647,6 +647,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routine_add_recitation => '添加持誦';
 
   @override
+  String get routine_add_plan_to_routine => 'Add Plan to Routine';
+
+  @override
+  String get routine_go_to_practice => 'Go to Practice';
+
+  @override
   String get continueWithGoogle => '使用 Google 繼續';
 
   @override

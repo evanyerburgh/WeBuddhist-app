@@ -8,6 +8,7 @@ import 'package:flutter_pecha/features/practice/data/datasource/routine_remote_d
 import 'package:flutter_pecha/features/practice/data/models/routine_api_models.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:flutter_pecha/features/practice/data/models/session_selection.dart';
+import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/practice/data/providers/routine_api_providers.dart';
 import 'package:flutter_pecha/features/practice/data/repositories/routine_repository.dart';
 import 'package:flutter_pecha/features/practice/data/services/routine_notification_service.dart';
@@ -41,7 +42,9 @@ class _EditableBlock {
 }
 
 class EditRoutineScreen extends ConsumerStatefulWidget {
-  const EditRoutineScreen({super.key});
+  final Plan? initialPlan;
+
+  const EditRoutineScreen({super.key, this.initialPlan});
 
   @override
   ConsumerState<EditRoutineScreen> createState() => _EditRoutineScreenState();
@@ -104,6 +107,44 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
         ),
       ];
     }
+  }
+
+  void _injectInitialPlan(Plan plan) {
+    final alreadyExists = _blocks.any(
+      (b) => b.items.any(
+        (item) => item.id == plan.id && item.type == RoutineItemType.plan,
+      ),
+    );
+    if (alreadyExists) return;
+
+    final newItem = RoutineItem(
+      id: plan.id,
+      title: plan.title,
+      imageUrl: plan.coverImageUrl,
+      type: RoutineItemType.plan,
+      enrolledAt: DateTime.now(),
+    );
+
+    // If we have exactly one empty default block, add the plan there
+    if (_blocks.length == 1 && _blocks.first.items.isEmpty) {
+      _blocks.first.items.add(newItem);
+      return;
+    }
+
+    // Otherwise create a new time block with the plan
+    final otherTimes = _blocks.map((b) => b.time).toList();
+    final defaultTime = const TimeOfDay(hour: 7, minute: 45);
+    final adjusted = adjustTimeForMinimumGap(defaultTime, otherTimes);
+    if (adjusted == null) {
+      // Fallback: add to the first block if no time slot available
+      _blocks.first.items.add(newItem);
+      return;
+    }
+
+    _blocks.add(
+      _EditableBlock(time: adjusted, notificationEnabled: true, items: [newItem]),
+    );
+    _sortBlocks();
   }
 
   RoutineBlock _toRoutineBlock(_EditableBlock b) {
@@ -733,6 +774,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
             setState(() {
               _hydratedFromApi = true;
               _applyInitialResponse(response);
+              if (widget.initialPlan != null) {
+                _injectInitialPlan(widget.initialPlan!);
+              }
             });
           });
           return PopScope(
