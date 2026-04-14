@@ -330,6 +330,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 EdgeInsets.symmetric(horizontal: 16.0),
               ),
               enabled: false,
+              elevation: const WidgetStatePropertyAll(0.0),
               leading: Icon(
                 Icons.search,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,

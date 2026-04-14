@@ -18,17 +18,6 @@ class LoginPage extends ConsumerWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            Positioned(
-              top: 30,
-              right: 30,
-              child: IconButton(
-                onPressed: () {
-                  ref.read(authProvider.notifier).continueAsGuest();
-                },
-                icon: const Icon(Icons.close, size: 24),
-                tooltip: 'Continue as guest',
-              ),
-            ),
             Center(
               child: SingleChildScrollView(
                 child: Padding(
