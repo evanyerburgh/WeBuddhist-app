@@ -1351,7 +1351,7 @@ abstract class AppLocalizations {
   /// No description provided for @routine_add_plan_to_routine.
   ///
   /// In en, this message translates to:
-  /// **'Add Plan to Routine'**
+  /// **'Add to Routine'**
   String get routine_add_plan_to_routine;
 
   /// No description provided for @routine_go_to_practice.
@@ -1755,6 +1755,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =0{0 missed days} =1{1 missed day} other{{count} missed days}}'**
   String missedDaysCount(int count);
+
+  /// No description provided for @plan_enrolled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrolled'**
+  String get plan_enrolled;
 }
 
 class _AppLocalizationsDelegate

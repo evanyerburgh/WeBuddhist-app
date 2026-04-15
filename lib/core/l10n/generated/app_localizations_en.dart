@@ -662,7 +662,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routine_add_recitation => 'Add Recitation';
 
   @override
-  String get routine_add_plan_to_routine => 'Add Plan to Routine';
+  String get routine_add_plan_to_routine => 'Add to Routine';
 
   @override
   String get routine_go_to_practice => 'Go to Practice';
@@ -891,4 +891,7 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get plan_enrolled => 'Enrolled';
 }

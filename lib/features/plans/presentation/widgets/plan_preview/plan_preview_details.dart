@@ -8,7 +8,6 @@ import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_pr
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
-import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -55,21 +54,15 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
     );
   }
 
-  void _handleGoToPractice() {
-    context.go('/home');
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(mainNavigationIndexProvider.notifier).state = 2;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final language = widget.plan.language;
     final authState = ref.watch(authProvider);
     final isGuest = authState.isGuest;
+    final alreadyInRoutine = _isCurrentlyInRoutine();
 
     return Scaffold(
-      appBar: _buildAppBar(context),
+      appBar: _buildAppBar(context, alreadyInRoutine),
       body: Column(
         children: [
           Expanded(
@@ -84,16 +77,54 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
               ),
             ),
           ),
-          _buildBottomButton(context, isGuest),
+          if (!alreadyInRoutine)
+            _buildBottomButton(context, isGuest),
         ],
       ),
     );
   }
 
-  AppBar _buildAppBar(BuildContext context) {
+  bool _isCurrentlyInRoutine() {
+    final routineAsync = ref.watch(userRoutineProvider);
+    final routineData = routineAsync.valueOrNull;
+    if (routineData == null) return false;
+    return _isPlanInRoutine(routineData);
+  }
+
+  AppBar _buildAppBar(BuildContext context, bool alreadyInRoutine) {
     return AppBar(
       title: Text(widget.plan.title, style: const TextStyle(fontSize: 20)),
       elevation: 0,
+      actions: [
+        if (alreadyInRoutine)
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      context.l10n.plan_enrolled,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.check, color: Colors.white, size: 14),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -209,40 +240,9 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
   }
 
   Widget _buildBottomButton(BuildContext context, bool isGuest) {
-    if (isGuest) {
-      return _AddToRoutineButton(
-        label: context.l10n.routine_add_plan_to_routine,
-        onPressed: _handleAddToRoutine,
-      );
-    }
-
-    final routineAsync = ref.watch(userRoutineProvider);
-
-    return routineAsync.when(
-      data: (routineData) {
-        final alreadyInRoutine =
-            routineData != null && _isPlanInRoutine(routineData);
-
-        if (alreadyInRoutine) {
-          return _AddToRoutineButton(
-            label: context.l10n.routine_go_to_practice,
-            onPressed: _handleGoToPractice,
-          );
-        }
-
-        return _AddToRoutineButton(
-          label: context.l10n.routine_add_plan_to_routine,
-          onPressed: _handleAddToRoutine,
-        );
-      },
-      loading: () => _AddToRoutineButton(
-        label: context.l10n.routine_add_plan_to_routine,
-        onPressed: null,
-      ),
-      error: (_, __) => _AddToRoutineButton(
-        label: context.l10n.routine_add_plan_to_routine,
-        onPressed: _handleAddToRoutine,
-      ),
+    return _AddToRoutineButton(
+      label: context.l10n.routine_add_plan_to_routine,
+      onPressed: _handleAddToRoutine,
     );
   }
 }
@@ -255,6 +255,12 @@ class _AddToRoutineButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor =
+        isDark ? AppColors.scaffoldBackgroundLight : AppColors.scaffoldBackgroundDark;
+    final foregroundColor =
+        isDark ? AppColors.textPrimary : AppColors.textPrimaryDark;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -263,8 +269,10 @@ class _AddToRoutineButton extends StatelessWidget {
           child: FilledButton(
             onPressed: onPressed,
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primarySurface,
-              foregroundColor: AppColors.textPrimary,
+              backgroundColor: backgroundColor,
+              foregroundColor: foregroundColor,
+              disabledBackgroundColor: backgroundColor.withValues(alpha: 0.5),
+              disabledForegroundColor: foregroundColor.withValues(alpha: 0.5),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),

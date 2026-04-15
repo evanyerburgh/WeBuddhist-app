@@ -208,7 +208,7 @@
   "routine_delete_block": "སུབ།",
   "routine_add_plan": "ཉམས་ལེན་ཁ་སྣོན།",
   "routine_add_recitation": "ཞལ་འདོན་ཁ་སྣོན།",
-  "routine_add_plan_to_routine": "Add Plan to Routine",
+  "routine_add_plan_to_routine": "Add to Routine",
   "routine_go_to_practice": "Go to Practice",
   "continueWithGoogle": "Google བརྒྱུད་ནས་མུ་མཐུད།",
   "continueWithApple": "Apple བརྒྱུད་ནས་མུ་མཐུད།",
@@ -331,5 +331,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "plan_enrolled": "Enrolled"
 }

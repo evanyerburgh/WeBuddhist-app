@@ -653,7 +653,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routine_add_recitation => '添加持誦';
 
   @override
-  String get routine_add_plan_to_routine => 'Add Plan to Routine';
+  String get routine_add_plan_to_routine => 'Add to Routine';
 
   @override
   String get routine_go_to_practice => 'Go to Practice';
@@ -878,4 +878,7 @@ class AppLocalizationsZh extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get plan_enrolled => '已加入';
 }
