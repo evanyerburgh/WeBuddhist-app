@@ -125,10 +125,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       return;
     }
 
-    // Otherwise create a new time block with the plan
+    // Otherwise create a new time block at the user's current local time
     final otherTimes = _blocks.map((b) => b.time).toList();
-    final defaultTime = const TimeOfDay(hour: 7, minute: 45);
-    final adjusted = adjustTimeForMinimumGap(defaultTime, otherTimes);
+    final adjusted = adjustTimeForMinimumGap(TimeOfDay.now(), otherTimes);
     if (adjusted == null) {
       // Fallback: add to the first block if no time slot available
       _blocks.first.items.add(newItem);
