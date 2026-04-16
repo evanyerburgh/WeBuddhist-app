@@ -110,8 +110,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return 'assets/images/tag_cover/patience.png';
     } else if (tagLower == 'fear') {
       return 'assets/images/tag_cover/fear.jpg';
+    } else if (tagLower == 'anxiety') {
+      return 'assets/images/tag_cover/anxiety.jpg';
+    } else if (tagLower == 'aspiration') {
+      return 'assets/images/tag_cover/aspiration.jpg';
+    } else if (tagLower == 'joy') {
+      return 'assets/images/tag_cover/joy.jpg';
+    } else if (tagLower == 'loneliness') {
+      return 'assets/images/tag_cover/loneliness.jpg';
+    } else {
+      return 'assets/images/tag_cover/cover_image.jpg';
     }
-    return null;
   }
 
   @override
