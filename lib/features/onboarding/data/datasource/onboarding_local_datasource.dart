@@ -99,8 +99,9 @@ class OnboardingLocalDatasource {
 
   /// Marks onboarding as complete for the current user.
   ///
-  /// Writes to the per-user key (primary) and the legacy device-level key
-  /// (kept for the backward-compatibility migration path).
+  /// Writes to the per-user key when a user ID is available (primary path).
+  /// Only falls back to the legacy device-level key when no user ID exists,
+  /// to avoid the legacy key being reused as a false positive for other users.
   Future<void> markOnboardingComplete() async {
     final userId = await _localStorageService.get<String>(
       StorageKeys.currentUserId,
