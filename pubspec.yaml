@@ -168,6 +168,7 @@ flutter:
     - assets/images/segment-bg/
     - assets/images/verse-bg/
     - assets/images/tag_cover/
+    - assets/images/recitation_cover/
     - assets/fonts/
     - assets/audios/
     - .env.dev
