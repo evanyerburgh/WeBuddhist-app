@@ -162,9 +162,8 @@ class _FeaturedPlanCard extends ConsumerWidget {
     final subtitleFontSize = locale.languageCode == 'bo' ? 18.0 : 14.0;
 
     final isGuest = ref.watch(authProvider).isGuest;
-    final enrolledInfo = isGuest
-        ? null
-        : _getEnrolledInfo(ref, plan.id);
+    final isEnrolled = !isGuest && _isPlanInRoutine(ref, plan.id);
+    final enrolledInfo = isEnrolled ? _getEnrolledInfo(ref, plan.id) : null;
 
     return InkWell(
       onTap: () => _handleTap(context, ref, enrolledInfo),
@@ -193,7 +192,7 @@ class _FeaturedPlanCard extends ConsumerWidget {
                 ),
               ),
             ),
-            if (enrolledInfo != null)
+            if (isEnrolled)
               Positioned(
                 top: 12,
                 right: 12,
@@ -315,9 +314,8 @@ class _PlanListItem extends ConsumerWidget {
     final subtitleFontSize = locale.languageCode == 'bo' ? 16.0 : 14.0;
 
     final isGuest = ref.watch(authProvider).isGuest;
-    final enrolledInfo = isGuest
-        ? null
-        : _getEnrolledInfo(ref, plan.id);
+    final isEnrolled = !isGuest && _isPlanInRoutine(ref, plan.id);
+    final enrolledInfo = isEnrolled ? _getEnrolledInfo(ref, plan.id) : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -375,7 +373,7 @@ class _PlanListItem extends ConsumerWidget {
                 ],
               ),
             ),
-            if (enrolledInfo != null) ...[
+            if (isEnrolled) ...[
               const SizedBox(width: 8),
               _EnrolledBadge(label: context.l10n.plan_enrolled),
             ],
@@ -436,6 +434,18 @@ class _EnrolledPlanInfo {
     required this.selectedDay,
     required this.startDate,
   });
+}
+
+/// Returns true if the plan exists in any routine block (lightweight check for
+/// badge display even when [UserPlansModel] data hasn't loaded yet).
+bool _isPlanInRoutine(WidgetRef ref, String planId) {
+  final routineData = ref.watch(userRoutineProvider).valueOrNull;
+  if (routineData == null) return false;
+  return routineData.blocks.any(
+    (block) => block.items.any(
+      (item) => item.id == planId && item.type == RoutineItemType.plan,
+    ),
+  );
 }
 
 /// Returns [_EnrolledPlanInfo] if the plan is in the user's routine and has a
