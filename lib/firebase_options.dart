@@ -65,11 +65,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyDQWTmF22yAt3UHdF-xusf_6aCX1xt7WA4',
-    appId: '1:551646315172:ios:c2002dcb05fbe25e7adc31',
+    appId: '1:551646315172:ios:93116d49fd2a07b97adc31',
     messagingSenderId: '551646315172',
     projectId: 'webuddhist-app',
     storageBucket: 'webuddhist-app.firebasestorage.app',
-    iosBundleId: 'com.example.flutterPecha',
+    iosBundleId: 'org.pecha.app',
   );
 
 }
