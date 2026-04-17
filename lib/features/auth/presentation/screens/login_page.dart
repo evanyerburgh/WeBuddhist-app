@@ -14,21 +14,28 @@ class LoginPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
 
+    // Show login UI only when auth state is fully resolved and user is unauthenticated.
+    // During loading or while a redirect is pending (already logged in / guest),
+    // we stay in a loading state so the form never flashes on screen.
+    final isUnauthenticated =
+        !authState.isLoading && !authState.isLoggedIn && !authState.isGuest;
+
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
-            Positioned(
-              top: 30,
-              right: 30,
-              child: IconButton(
-                onPressed: () {
-                  ref.read(authProvider.notifier).continueAsGuest();
-                },
-                icon: const Icon(Icons.close, size: 24),
-                tooltip: 'Continue as guest',
+            if (isUnauthenticated)
+              Positioned(
+                top: 30,
+                right: 30,
+                child: IconButton(
+                  onPressed: () {
+                    ref.read(authProvider.notifier).continueAsGuest();
+                  },
+                  icon: const Icon(Icons.close, size: 24),
+                  tooltip: 'Continue as guest',
+                ),
               ),
-            ),
             Center(
               child: SingleChildScrollView(
                 child: Padding(
@@ -38,10 +45,10 @@ class LoginPage extends ConsumerWidget {
                     children: [
                       const LogoLabel(),
                       const SizedBox(height: 30),
-                      if (authState.isLoading)
-                        const CircularProgressIndicator()
+                      if (isUnauthenticated)
+                        AuthButtons()
                       else
-                        AuthButtons(),
+                        const CircularProgressIndicator(),
                     ],
                   ),
                 ),
