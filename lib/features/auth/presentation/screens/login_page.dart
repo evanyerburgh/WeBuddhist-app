@@ -36,6 +36,14 @@ class LoginPage extends ConsumerWidget {
                   tooltip: 'Continue as guest',
                 ),
               ),
+            Positioned(
+              top: MediaQuery.of(context).size.height * 0.20,
+              left: 0,
+              right: 0,
+              child: const Center(
+                child: LogoLabel(),
+              ),
+            ),
             Center(
               child: SingleChildScrollView(
                 child: Padding(
@@ -43,8 +51,7 @@ class LoginPage extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const LogoLabel(),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 180),
                       if (isUnauthenticated)
                         AuthButtons()
                       else
