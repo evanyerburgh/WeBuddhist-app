@@ -28,10 +28,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -65,4 +62,14 @@ class DefaultFirebaseOptions {
     storageBucket: 'webuddhist-app.firebasestorage.app',
     iosBundleId: 'org.pecha.app',
   );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyDQWTmF22yAt3UHdF-xusf_6aCX1xt7WA4',
+    appId: '1:551646315172:ios:93116d49fd2a07b97adc31',
+    messagingSenderId: '551646315172',
+    projectId: 'webuddhist-app',
+    storageBucket: 'webuddhist-app.firebasestorage.app',
+    iosBundleId: 'org.pecha.app',
+  );
+
 }

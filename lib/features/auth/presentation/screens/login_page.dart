@@ -14,19 +14,34 @@ class LoginPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
 
+    // Show login UI only when auth state is fully resolved and user is unauthenticated.
+    // During loading or while a redirect is pending (already logged in / guest),
+    // we stay in a loading state so the form never flashes on screen.
+    final isUnauthenticated =
+        !authState.isLoading && !authState.isLoggedIn && !authState.isGuest;
+
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
+            if (isUnauthenticated)
+              Positioned(
+                top: 30,
+                right: 30,
+                child: IconButton(
+                  onPressed: () {
+                    ref.read(authProvider.notifier).continueAsGuest();
+                  },
+                  icon: const Icon(Icons.close, size: 24),
+                  tooltip: 'Continue as guest',
+                ),
+              ),
             Positioned(
-              top: 30,
-              right: 30,
-              child: IconButton(
-                onPressed: () {
-                  ref.read(authProvider.notifier).continueAsGuest();
-                },
-                icon: const Icon(Icons.close, size: 24),
-                tooltip: 'Continue as guest',
+              top: MediaQuery.of(context).size.height * 0.20,
+              left: 0,
+              right: 0,
+              child: const Center(
+                child: LogoLabel(),
               ),
             ),
             Center(
@@ -36,12 +51,11 @@ class LoginPage extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const LogoLabel(),
-                      const SizedBox(height: 30),
-                      if (authState.isLoading)
-                        const CircularProgressIndicator()
+                      const SizedBox(height: 180),
+                      if (isUnauthenticated)
+                        AuthButtons()
                       else
-                        AuthButtons(),
+                        const CircularProgressIndicator(),
                     ],
                   ),
                 ),
