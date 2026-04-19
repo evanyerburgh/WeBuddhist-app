@@ -89,7 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _navigateToPlans(String tag) {
-    context.push('/home/plans/$tag');
+    context.pushNamed('home-plans', pathParameters: {'tag': tag});
   }
 
   String? _getTagImagePath(String tag) {
