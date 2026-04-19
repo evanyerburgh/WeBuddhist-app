@@ -653,6 +653,61 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routine_add_recitation => '添加持誦';
 
   @override
+  String get routine_add_plan_to_routine => 'Add to Routine';
+
+  @override
+  String get routine_go_to_practice => 'Go to Practice';
+
+  @override
+  String get routine_load_error => '無法載入你的日常修持，請重試。';
+
+  @override
+  String get routine_empty_block_title_singular => '空白時間區塊';
+
+  @override
+  String routine_empty_block_title_plural(int count) {
+    return '空白時間區塊 ($count)';
+  }
+
+  @override
+  String get routine_empty_block_message_singular =>
+      '此時間區塊沒有任何項目。你要添加項目還是刪除區塊？';
+
+  @override
+  String routine_empty_block_message_plural(int count) {
+    return '你有 $count 個時間區塊沒有任何項目。你要添加項目還是刪除這些區塊？';
+  }
+
+  @override
+  String get routine_empty_block_add_items => '添加項目';
+
+  @override
+  String get routine_empty_block_delete_singular => '刪除區塊';
+
+  @override
+  String get routine_empty_block_delete_plural => '刪除空白區塊';
+
+  @override
+  String get routine_notification_title => '讓祈禱成為日常';
+
+  @override
+  String get routine_notification_description => '允許通知以接收祈禱提醒。';
+
+  @override
+  String get routine_notification_enable => '啟用通知';
+
+  @override
+  String get routine_notification_skip => '跳過';
+
+  @override
+  String routine_time_adjusted(String time, int gap) {
+    return '已調整為 $time（最少 $gap 分鐘間隔）';
+  }
+
+  @override
+  String get routine_add_block_label => '時間區塊';
+
+  @override
   String get continueWithGoogle => '使用 Google 繼續';
 
   @override
@@ -872,4 +927,7 @@ class AppLocalizationsZh extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get plan_enrolled => '已加入';
 }

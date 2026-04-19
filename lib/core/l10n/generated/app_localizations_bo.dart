@@ -664,6 +664,63 @@ class AppLocalizationsBo extends AppLocalizations {
   String get routine_add_recitation => 'ཞལ་འདོན་ཁ་སྣོན།';
 
   @override
+  String get routine_add_plan_to_routine => 'Add to Routine';
+
+  @override
+  String get routine_go_to_practice => 'Go to Practice';
+
+  @override
+  String get routine_load_error =>
+      'Could not load your routine. Please try again.';
+
+  @override
+  String get routine_empty_block_title_singular => 'Empty Time Block';
+
+  @override
+  String routine_empty_block_title_plural(int count) {
+    return 'Empty Time Blocks ($count)';
+  }
+
+  @override
+  String get routine_empty_block_message_singular =>
+      'This time block has no items. Would you like to add an item or delete the block?';
+
+  @override
+  String routine_empty_block_message_plural(int count) {
+    return 'You have $count time blocks without any items. Would you like to add items or delete these blocks?';
+  }
+
+  @override
+  String get routine_empty_block_add_items => 'Add Items';
+
+  @override
+  String get routine_empty_block_delete_singular => 'Delete Block';
+
+  @override
+  String get routine_empty_block_delete_plural => 'Delete Empty Blocks';
+
+  @override
+  String get routine_notification_title => 'Make Prayer Daily';
+
+  @override
+  String get routine_notification_description =>
+      'Allow notifications to receive your reminder to pray.';
+
+  @override
+  String get routine_notification_enable => 'Enable Notifications';
+
+  @override
+  String get routine_notification_skip => 'Skip';
+
+  @override
+  String routine_time_adjusted(String time, int gap) {
+    return 'Adjusted to $time ($gap-min minimum gap)';
+  }
+
+  @override
+  String get routine_add_block_label => 'Time Block';
+
+  @override
   String get continueWithGoogle => 'Google བརྒྱུད་ནས་མུ་མཐུད།';
 
   @override
@@ -885,4 +942,7 @@ class AppLocalizationsBo extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get plan_enrolled => 'Enrolled';
 }
