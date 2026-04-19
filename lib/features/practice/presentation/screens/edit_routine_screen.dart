@@ -207,7 +207,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
               block.apiTimeBlockId!,
             );
             result.fold((f) => throw f, (_) {
-              block.apiTimeBlockId = null;
+              if (mounted) setState(() => block.apiTimeBlockId = null);
             });
           }
           return;
@@ -220,9 +220,13 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
           final result = await ref
               .read(createRoutineWithTimeBlockUseCaseProvider)(request);
           result.fold((f) => throw f, (created) {
-            _apiRoutineId = created.routineId;
-            block.apiTimeBlockId = created.timeBlockId;
-            block.id = created.timeBlockId;
+            if (mounted) {
+              setState(() {
+              _apiRoutineId = created.routineId;
+              block.apiTimeBlockId = created.timeBlockId;
+              block.id = created.timeBlockId;
+            });
+            }
           });
         } else if (block.apiTimeBlockId == null) {
           // Routine exists but this block is new.
@@ -231,8 +235,10 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
             request,
           );
           result.fold((f) => throw f, (timeBlockId) {
-            block.apiTimeBlockId = timeBlockId;
-            block.id = timeBlockId;
+            if (mounted) setState(() {
+              block.apiTimeBlockId = timeBlockId;
+              block.id = timeBlockId;
+            });
           });
         } else {
           // Both exist — full replacement update.
@@ -293,6 +299,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       await _syncNotifications();
     } catch (e, st) {
       _logger.error('Failed to sync notifications on save', e, st);
+      if (mounted) _showErrorSnackBar(_mapError(e));
     }
 
     ref.invalidate(userRoutineProvider);
