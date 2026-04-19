@@ -266,6 +266,36 @@
   "routine_add_recitation": "Add Recitation",
   "routine_add_plan_to_routine": "Add to Routine",
   "routine_go_to_practice": "Go to Practice",
+  "routine_load_error": "Could not load your routine. Please try again.",
+  "routine_empty_block_title_singular": "Empty Time Block",
+  "routine_empty_block_title_plural": "Empty Time Blocks ({count})",
+  "@routine_empty_block_title_plural": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "routine_empty_block_message_singular": "This time block has no items. Would you like to add an item or delete the block?",
+  "routine_empty_block_message_plural": "You have {count} time blocks without any items. Would you like to add items or delete these blocks?",
+  "@routine_empty_block_message_plural": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "routine_empty_block_add_items": "Add Items",
+  "routine_empty_block_delete_singular": "Delete Block",
+  "routine_empty_block_delete_plural": "Delete Empty Blocks",
+  "routine_notification_title": "Make Prayer Daily",
+  "routine_notification_description": "Allow notifications to receive your reminder to pray.",
+  "routine_notification_enable": "Enable Notifications",
+  "routine_notification_skip": "Skip",
+  "routine_time_adjusted": "Adjusted to {time} ({gap}-min minimum gap)",
+  "@routine_time_adjusted": {
+    "placeholders": {
+      "time": { "type": "String" },
+      "gap": { "type": "int" }
+    }
+  },
+  "routine_add_block_label": "Time Block",
   "continueWithGoogle": "Continue with Google",
   "continueWithApple": "Continue with Apple",
   "continueAsGuest": "Continue as Guest",

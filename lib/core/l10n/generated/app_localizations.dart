@@ -1360,6 +1360,90 @@ abstract class AppLocalizations {
   /// **'Go to Practice'**
   String get routine_go_to_practice;
 
+  /// No description provided for @routine_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your routine. Please try again.'**
+  String get routine_load_error;
+
+  /// No description provided for @routine_empty_block_title_singular.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty Time Block'**
+  String get routine_empty_block_title_singular;
+
+  /// No description provided for @routine_empty_block_title_plural.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty Time Blocks ({count})'**
+  String routine_empty_block_title_plural(int count);
+
+  /// No description provided for @routine_empty_block_message_singular.
+  ///
+  /// In en, this message translates to:
+  /// **'This time block has no items. Would you like to add an item or delete the block?'**
+  String get routine_empty_block_message_singular;
+
+  /// No description provided for @routine_empty_block_message_plural.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {count} time blocks without any items. Would you like to add items or delete these blocks?'**
+  String routine_empty_block_message_plural(int count);
+
+  /// No description provided for @routine_empty_block_add_items.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Items'**
+  String get routine_empty_block_add_items;
+
+  /// No description provided for @routine_empty_block_delete_singular.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Block'**
+  String get routine_empty_block_delete_singular;
+
+  /// No description provided for @routine_empty_block_delete_plural.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Empty Blocks'**
+  String get routine_empty_block_delete_plural;
+
+  /// No description provided for @routine_notification_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Make Prayer Daily'**
+  String get routine_notification_title;
+
+  /// No description provided for @routine_notification_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow notifications to receive your reminder to pray.'**
+  String get routine_notification_description;
+
+  /// No description provided for @routine_notification_enable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Notifications'**
+  String get routine_notification_enable;
+
+  /// No description provided for @routine_notification_skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get routine_notification_skip;
+
+  /// No description provided for @routine_time_adjusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjusted to {time} ({gap}-min minimum gap)'**
+  String routine_time_adjusted(String time, int gap);
+
+  /// No description provided for @routine_add_block_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Time Block'**
+  String get routine_add_block_label;
+
   /// No description provided for @continueWithGoogle.
   ///
   /// In en, this message translates to:

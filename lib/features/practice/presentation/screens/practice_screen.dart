@@ -20,6 +20,17 @@ class PracticeScreen extends ConsumerWidget {
     context.pushNamed('edit-routine');
   }
 
+  /// Strips the `Exception: ` prefix from thrown errors so users do not see
+  /// Dart runtime jargon. Falls back to the generic localized error message
+  /// when the underlying error has no useful description.
+  String _friendlyErrorMessage(Object error, AppLocalizations localizations) {
+    if (error is Exception) {
+      final raw = error.toString().replaceFirst('Exception: ', '').trim();
+      if (raw.isNotEmpty) return raw;
+    }
+    return localizations.routine_load_error;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final localizations = AppLocalizations.of(context)!;
@@ -51,7 +62,7 @@ class PracticeScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    localizations.routine_empty_title,
+                    localizations.routine_load_error,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 20,
@@ -59,11 +70,14 @@ class PracticeScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text('$error', textAlign: TextAlign.center),
+                  Text(
+                    _friendlyErrorMessage(error, localizations),
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: () => ref.invalidate(userRoutineProvider),
-                    child: const Text('Retry'),
+                    child: Text(localizations.retry),
                   ),
                 ],
               ),

@@ -36,8 +36,8 @@ class _EditableBlock {
     required this.time,
     required this.notificationEnabled,
     List<RoutineItem>? items,
-  })  : id = id ?? _uuid.v4(),
-        items = items ?? [];
+  }) : id = id ?? _uuid.v4(),
+       items = items ?? [];
 }
 
 class EditRoutineScreen extends ConsumerStatefulWidget {
@@ -82,17 +82,18 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     _apiRoutineId = routineData?.apiRoutineId;
 
     if (routineData != null && routineData.blocks.isNotEmpty) {
-      _blocks = routineData.blocks
-          .map(
-            (b) => _EditableBlock(
-              id: b.id,
-              apiTimeBlockId: b.apiTimeBlockId,
-              time: b.time,
-              notificationEnabled: b.notificationEnabled,
-              items: List.from(b.items),
-            ),
-          )
-          .toList();
+      _blocks =
+          routineData.blocks
+              .map(
+                (b) => _EditableBlock(
+                  id: b.id,
+                  apiTimeBlockId: b.apiTimeBlockId,
+                  time: b.time,
+                  notificationEnabled: b.notificationEnabled,
+                  items: List.from(b.items),
+                ),
+              )
+              .toList();
     } else {
       _blocks = [
         _EditableBlock(
@@ -136,7 +137,10 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
     _blocks.add(
       _EditableBlock(
-          time: adjusted, notificationEnabled: true, items: [newItem]),
+        time: adjusted,
+        notificationEnabled: true,
+        items: [newItem],
+      ),
     );
     _sortBlocks();
   }
@@ -167,7 +171,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
   Future<void> _syncNotifications() async {
     final blocks = _blocks.map(_toRoutineBlock).toList();
-    await ref.read(routineNotificationServiceProvider).syncNotifications(blocks);
+    await ref
+        .read(routineNotificationServiceProvider)
+        .syncNotifications(blocks);
   }
 
   // ─── Operation queue ───
@@ -185,10 +191,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
     try {
       await fn();
+    } finally {
+      // Always release the queue slot, whether fn() succeeded or threw.
       completer.complete();
-    } catch (e, st) {
-      completer.complete();
-      Error.throwWithStackTrace(e, st);
     }
   }
 
@@ -200,56 +205,59 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
   /// Block with items but no server ID → CREATE (routine or time block).
   /// Block with items and a server ID → UPDATE (full replacement).
   Future<void> _syncBlock(_EditableBlock block) => _enqueue(() async {
-        if (block.items.isEmpty) {
-          if (block.apiTimeBlockId != null && _apiRoutineId != null) {
-            final result = await ref.read(deleteTimeBlockUseCaseProvider)(
-              _apiRoutineId!,
-              block.apiTimeBlockId!,
-            );
-            result.fold((f) => throw f, (_) {
-              if (mounted) setState(() => block.apiTimeBlockId = null);
-            });
-          }
-          return;
-        }
+    if (block.items.isEmpty) {
+      if (block.apiTimeBlockId != null && _apiRoutineId != null) {
+        final result = await ref.read(deleteTimeBlockUseCaseProvider)(
+          _apiRoutineId!,
+          block.apiTimeBlockId!,
+        );
+        result.fold((f) => throw f, (_) {
+          if (mounted) setState(() => block.apiTimeBlockId = null);
+        });
+      }
+      return;
+    }
 
-        final request = routineBlockToRequest(_toRoutineBlock(block));
+    final request = routineBlockToRequest(_toRoutineBlock(block));
 
-        if (_apiRoutineId == null) {
-          // First block ever: creates the routine + block together.
-          final result = await ref
-              .read(createRoutineWithTimeBlockUseCaseProvider)(request);
-          result.fold((f) => throw f, (created) {
-            if (mounted) {
-              setState(() {
-              _apiRoutineId = created.routineId;
-              block.apiTimeBlockId = created.timeBlockId;
-              block.id = created.timeBlockId;
-            });
-            }
+    if (_apiRoutineId == null) {
+      // First block ever: creates the routine + block together.
+      final result = await ref.read(createRoutineWithTimeBlockUseCaseProvider)(
+        request,
+      );
+      result.fold((f) => throw f, (created) {
+        if (mounted) {
+          setState(() {
+            _apiRoutineId = created.routineId;
+            block.apiTimeBlockId = created.timeBlockId;
+            block.id = created.timeBlockId;
           });
-        } else if (block.apiTimeBlockId == null) {
-          // Routine exists but this block is new.
-          final result = await ref.read(createTimeBlockUseCaseProvider)(
-            _apiRoutineId!,
-            request,
-          );
-          result.fold((f) => throw f, (timeBlockId) {
-            if (mounted) setState(() {
-              block.apiTimeBlockId = timeBlockId;
-              block.id = timeBlockId;
-            });
-          });
-        } else {
-          // Both exist — full replacement update.
-          final result = await ref.read(updateTimeBlockUseCaseProvider)(
-            _apiRoutineId!,
-            block.apiTimeBlockId!,
-            request,
-          );
-          result.fold((f) => throw f, (_) {});
         }
       });
+    } else if (block.apiTimeBlockId == null) {
+      // Routine exists but this block is new.
+      final result = await ref.read(createTimeBlockUseCaseProvider)(
+        _apiRoutineId!,
+        request,
+      );
+      result.fold((f) => throw f, (timeBlockId) {
+        if (mounted) {
+          setState(() {
+            block.apiTimeBlockId = timeBlockId;
+            block.id = timeBlockId;
+          });
+        }
+      });
+    } else {
+      // Both exist — full replacement update.
+      final result = await ref.read(updateTimeBlockUseCaseProvider)(
+        _apiRoutineId!,
+        block.apiTimeBlockId!,
+        request,
+      );
+      result.fold((f) => throw f, (_) {});
+    }
+  });
 
   /// Deletes a persisted time block from the server.
   Future<void> _deletePersistedBlock(String apiTimeBlockId) =>
@@ -312,30 +320,32 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final emptyCount = _blocks.where((b) => b.items.isEmpty).length;
     final hasMultipleEmpty = emptyCount > 1;
+    final l10n = context.l10n;
 
     return showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           title: Text(
-            hasMultipleEmpty ? 'Empty Time Blocks' : 'Empty Time Block',
+            hasMultipleEmpty
+                ? l10n.routine_empty_block_title_plural(emptyCount)
+                : l10n.routine_empty_block_title_singular,
           ),
           content: Text(
             hasMultipleEmpty
-                ? 'You have $emptyCount time blocks without any items. '
-                    'Would you like to add items or delete these blocks?'
-                : 'This time block has no items. '
-                    'Would you like to add an item or delete the block?',
+                ? l10n.routine_empty_block_message_plural(emptyCount)
+                : l10n.routine_empty_block_message_singular,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
               child: Text(
-                'Add Items',
+                l10n.routine_empty_block_add_items,
                 style: TextStyle(
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimary,
+                  color:
+                      isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
                 ),
               ),
             ),
@@ -345,7 +355,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                 backgroundColor: Theme.of(dialogContext).colorScheme.error,
               ),
               child: Text(
-                hasMultipleEmpty ? 'Delete Empty Blocks' : 'Delete Block',
+                hasMultipleEmpty
+                    ? l10n.routine_empty_block_delete_plural
+                    : l10n.routine_empty_block_delete_singular,
               ),
             ),
           ],
@@ -362,12 +374,13 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       initialTime: _blocks[index].time,
     );
     if (picked != null) {
-      final otherTimes = _blocks
-          .asMap()
-          .entries
-          .where((e) => e.key != index)
-          .map((e) => e.value.time)
-          .toList();
+      final otherTimes =
+          _blocks
+              .asMap()
+              .entries
+              .where((e) => e.key != index)
+              .map((e) => e.value.time)
+              .toList();
       final adjusted = adjustTimeForMinimumGap(picked, otherTimes);
 
       if (adjusted == null) {
@@ -394,8 +407,10 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Adjusted to ${formatRoutineTime(adjusted)} '
-              '($kMinBlockGapMinutes-min minimum gap)',
+              context.l10n.routine_time_adjusted(
+                formatRoutineTime(adjusted),
+                kMinBlockGapMinutes,
+              ),
             ),
             duration: const Duration(seconds: 2),
           ),
@@ -468,6 +483,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
   Future<bool?> _showNotificationPermissionModal() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = context.l10n;
 
     return showModalBottomSheet<bool>(
       context: context,
@@ -484,30 +500,33 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                 Icon(
                   Icons.notifications_outlined,
                   size: 48,
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimary,
+                  color:
+                      isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Make Prayer Daily',
+                  l10n.routine_notification_title,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimary,
+                    color:
+                        isDark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Allow notifications to receive your reminder to pray.',
+                  l10n.routine_notification_description,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark
-                        ? AppColors.textTertiaryDark
-                        : AppColors.textSecondary,
+                    color:
+                        isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -524,20 +543,22 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                       nav.pop(nowEnabled);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimary,
-                      foregroundColor: isDark
-                          ? AppColors.textPrimary
-                          : AppColors.textPrimaryDark,
+                      backgroundColor:
+                          isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimary,
+                      foregroundColor:
+                          isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryDark,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Enable Notifications',
-                      style: TextStyle(
+                    child: Text(
+                      l10n.routine_notification_enable,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -550,12 +571,13 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(false),
                     child: Text(
-                      'Skip',
+                      l10n.routine_notification_skip,
                       style: TextStyle(
                         fontSize: 16,
-                        color: isDark
-                            ? AppColors.textTertiaryDark
-                            : AppColors.textSecondary,
+                        color:
+                            isDark
+                                ? AppColors.textTertiaryDark
+                                : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -614,7 +636,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
     final otherTimes = _blocks.map((b) => b.time).toList();
     final adjusted = adjustTimeForMinimumGap(
-        const TimeOfDay(hour: 12, minute: 0), otherTimes);
+      const TimeOfDay(hour: 12, minute: 0),
+      otherTimes,
+    );
 
     if (adjusted == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -678,12 +702,23 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     }
 
     if (block.apiTimeBlockId != null) {
-      _syncBlock(block).catchError((e) {
-        if (mounted) {
-          setState(() => block.items.insert(itemIndex, removedItem));
-          _showErrorSnackBar(_mapError(e));
-        }
-      });
+      _syncBlock(block)
+          .then((_) {
+            // After a successful server DELETE (block.items empty), remove the
+            // now-orphaned local block so it does not linger as an empty row.
+            if (mounted && block.items.isEmpty) {
+              setState(() => _blocks.remove(block));
+            }
+          })
+          .catchError((e) {
+            if (mounted) {
+              setState(() => block.items.insert(itemIndex, removedItem));
+              _showErrorSnackBar(_mapError(e));
+            }
+          });
+    } else if (block.items.isEmpty) {
+      // No server state to sync — drop the empty local block immediately.
+      setState(() => _blocks.remove(block));
     }
   }
 
@@ -708,8 +743,8 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       final excluded = _collectRoutineItemIds();
       final result = await Navigator.of(context).push<SessionSelection>(
         MaterialPageRoute(
-          builder: (_) =>
-              SelectSessionScreen(excludedPlanIds: excluded.planIds),
+          builder:
+              (_) => SelectSessionScreen(excludedPlanIds: excluded.planIds),
         ),
       );
 
@@ -717,9 +752,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
         final (newItemId, newItemType) = switch (result) {
           PlanSessionSelection(:final plan) => (plan.id, RoutineItemType.plan),
           RecitationSessionSelection(:final recitation) => (
-              recitation.textId,
-              RoutineItemType.recitation,
-            ),
+            recitation.textId,
+            RoutineItemType.recitation,
+          ),
         };
 
         final isDuplicate = _blocks[blockIndex].items.any(
@@ -781,15 +816,21 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     final localizations = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final routineAsync = ref.watch(userRoutineProvider);
-
-    // Show loading/error until the API data is hydrated into local editable state.
+    // Show loading/error until the API data is hydrated into local editable
+    // state. Watching the provider is limited to this guarded branch so that
+    // external invalidations (e.g. ref.invalidate in _saveAndPop) never
+    // rebuild the screen mid-editing once hydration is done.
     if (!_hydratedFromApi) {
+      final routineAsync = ref.watch(userRoutineProvider);
       return routineAsync.when(
         loading: () => _buildLoadingScaffold(localizations),
         error: (e, _) => _buildErrorScaffold(e, localizations),
         data: (routineData) {
-          // Use a post-frame callback to avoid calling setState during build.
+          // Data is ready — schedule hydration for the next frame.
+          // addPostFrameCallback is used here because calling setState during
+          // build is illegal. The _hydratedFromApi guard prevents multiple
+          // callbacks from racing if the provider rebuilds before the frame
+          // fires (e.g., a quick re-watch before hydration completes).
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted || _hydratedFromApi) return;
             setState(() {
@@ -799,7 +840,6 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                 _injectInitialPlan(widget.initialPlan!);
               }
             });
-            // Sync the block that received the injected plan.
             if (widget.initialPlan != null) {
               _syncInjectedPlan(widget.initialPlan!);
             }
@@ -839,7 +879,8 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                   child: ListView.separated(
                     itemCount: _calculateListItemCount(),
                     separatorBuilder: (_, index) {
-                      final isLastItem = index == _blocks.length - 1 ||
+                      final isLastItem =
+                          index == _blocks.length - 1 ||
                           (_shouldShowAddButton && index == _blocks.length);
                       if (isLastItem) return const SizedBox(height: 16);
                       return const Padding(
@@ -849,7 +890,10 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                     },
                     itemBuilder: (context, index) {
                       if (_shouldShowAddButton && index == _blocks.length) {
-                        return _AddBlockButton(onTap: _addBlock, isDark: isDark);
+                        return _AddBlockButton(
+                          onTap: _addBlock,
+                          isDark: isDark,
+                        );
                       }
                       final block = _blocks[index];
                       return RoutineTimeBlock(
@@ -857,14 +901,14 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                         notificationEnabled: block.notificationEnabled,
                         items: block.items,
                         onTimeChanged: () => _pickTime(index),
-                        onNotificationToggle: () =>
-                            _toggleNotification(index),
+                        onNotificationToggle: () => _toggleNotification(index),
                         onDelete: () => _deleteBlock(index),
                         onAddSession: () => _navigateToSelectSession(index),
-                        onReorderItems: (oldIdx, newIdx) =>
-                            _onReorderItems(index, oldIdx, newIdx),
-                        onDeleteItem: (itemIdx) =>
-                            _onDeleteItem(index, itemIdx),
+                        onReorderItems:
+                            (oldIdx, newIdx) =>
+                                _onReorderItems(index, oldIdx, newIdx),
+                        onDeleteItem:
+                            (itemIdx) => _onDeleteItem(index, itemIdx),
                       );
                     },
                   ),
@@ -983,19 +1027,19 @@ class _AddBlockButton extends StatelessWidget {
               Icon(
                 Icons.add,
                 size: 16,
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimary,
+                color:
+                    isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
               ),
               const SizedBox(width: 6),
               Text(
-                'Time Block',
+                context.l10n.routine_add_block_label,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimary,
+                  color:
+                      isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
                 ),
               ),
             ],
