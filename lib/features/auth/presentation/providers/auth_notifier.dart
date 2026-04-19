@@ -42,18 +42,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required IsGuestModeUseCase isGuestModeUseCase,
     required ClearGuestModeUseCase clearGuestModeUseCase,
     required LogoutUseCase localLogoutUseCase,
-    required ClearGuestModeAndOnboardingUseCase clearGuestModeAndOnboardingUseCase,
+    required ClearGuestModeAndOnboardingUseCase
+    clearGuestModeAndOnboardingUseCase,
     required this.ref,
-  })  : _loginUseCase = loginUseCase,
-        _initializeAuthUseCase = initializeAuthUseCase,
-        _hasValidCredentialsUseCase = hasValidCredentialsUseCase,
-        _getCredentialsUseCase = getCredentialsUseCase,
-        _continueAsGuestUseCase = continueAsGuestUseCase,
-        _isGuestModeUseCase = isGuestModeUseCase,
-        _clearGuestModeUseCase = clearGuestModeUseCase,
-        _localLogoutUseCase = localLogoutUseCase,
-        _clearGuestModeAndOnboardingUseCase = clearGuestModeAndOnboardingUseCase,
-        super(const AuthState(isLoggedIn: false, isLoading: true)) {
+  }) : _loginUseCase = loginUseCase,
+       _initializeAuthUseCase = initializeAuthUseCase,
+       _hasValidCredentialsUseCase = hasValidCredentialsUseCase,
+       _getCredentialsUseCase = getCredentialsUseCase,
+       _continueAsGuestUseCase = continueAsGuestUseCase,
+       _isGuestModeUseCase = isGuestModeUseCase,
+       _clearGuestModeUseCase = clearGuestModeUseCase,
+       _localLogoutUseCase = localLogoutUseCase,
+       _clearGuestModeAndOnboardingUseCase = clearGuestModeAndOnboardingUseCase,
+       super(const AuthState(isLoggedIn: false, isLoading: true)) {
     _restoreLoginState();
   }
 
@@ -88,7 +89,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
 
     // Check if we have any credentials at all
-    final credentialsResult = await _hasValidCredentialsUseCase(const NoParams());
+    final credentialsResult = await _hasValidCredentialsUseCase(
+      const NoParams(),
+    );
     credentialsResult.fold(
       (failure) {
         _logger.error('Failed to check credentials: ${failure.message}');
@@ -112,12 +115,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Extract result outside fold so we can await async operations below.
     // fpdart's fold() is synchronous and will not await returned Futures.
     AuthCredentials? credentials;
-    credentialsResult.fold(
-      (failure) {
-        _logger.error('Failed to get credentials: ${failure.message}');
-      },
-      (creds) => credentials = creds,
-    );
+    credentialsResult.fold((failure) {
+      _logger.error('Failed to get credentials: ${failure.message}');
+    }, (creds) => credentials = creds);
 
     if (credentials == null || credentials!.idToken.isEmpty) {
       _logger.debug('Credentials check returned null or invalid credentials');
@@ -178,11 +178,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   void _setLoggedOutState() {
-    state = state.copyWith(
-      isLoggedIn: false,
-      isLoading: false,
-      isGuest: false,
-    );
+    state = state.copyWith(isLoggedIn: false, isLoading: false, isGuest: false);
     _logger.info('No valid credentials or guest mode found, showing login');
   }
 
@@ -190,24 +186,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final logoutResult = await _localLogoutUseCase(const NoParams());
     logoutResult.fold(
       (failure) {
-        _logger.warning('Failed to clear credentials during logout: ${failure.message}');
+        _logger.warning(
+          'Failed to clear credentials during logout: ${failure.message}',
+        );
       },
       (_) {
         _logger.debug('Credentials cleared during failure handling');
       },
     );
 
-    state = state.copyWith(
-      isLoggedIn: false,
-      isLoading: false,
-      isGuest: false,
-    );
+    state = state.copyWith(isLoggedIn: false, isLoading: false, isGuest: false);
   }
 
   Future<void> login({String? connection}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
-    final loginResult = await _loginUseCase(LoginParams(connection: connection));
+    final loginResult = await _loginUseCase(
+      LoginParams(connection: connection),
+    );
     loginResult.fold(
       (failure) {
         _logger.error('Login failed: ${failure.message}');
@@ -217,14 +213,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
       },
       (credentials) {
-        if (credentials != null) {
-          _handleSuccessfulLogin(credentials);
-        } else {
-          state = state.copyWith(
-            isLoading: false,
-            errorMessage: 'Login was cancelled or failed',
-          );
-        }
+        _handleSuccessfulLogin(credentials);
       },
     );
   }
@@ -283,8 +272,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final parts = idToken.split('.');
       if (parts.length != 3) return null;
       final payload = base64Url.decode(base64Url.normalize(parts[1]));
-      final claims =
-          jsonDecode(utf8.decode(payload)) as Map<String, dynamic>;
+      final claims = jsonDecode(utf8.decode(payload)) as Map<String, dynamic>;
       return claims['sub'] as String?;
     } catch (_) {
       return null;
@@ -336,11 +324,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         .read(localStorageServiceProvider)
         .remove(StorageKeys.currentUserId);
 
-    state = state.copyWith(
-      isLoggedIn: false,
-      isLoading: false,
-      isGuest: false,
-    );
+    state = state.copyWith(isLoggedIn: false, isLoading: false, isGuest: false);
     _logger.info('User logged out, auth and user state cleared');
   }
 
