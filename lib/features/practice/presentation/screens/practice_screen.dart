@@ -50,34 +50,38 @@ class PracticeScreen extends ConsumerWidget {
     final routineAsync = ref.watch(userRoutineProvider);
 
     return routineAsync.when(
-      loading: () => const Scaffold(
-        body: SafeArea(child: Center(child: CircularProgressIndicator())),
-      ),
-      error: (error, _) => Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    localizations.routine_load_error,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _friendlyErrorMessage(error, localizations),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: () => ref.invalidate(userRoutineProvider),
-                    child: Text(localizations.retry),
+      loading:
+          () => const Scaffold(
+            body: SafeArea(child: Center(child: CircularProgressIndicator())),
+          ),
+      error:
+          (error, _) => Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        localizations.routine_load_error,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _friendlyErrorMessage(error, localizations),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton(
+                        onPressed: () => ref.invalidate(userRoutineProvider),
+                        child: Text(localizations.retry),
+                      ),
+                    ],
                   ),
                 ),
               ),
