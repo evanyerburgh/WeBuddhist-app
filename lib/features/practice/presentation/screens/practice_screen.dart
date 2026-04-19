@@ -79,12 +79,10 @@ class PracticeScreen extends ConsumerWidget {
                     onPressed: () => ref.invalidate(userRoutineProvider),
                     child: Text(localizations.retry),
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
       // userRoutineProvider already maps RoutineResponse → RoutineData, so
       // the screen never touches API models or mapper functions.
       data: (routineData) {
@@ -115,9 +113,11 @@ class PracticeScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 24),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8,
+              ),
               child: Text(
                 localizations.routine_empty_title,
                 style: const TextStyle(

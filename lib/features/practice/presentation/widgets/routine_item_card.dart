@@ -44,21 +44,21 @@ class RoutineItemCard extends StatelessWidget {
             ],
             type == RoutineItemType.recitation
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      AppAssets.weBuddhistLogo,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : CachedNetworkImageWidget(
-                    imageUrl: imageUrl ?? '',
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    AppAssets.recitationCoverDefault,
                     width: 60,
                     height: 60,
                     fit: BoxFit.cover,
-                    borderRadius: BorderRadius.circular(10),
                   ),
+                )
+                : CachedNetworkImageWidget(
+                  imageUrl: imageUrl ?? '',
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                  borderRadius: BorderRadius.circular(10),
+                ),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
@@ -67,7 +67,9 @@ class RoutineItemCard extends StatelessWidget {
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color:
-                      isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                      isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
