@@ -59,13 +59,26 @@ android {
         )
     }
 
+    val cmKeystorePath: String? = System.getenv("CM_KEYSTORE_PATH")
+    val cmKeystorePassword: String? = System.getenv("CM_KEYSTORE_PASSWORD")
+    val cmKeyAlias: String? = System.getenv("CM_KEY_ALIAS")
+    val cmKeyPassword: String? = System.getenv("CM_KEY_PASSWORD")
+    val isCi: Boolean = !cmKeystorePath.isNullOrBlank()
+
     signingConfigs {
         fun createSigningConfig(flavor: String) {
+            val storeFilePath = if (isCi) cmKeystorePath
+                else keystoreProperties["${flavor}.storeFile"]?.toString()
+            if (storeFilePath.isNullOrBlank()) return
+
             create("${flavor}Release") {
-                keyAlias = keystoreProperties["${flavor}.keyAlias"]?.toString()
-                keyPassword = keystoreProperties["${flavor}.keyPassword"]?.toString()
-                storeFile = keystoreProperties["${flavor}.storeFile"]?.toString()?.let { file(it) }
-                storePassword = keystoreProperties["${flavor}.storePassword"]?.toString()
+                storeFile = file(storeFilePath)
+                storePassword = if (isCi) cmKeystorePassword
+                    else keystoreProperties["${flavor}.storePassword"]?.toString()
+                keyAlias = if (isCi) cmKeyAlias
+                    else keystoreProperties["${flavor}.keyAlias"]?.toString()
+                keyPassword = if (isCi) cmKeyPassword
+                    else keystoreProperties["${flavor}.keyPassword"]?.toString()
             }
         }
 
@@ -82,7 +95,7 @@ android {
             applicationId = "org.pecha.app.dev"
             resValue("string", "app_name", "[Dev] WeBuddhist")
             versionNameSuffix = "-dev"
-            signingConfig = signingConfigs.getByName("devRelease")
+            signingConfigs.findByName("devRelease")?.let { signingConfig = it }
         }
 
         create("staging") {
@@ -90,14 +103,14 @@ android {
             applicationId = "org.pecha.app.staging"
             resValue("string", "app_name", "[Stage] WeBuddhist")
             versionNameSuffix = "-staging"
-            signingConfig = signingConfigs.getByName("stagingRelease")
+            signingConfigs.findByName("stagingRelease")?.let { signingConfig = it }
         }
 
         create("prod") {
             dimension = "environment"
             applicationId = "org.pecha.app"
             resValue("string", "app_name", "WeBuddhist")
-            signingConfig = signingConfigs.getByName("prodRelease")
+            signingConfigs.findByName("prodRelease")?.let { signingConfig = it }
         }
     }
 
