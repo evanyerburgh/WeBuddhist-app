@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/data/channels/notification_channels.dart';
@@ -203,13 +204,60 @@ class NotificationService {
   }
 
   /// Opens the system dialog that lets the user exempt this app from
-  /// battery optimisation. Required for reliable terminated-state alarms
-  /// on Samsung, Xiaomi, OnePlus and other OEM Android devices.
+  /// battery optimisation. Only needed on OEM devices (Samsung, Xiaomi, OnePlus).
   Future<bool> requestBatteryOptimizationExemption() async {
     if (!Platform.isAndroid) return true;
     final status = await Permission.ignoreBatteryOptimizations.request();
     _logger.info('[NOTIF] Battery optimization exemption request result: $status');
     return status.isGranted;
+  }
+
+  /// Returns true if exact alarms are permitted (Android 12+).
+  /// Always true on iOS/macOS and Android < 12.
+  Future<bool> canScheduleExactNotifications() async {
+    if (!Platform.isAndroid) return true;
+    final androidImpl = notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    return await androidImpl?.canScheduleExactNotifications() ?? false;
+  }
+
+  /// Opens the Alarms & Reminders settings page for this app (Android 12+).
+  Future<void> openExactAlarmSettings() async {
+    if (!Platform.isAndroid) return;
+    final androidImpl = notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    await androidImpl?.requestExactAlarmsPermission();
+  }
+
+  /// Reads the live system state of a notification channel.
+  /// Returns false if the user has muted the channel (importance = none) or
+  /// the channel doesn't exist. iOS/macOS have no channels — returns the
+  /// app-level permission instead.
+  Future<bool> isChannelEnabled(String channelId) async {
+    if (!Platform.isAndroid) return areNotificationsEnabled();
+    final androidImpl = notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    final channels = await androidImpl?.getNotificationChannels() ?? [];
+    final channel = channels.where((c) => c.id == channelId).firstOrNull;
+    if (channel == null) return false;
+    return channel.importance != Importance.none;
+  }
+
+  /// Opens the OS notification settings for a specific channel (Android 8+).
+  /// Falls back to opening the app-level notification settings on older devices.
+  Future<void> openChannelSettings(String channelId) async {
+    if (!Platform.isAndroid) return;
+    const platform = MethodChannel('org.pecha.app/notifications');
+    try {
+      await platform.invokeMethod('openChannelSettings', {
+        'channelId': channelId,
+      });
+    } catch (e) {
+      _logger.warning('openChannelSettings failed: $e');
+    }
   }
 
   /// Create Android notification channels
