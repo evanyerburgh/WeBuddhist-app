@@ -21,6 +21,7 @@ import 'package:flutter_pecha/features/practice/presentation/screens/edit_routin
 import 'package:flutter_pecha/features/practice/presentation/screens/practice_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/select_plan_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/select_recitation_screen.dart';
+import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/presentation/screens/reader_screen.dart';
 import 'package:flutter_pecha/features/texts/presentation/screens/chapters/chapters_screen.dart';
@@ -275,6 +276,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             imagePath: extra?['imagePath'] as String,
           );
         },
+      ),
+
+      // notifications route
+      GoRoute(
+        path: AppRoutes.notifications,
+        name: "notifications",
+        builder: (context, state) => const NotificationSettingsScreen(),
       ),
 
       // reader route - new refactored text reader
