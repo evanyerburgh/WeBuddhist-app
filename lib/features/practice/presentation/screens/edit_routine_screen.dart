@@ -876,15 +876,11 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                 ),
                 const SizedBox(height: 12),
                 const Divider(height: 1),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 Expanded(
                   child: ListView.separated(
                     itemCount: _calculateListItemCount(),
                     separatorBuilder: (_, index) {
-                      final isLastItem =
-                          index == _blocks.length - 1 ||
-                          (_shouldShowAddButton && index == _blocks.length);
-                      if (isLastItem) return const SizedBox(height: 16);
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
                         child: Divider(height: 1),
@@ -898,7 +894,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                         );
                       }
                       final block = _blocks[index];
-                      return RoutineTimeBlock(
+                      return RoutineTimeBlock( 
                         time: block.time,
                         notificationEnabled: block.notificationEnabled,
                         items: block.items,
@@ -1029,6 +1025,7 @@ class _AddBlockButton extends StatelessWidget {
               Icon(
                 Icons.add,
                 size: 16,
+                fontWeight: FontWeight.w600,
                 color:
                     isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
               ),
@@ -1037,7 +1034,7 @@ class _AddBlockButton extends StatelessWidget {
                 context.l10n.routine_add_block_label,
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                   color:
                       isDark
                           ? AppColors.textPrimaryDark

@@ -653,7 +653,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routine_edit_title => 'Edit Your Routine';
 
   @override
-  String get routine_delete_block => 'Delete Time Block';
+  String get routine_delete_block => 'Delete Block';
+
+  @override
+  String get routine_delete_time_block => 'Delete Time Block';
 
   @override
   String get routine_add_plan => 'Add Plan';

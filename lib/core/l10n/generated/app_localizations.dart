@@ -1333,8 +1333,14 @@ abstract class AppLocalizations {
   /// No description provided for @routine_delete_block.
   ///
   /// In en, this message translates to:
-  /// **'Delete Time Block'**
+  /// **'Delete Block'**
   String get routine_delete_block;
+
+  /// No description provided for @routine_delete_time_block.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Time Block'**
+  String get routine_delete_time_block;
 
   /// No description provided for @routine_add_plan.
   ///

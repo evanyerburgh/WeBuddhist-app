@@ -647,6 +647,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routine_delete_block => '刪除區塊';
 
   @override
+  String get routine_delete_time_block => '刪除區塊';
+
+  @override
   String get routine_add_plan => '添加計劃';
 
   @override

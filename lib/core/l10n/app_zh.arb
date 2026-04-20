@@ -206,6 +206,7 @@
   "routine_remind_me": "提醒我",
   "routine_edit_title": "編輯日常修持",
   "routine_delete_block": "刪除區塊",
+  "routine_delete_time_block": "刪除區塊",
   "routine_add_plan": "添加計劃",
   "routine_add_recitation": "添加持誦",
   "routine_add_plan_to_routine": "Add to Routine",

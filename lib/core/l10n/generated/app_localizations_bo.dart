@@ -658,6 +658,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get routine_delete_block => 'སུབ།';
 
   @override
+  String get routine_delete_time_block => 'སུབ།';
+
+  @override
   String get routine_add_plan => 'ཉམས་ལེན་ཁ་སྣོན།';
 
   @override
