@@ -72,11 +72,16 @@ class _NotificationSettingsScreenState
   }
 
   Future<void> _toggleRoutineChannel(bool _) async {
-    // Both directions require the user to flip the switch in system settings —
-    // this opens the exact channel page.
-    await ref
-        .read(notificationServiceProvider)
-        .openChannelSettings(NotificationChannels.routineBlockId);
+    if (Platform.isAndroid) {
+      // Android: open the exact notification channel page.
+      await ref
+          .read(notificationServiceProvider)
+          .openChannelSettings(NotificationChannels.routineBlockId);
+    } else {
+      // iOS: no per-channel control — open the app notification settings page.
+      _snack('Opening Settings — manage notifications there.');
+      await openAppSettings();
+    }
   }
 
   Future<void> _toggleExactAlarms(bool enable) async {

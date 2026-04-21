@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
@@ -118,6 +120,10 @@ class RoutineNotificationService {
       );
 
       final body = _getNotificationBody(block);
+      final firstItem = block.items.firstOrNull;
+      final payload = firstItem != null
+          ? jsonEncode({'itemId': firstItem.id, 'itemType': firstItem.type.name})
+          : null;
 
       await _plugin.zonedSchedule(
         block.notificationId,
@@ -127,6 +133,7 @@ class RoutineNotificationService {
         NotificationChannels.routineBlockDetails(),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
+        payload: payload,
       );
 
       _logger.info(

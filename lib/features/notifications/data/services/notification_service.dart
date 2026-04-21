@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/data/channels/notification_channels.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
+import 'package:flutter_pecha/features/notifications/data/models/notification_nav.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:go_router/go_router.dart';
@@ -345,35 +347,33 @@ class NotificationService {
 
   void _onNotificationTapped(NotificationResponse response) {
     _logger.info('Notification tapped - ID: ${response.id}, Payload: ${response.payload}');
-    
-    // Navigate based on notification ID
-    if (_router == null) {
-      _logger.warning('Router not initialized, cannot navigate');
-      return;
-    }
-    
-    if (_container == null) {
-      _logger.warning('Container not initialized, cannot navigate');
+
+    if (_router == null || _container == null) {
+      _logger.warning('Router/container not initialized, cannot navigate');
       return;
     }
 
-    final currentUri = _router!.routerDelegate.currentConfiguration.uri;
-    _logger.debug('Current route: $currentUri');
-    
-    // Routine block notifications have ID >= 1000 (range: 1000-999999)
-    // Legacy notifications use ID 100-999
-    if (response.id != null && response.id! >= 100) {
-      _logger.info('Navigating to practice screen (routine notification)');
-      // Routine block notification — navigate to practice screen (index 2)
-      _container!.read(mainNavigationIndexProvider.notifier).state = 3;
-    } else {
-      _logger.info('Navigating to home screen (default)');
-      // Default fallback - go to home tab (index 0)
-      _container!.read(mainNavigationIndexProvider.notifier).state = 0;
+    // Parse payload and store as pending navigation — RoutineFilledState will
+    // consume it once it renders and plan data is available.
+    final payload = response.payload;
+    if (payload != null && payload.isNotEmpty) {
+      try {
+        final data = jsonDecode(payload) as Map<String, dynamic>;
+        final itemId = data['itemId'] as String?;
+        final itemTypeStr = data['itemType'] as String?;
+        if (itemId != null && itemTypeStr != null) {
+          _logger.info('Storing pending notification nav: $itemTypeStr $itemId');
+          _container!.read(pendingNotificationNavProvider.notifier).state =
+              NotificationNav(itemId: itemId, itemType: itemTypeStr);
+        }
+      } catch (e) {
+        _logger.warning('Failed to parse notification payload: $e');
+      }
     }
-    
+
+    // Navigate to the practice tab — RoutineFilledState will push the detail screen.
+    _container!.read(mainNavigationIndexProvider.notifier).state = 2;
     _router!.go('/home');
-    _logger.debug('Navigation completed');
   }
 }
 
