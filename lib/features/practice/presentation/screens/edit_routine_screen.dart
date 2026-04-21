@@ -312,7 +312,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     }
 
     ref.invalidate(userRoutineProvider);
-    ref.invalidate(myPlansPaginatedProvider);
+    await ref.read(myPlansPaginatedProvider.notifier).refresh();
     if (mounted) context.pop();
   }
 
@@ -894,7 +894,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                         );
                       }
                       final block = _blocks[index];
-                      return RoutineTimeBlock( 
+                      return RoutineTimeBlock(
                         time: block.time,
                         notificationEnabled: block.notificationEnabled,
                         items: block.items,
