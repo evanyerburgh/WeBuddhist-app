@@ -130,7 +130,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nav_practice => 'Practice';
 
   @override
-  String get nav_settings => 'Me';
+  String get nav_settings => 'Settings';
 
   @override
   String get nav_connect => 'Connect';

@@ -129,7 +129,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get nav_practice => '修持計劃';
 
   @override
-  String get nav_settings => 'Me';
+  String get nav_settings => '设置';
 
   @override
   String get nav_connect => '连接';
