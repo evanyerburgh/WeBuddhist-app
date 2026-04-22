@@ -7,9 +7,9 @@ import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
+import 'package:flutter_pecha/features/plans/plans.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:flutter_pecha/features/practice/data/models/session_selection.dart';
-import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/practice/data/utils/routine_api_mapper.dart';
 import 'package:flutter_pecha/features/practice/data/utils/routine_time_utils.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_providers.dart';
@@ -18,6 +18,7 @@ import 'package:flutter_pecha/features/practice/presentation/providers/routine_p
 import 'package:flutter_pecha/features/practice/presentation/screens/select_session_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/routine_time_block.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 
@@ -315,7 +316,8 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     }
 
     ref.invalidate(userRoutineProvider);
-    if (mounted) Navigator.of(context).pop();
+    await ref.read(myPlansPaginatedProvider.notifier).refresh();
+    if (mounted) context.pop();
   }
 
   // ─── Dialogs ───
@@ -878,15 +880,11 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                 ),
                 const SizedBox(height: 12),
                 const Divider(height: 1),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 Expanded(
                   child: ListView.separated(
                     itemCount: _calculateListItemCount(),
                     separatorBuilder: (_, index) {
-                      final isLastItem =
-                          index == _blocks.length - 1 ||
-                          (_shouldShowAddButton && index == _blocks.length);
-                      if (isLastItem) return const SizedBox(height: 16);
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
                         child: Divider(height: 1),
@@ -1031,6 +1029,7 @@ class _AddBlockButton extends StatelessWidget {
               Icon(
                 Icons.add,
                 size: 16,
+                fontWeight: FontWeight.w600,
                 color:
                     isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
               ),
@@ -1039,7 +1038,7 @@ class _AddBlockButton extends StatelessWidget {
                 context.l10n.routine_add_block_label,
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                   color:
                       isDark
                           ? AppColors.textPrimaryDark

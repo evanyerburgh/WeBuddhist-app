@@ -129,7 +129,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get nav_practice => '修持計劃';
 
   @override
-  String get nav_settings => 'Me';
+  String get nav_settings => '设置';
 
   @override
   String get nav_connect => '连接';
@@ -645,6 +645,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get routine_delete_block => '刪除區塊';
+
+  @override
+  String get routine_delete_time_block => '刪除區塊';
 
   @override
   String get routine_add_plan => '添加計劃';
