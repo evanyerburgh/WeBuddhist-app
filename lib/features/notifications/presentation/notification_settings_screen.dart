@@ -231,39 +231,39 @@ class _NotificationSettingsScreenState
                   const SizedBox(height: 24),
 
                   // ── 5. Test ────────────────────────────────────────
-                  _label('Diagnostics', ts, context),
-                  Card(
-                    margin: EdgeInsets.zero,
-                    child: ListTile(
-                      leading: _isSchedulingTest
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(
-                              Icons.notifications_active,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                      title: Text(
-                        'Send Test Notification',
-                        style: TextStyle(
-                            fontSize: ts, fontWeight: FontWeight.w500),
-                      ),
-                      subtitle: Text(
-                        'Fires in 4 minutes — close the app to verify',
-                        style: TextStyle(fontSize: ss),
-                      ),
-                      trailing: _isSchedulingTest
-                          ? null
-                          : const Icon(Icons.chevron_right),
-                      onTap:
-                          _isSchedulingTest ? null : _scheduleTestNotification,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 4),
-                    ),
-                  ),
+                  // _label('Diagnostics', ts, context),
+                  // Card(
+                  //   margin: EdgeInsets.zero,
+                  //   child: ListTile(
+                  //     leading: _isSchedulingTest
+                  //         ? const SizedBox(
+                  //             width: 24,
+                  //             height: 24,
+                  //             child:
+                  //                 CircularProgressIndicator(strokeWidth: 2),
+                  //           )
+                  //         : Icon(
+                  //             Icons.notifications_active,
+                  //             color: Theme.of(context).colorScheme.primary,
+                  //           ),
+                  //     title: Text(
+                  //       'Send Test Notification',
+                  //       style: TextStyle(
+                  //           fontSize: ts, fontWeight: FontWeight.w500),
+                  //     ),
+                  //     subtitle: Text(
+                  //       'Fires in 4 minutes — close the app to verify',
+                  //       style: TextStyle(fontSize: ss),
+                  //     ),
+                  //     trailing: _isSchedulingTest
+                  //         ? null
+                  //         : const Icon(Icons.chevron_right),
+                  //     onTap:
+                  //         _isSchedulingTest ? null : _scheduleTestNotification,
+                  //     contentPadding: const EdgeInsets.symmetric(
+                  //         horizontal: 16, vertical: 4),
+                  //   ),
+                  // ),
                 ],
 
                 const SizedBox(height: 32),
