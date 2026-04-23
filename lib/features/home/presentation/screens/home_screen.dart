@@ -70,11 +70,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (!alreadyEnabled) {
         _log.info('Requesting notification permissions...');
         final granted = await notificationService.requestPermission();
-        if (granted) {
-          _log.info('Notification permissions granted');
-        } else {
-          _log.info('Notification permissions denied');
-        }
+        _log.info(granted
+            ? 'Notification permissions granted'
+            : 'Notification permissions denied');
       }
     } catch (e) {
       _log.warning('Error requesting notification permissions: $e');

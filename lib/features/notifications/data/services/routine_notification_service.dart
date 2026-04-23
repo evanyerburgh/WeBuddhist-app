@@ -1,16 +1,14 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/notifications/data/channels/notification_channels.dart';
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 final _logger = AppLogger('RoutineNotificationService');
-
-// Channel constants
-const routineNotificationChannelId = 'routine_block_reminder';
-const routineNotificationChannelName = 'Routine Block Reminder';
-const routineNotificationChannelDescription =
-    'Daily notifications for routine practice blocks';
 
 /// Result of a notification scheduling operation.
 class NotificationResult {
@@ -58,25 +56,46 @@ class RoutineNotificationService {
   factory RoutineNotificationService() => _instance;
   RoutineNotificationService._internal();
 
+  // Allows injecting a mock plugin in tests without breaking the public API.
+  FlutterLocalNotificationsPlugin? _testPlugin;
+
+  @visibleForTesting
+  factory RoutineNotificationService.withPlugin(
+    FlutterLocalNotificationsPlugin plugin,
+  ) {
+    final svc = RoutineNotificationService._internal();
+    svc._testPlugin = plugin;
+    return svc;
+  }
+
   FlutterLocalNotificationsPlugin get _plugin =>
-      NotificationService().notificationsPlugin;
+      _testPlugin ?? NotificationService().notificationsPlugin;
 
   bool get _isReady => NotificationService().isInitialized;
 
   /// Schedule a daily repeating notification for a single block.
-  ///
-  /// Returns [NotificationResult] indicating success or failure with details.
-  Future<NotificationResult> scheduleBlockNotification(RoutineBlock block) async {
+  Future<NotificationResult> scheduleBlockNotification(
+    RoutineBlock block,
+  ) async {
+    _logger.info(
+      '[NOTIF-SCHEDULE] block=${block.id} time=${block.formattedTime} '
+      'notificationEnabled=${block.notificationEnabled} '
+      'items=${block.items.length} notificationId=${block.notificationId}',
+    );
+
     if (!block.notificationEnabled) {
+      _logger.info('[NOTIF-SCHEDULE] SKIPPED: notifications disabled for block');
       return NotificationResult.skipped('Notifications disabled for block');
     }
 
     if (block.items.isEmpty) {
+      _logger.info('[NOTIF-SCHEDULE] SKIPPED: block has no items');
       return NotificationResult.skipped('Block has no items');
     }
 
+    _logger.info('[NOTIF-SCHEDULE] _isReady=$_isReady');
     if (!_isReady) {
-      _logger.warning('NotificationService not initialized, skipping schedule');
+      _logger.warning('[NOTIF-SCHEDULE] FAILED: NotificationService not initialized');
       return NotificationResult.failure('Notification service not initialized');
     }
 
@@ -95,43 +114,37 @@ class RoutineNotificationService {
         scheduledDate = scheduledDate.add(const Duration(days: 1));
       }
 
+      _logger.info(
+        '[NOTIF-SCHEDULE] now=$now  scheduledFor=$scheduledDate  '
+        'tz=${tz.local.name}',
+      );
+
       final body = _getNotificationBody(block);
+      final firstItem = block.items.firstOrNull;
+      final payload = firstItem != null
+          ? jsonEncode({'itemId': firstItem.id, 'itemType': firstItem.type.name})
+          : null;
 
       await _plugin.zonedSchedule(
         block.notificationId,
         'Time for your practice',
         body,
         scheduledDate,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            routineNotificationChannelId,
-            routineNotificationChannelName,
-            channelDescription: routineNotificationChannelDescription,
-            importance: Importance.high,
-            priority: Priority.high,
-            icon: 'ic_notification',
-            enableVibration: true,
-            playSound: true,
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
+        NotificationChannels.routineBlockDetails(),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time, // daily repeat
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: payload,
       );
 
       _logger.info(
-        'Scheduled routine notification ID=${block.notificationId} '
-        'at ${block.formattedTime}',
+        '[NOTIF-SCHEDULE] SUCCESS  id=${block.notificationId}  '
+        'fires=$scheduledDate  body="$body"',
       );
 
       return NotificationResult.success(block.notificationId);
     } catch (e, stackTrace) {
       _logger.error(
-        'Failed to schedule notification for block ${block.id}',
+        '[NOTIF-SCHEDULE] ERROR scheduling block ${block.id}',
         e,
         stackTrace,
       );
@@ -140,31 +153,29 @@ class RoutineNotificationService {
   }
 
   /// Cancel notification for a single block.
-  ///
-  /// Safe to call even if the notification doesn't exist or service isn't ready.
   Future<void> cancelBlockNotification(RoutineBlock block) async {
     if (!_isReady) return;
     try {
       await _plugin.cancel(block.notificationId);
       _logger.info('Cancelled routine notification ID=${block.notificationId}');
     } catch (e) {
-      _logger.warning('Failed to cancel notification ${block.notificationId}: $e');
+      _logger.warning(
+        'Failed to cancel notification ${block.notificationId}: $e',
+      );
     }
   }
 
   /// Synchronize notifications with the current block list.
   ///
-  /// This uses a safer approach:
-  /// 1. First schedules all new/updated notifications
-  /// 2. Then cancels notifications for removed blocks
-  ///
-  /// This ensures that if the app crashes mid-sync, notifications are more
-  /// likely to still be scheduled rather than lost.
-  ///
-  /// Returns [NotificationSyncResult] with details about the operation.
-  Future<NotificationSyncResult> syncNotifications(List<RoutineBlock> blocks) async {
+  /// Schedules active blocks first, then cancels inactive ones — so if the
+  /// app crashes mid-sync, notifications are more likely to remain scheduled.
+  Future<NotificationSyncResult> syncNotifications(
+    List<RoutineBlock> blocks,
+  ) async {
+    _logger.info('[NOTIF-SYNC] starting sync for ${blocks.length} blocks, _isReady=$_isReady');
+
     if (!_isReady) {
-      _logger.warning('NotificationService not initialized, skipping sync');
+      _logger.warning('[NOTIF-SYNC] FAILED: NotificationService not initialized');
       return const NotificationSyncResult(
         errors: ['Notification service not initialized'],
       );
@@ -176,11 +187,9 @@ class RoutineNotificationService {
     final errors = <String>[];
 
     try {
-      // Step 1: Schedule notifications for active blocks first (safer - ensures
-      // notifications exist before we cancel old ones)
-      final activeBlocks = blocks.where(
-        (b) => b.notificationEnabled && b.items.isNotEmpty,
-      ).toList();
+      final activeBlocks = blocks
+          .where((b) => b.notificationEnabled && b.items.isNotEmpty)
+          .toList();
 
       final activeIds = <int>{};
       for (final block in activeBlocks) {
@@ -196,11 +205,6 @@ class RoutineNotificationService {
         }
       }
 
-      // Step 2: Cancel notifications for inactive/removed blocks
-      // Cancel all blocks that are either:
-      // - Not in the active list (removed or disabled)
-      // - Have notifications disabled
-      // - Have no items
       for (final block in blocks) {
         if (!activeIds.contains(block.notificationId)) {
           await cancelBlockNotification(block);
@@ -209,10 +213,11 @@ class RoutineNotificationService {
       }
 
       _logger.info(
-        'Notification sync complete: $scheduled scheduled, $cancelled cancelled, $failed failed',
+        'Notification sync complete: $scheduled scheduled, '
+        '$cancelled cancelled, $failed failed',
       );
-    } catch (e) {
-      _logger.error('Sync failed: $e');
+    } catch (e, st) {
+      _logger.error('Sync failed', e, st);
       errors.add('Sync error: $e');
     }
 
@@ -234,8 +239,6 @@ class RoutineNotificationService {
   }
 
   /// Cancel a notification by ID directly.
-  ///
-  /// Useful when you need to cancel a notification but don't have the full block.
   Future<void> cancelNotificationById(int notificationId) async {
     if (!_isReady) return;
     try {
