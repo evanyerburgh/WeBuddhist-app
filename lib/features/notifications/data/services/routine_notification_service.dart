@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/data/channels/notification_channels.dart';
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 final _logger = AppLogger('RoutineNotificationService');
@@ -125,12 +127,21 @@ class RoutineNotificationService {
           ? jsonEncode({'itemId': firstItem.id, 'itemType': firstItem.type.name})
           : null;
 
+      // Add image support
+      final androidStyle = await _buildBigPictureStyle(firstItem);
+      final iosDetails = await _buildIOSNotificationDetails(firstItem);
+      final largeIcon = await _getLargeIcon(firstItem);
+
       await _plugin.zonedSchedule(
         block.notificationId,
-        'Time for your practice',
+        firstItem?.title ?? 'Time for your practice',
         body,
         scheduledDate,
-        NotificationChannels.routineBlockDetails(),
+        NotificationChannels.routineBlockDetails(
+          styleInformation: androidStyle,
+          largeIcon: largeIcon,
+          iOSDetails: iosDetails,
+        ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
         payload: payload,
@@ -256,5 +267,117 @@ class RoutineNotificationService {
     if (remaining == 1) return '$firstItem and 1 other';
     if (remaining > 1) return '$firstItem and $remaining others';
     return firstItem;
+  }
+
+  /// Builds Android BigPictureStyle for rich image notifications.
+  Future<StyleInformation> _buildBigPictureStyle(RoutineItem? item) async {
+    if (item == null || item.imageUrl == null || item.imageUrl!.isEmpty) {
+      return BigTextStyleInformation(
+        item?.title ?? 'Time for your practice',
+        htmlFormatBigText: true,
+        contentTitle: item?.title,
+        htmlFormatContentTitle: true,
+      );
+    }
+
+    try {
+      final imagePath = await _downloadAndCacheImage(item.imageUrl!);
+      if (imagePath != null) {
+        return BigPictureStyleInformation(
+          FilePathAndroidBitmap(imagePath),
+          largeIcon: await _getLargeIcon(item),
+          contentTitle: item.title,
+          summaryText: 'Time for your practice',
+          htmlFormatContentTitle: true,
+          htmlFormatSummaryText: true,
+        );
+      }
+    } catch (e) {
+      _logger.warning('Failed to load image for notification: $e');
+    }
+
+    return BigTextStyleInformation(
+      item.title,
+      htmlFormatBigText: true,
+      contentTitle: item.title,
+      htmlFormatContentTitle: true,
+    );
+  }
+
+  /// Builds iOS notification details with attachments.
+  Future<DarwinNotificationDetails> _buildIOSNotificationDetails(
+    RoutineItem? item,
+  ) async {
+    if (item?.imageUrl != null && item!.imageUrl!.isNotEmpty) {
+      try {
+        final imagePath = await _downloadAndCacheImage(item.imageUrl!);
+        if (imagePath != null) {
+          return DarwinNotificationDetails(
+            attachments: [DarwinNotificationAttachment(imagePath)],
+            threadIdentifier: 'routine_notifications',
+          );
+        }
+      } catch (e) {
+        _logger.warning('Failed to attach image for iOS notification: $e');
+      }
+    }
+
+    return const DarwinNotificationDetails(
+      threadIdentifier: 'routine_notifications',
+    );
+  }
+
+  /// Downloads and caches an image URL to local storage.
+  Future<String?> _downloadAndCacheImage(String imageUrl) async {
+    try {
+      // Generate a safe filename using hash to avoid length issues
+      final imageHash = imageUrl.hashCode.toString();
+      final extension = imageUrl.contains('.jpg') ? '.jpg' :
+                       imageUrl.contains('.png') ? '.png' : '.jpg';
+      final filename = 'notif_$imageHash$extension';
+
+      final directory = await getTemporaryDirectory();
+      final filePath = '${directory.path}/notification_images/$filename';
+
+      // Check if already cached
+      final file = File(filePath);
+      if (await file.exists()) {
+        return filePath;
+      }
+
+      // Create directory if it doesn't exist
+      await file.parent.create(recursive: true);
+
+      // Download the image
+      final request = await HttpClient().getUrl(Uri.parse(imageUrl));
+      final response = await request.close();
+
+      if (response.statusCode == 200) {
+        final bytes = await response.toList();
+        await file.writeAsBytes(bytes.expand((b) => b).toList());
+        return filePath;
+      }
+    } catch (e) {
+      _logger.warning('Error downloading image: $e');
+    }
+    return null;
+  }
+
+  /// Gets the large icon for Android notification.
+  Future<FilePathAndroidBitmap?> _getLargeIcon(RoutineItem? item) async {
+    if (item?.imageUrl == null || item!.imageUrl!.isEmpty) {
+      return null;
+    }
+
+    try {
+      final imagePath = await _downloadAndCacheImage(item.imageUrl!);
+      if (imagePath != null) {
+        return FilePathAndroidBitmap(imagePath);
+      }
+    } catch (e) {
+      _logger.warning('Failed to load large icon: $e');
+    }
+
+    return null;
   }
 }
