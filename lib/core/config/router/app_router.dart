@@ -192,7 +192,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               }
               return PlanDetails(
                 plan: plan,
-                selectedDay: selectedDay ?? 0,
+                selectedDay: selectedDay ?? 1,
                 startDate: startDate ?? DateTime.now(),
               );
             },
@@ -237,7 +237,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   }
                   return PlanDetails(
                     plan: plan,
-                    selectedDay: selectedDay ?? 0,
+                    selectedDay: selectedDay ?? 1,
                     startDate: startDate ?? DateTime.now(),
                   );
                 },
