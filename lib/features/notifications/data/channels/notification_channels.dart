@@ -42,6 +42,9 @@ class NotificationChannels {
   /// Full platform-specific NotificationDetails for routine block notifications.
   static NotificationDetails routineBlockDetails({
     String icon = 'ic_notification',
+    StyleInformation? styleInformation,
+    FilePathAndroidBitmap? largeIcon,
+    DarwinNotificationDetails? iOSDetails,
   }) =>
       NotificationDetails(
         android: AndroidNotificationDetails(
@@ -50,12 +53,14 @@ class NotificationChannels {
           channelDescription: routineBlockDescription,
           importance: Importance.high,
           priority: Priority.high,
+          styleInformation: styleInformation,
           icon: icon,
+          largeIcon: largeIcon,
           enableVibration: true,
           playSound: true,
           sound: routineAndroidSound,
         ),
-        iOS: DarwinNotificationDetails(
+        iOS: iOSDetails ?? DarwinNotificationDetails(
           sound: routineIosSoundFile,
           presentAlert: true,
           presentBadge: true,
