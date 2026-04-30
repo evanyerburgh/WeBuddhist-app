@@ -272,14 +272,19 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       state = state.copyWith(
         clearSelectedSegment: true,
         clearCommentarySegmentId: true,
+        clearTranslationSegmentId: true,
       );
     } else {
       // Select new segment
       state = state.copyWith(selectedSegment: segment);
-      
+
       // Update commentary if it's open
       if (state.isCommentaryOpen) {
         state = state.copyWith(commentarySegmentId: segment.segmentId);
+      }
+      // Update translation if it's open
+      if (state.isTranslationOpen) {
+        state = state.copyWith(translationSegmentId: segment.segmentId);
       }
     }
   }

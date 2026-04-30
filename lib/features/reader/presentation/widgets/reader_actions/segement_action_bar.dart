@@ -38,6 +38,7 @@ class SegmentActionBar extends ConsumerWidget {
   final ReaderParams params;
   final VoidCallback onClose;
   final VoidCallback? onOpenCommentary;
+  final VoidCallback? onOpenTranslation;
 
   const SegmentActionBar({
     super.key,
@@ -45,6 +46,7 @@ class SegmentActionBar extends ConsumerWidget {
     required this.params,
     required this.onClose,
     this.onOpenCommentary,
+    this.onOpenTranslation,
   });
 
   @override
@@ -82,6 +84,9 @@ class SegmentActionBar extends ConsumerWidget {
                     label: localizations.text_translations,
                     onTap: () {
                       notifier.toggleTranslation(segment.segmentId);
+                      if (!state.isTranslationOpen) {
+                        onOpenTranslation?.call();
+                      }
                     },
                   ),
                   // Commentary button

@@ -233,6 +233,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                 );
                               }
                             },
+                            onOpenTranslation: () {
+                              if (_scrollToSegment != null &&
+                                  state.selectedSegment != null) {
+                                _scrollToSegment!(
+                                  state.selectedSegment!.segmentId,
+                                  alignment: 0.0,
+                                );
+                              }
+                            },
                           ),
                       ],
                     ),
