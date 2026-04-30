@@ -108,12 +108,14 @@ class PlanTextScreen extends ConsumerWidget {
   ) {
     if (direction == SwipeDirection.next) {
       completeCurrentPlanSubtask(ref, navigationContext);
+      invalidatePlanProviders(ref, navigationContext);
     }
     PlanNavigator.navigateAdjacent(context, navigationContext, direction);
   }
 
   void _finish(BuildContext context, WidgetRef ref) {
     completeCurrentPlanSubtask(ref, navigationContext);
+    invalidatePlanProviders(ref, navigationContext);
     if (context.mounted) context.pop();
   }
 }

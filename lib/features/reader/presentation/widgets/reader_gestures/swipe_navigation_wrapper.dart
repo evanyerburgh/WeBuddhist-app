@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
-import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigation_bottom_bar.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_subtask_completion.dart';
@@ -66,20 +64,26 @@ class _SwipeNavigationWrapperState
               child: PlanNavigationBottomBar(
                 navigationContext: navigationContext,
                 fallbackTitle: widget.textDetail.title,
-                fallbackTitleFontFamily: getFontFamily(widget.textDetail.language),
-                onPreviousTap: canSwipe
-                    ? () => _navigate(
+                fallbackTitleFontFamily: getFontFamily(
+                  widget.textDetail.language,
+                ),
+                onPreviousTap:
+                    canSwipe
+                        ? () => _navigate(
                           navigationContext,
                           SwipeDirection.previous,
                         )
-                    : null,
-                onNextTap: canSwipe
-                    ? () => _navigate(navigationContext, SwipeDirection.next)
-                    : null,
-                onFinishedTap: navigationContext != null &&
-                        navigationContext.source == NavigationSource.plan
-                    ? _finishReading
-                    : null,
+                        : null,
+                onNextTap:
+                    canSwipe
+                        ? () =>
+                            _navigate(navigationContext, SwipeDirection.next)
+                        : null,
+                onFinishedTap:
+                    navigationContext != null &&
+                            navigationContext.source == NavigationSource.plan
+                        ? _finishReading
+                        : null,
               ),
             ),
         ],
@@ -103,6 +107,7 @@ class _SwipeNavigationWrapperState
 
     if (direction == SwipeDirection.next) {
       completeCurrentPlanSubtask(ref, currentContext);
+      invalidatePlanProviders(ref, currentContext);
     }
 
     // Clear UI state before navigation for clean transition
@@ -126,19 +131,7 @@ class _SwipeNavigationWrapperState
   void _finishReading() {
     final navContext = widget.params.navigationContext;
     completeCurrentPlanSubtask(ref, navContext);
-
-    if (navContext != null && navContext.source == NavigationSource.plan) {
-      final planId = navContext.planId;
-      final dayNumber = navContext.dayNumber;
-      if (planId != null && dayNumber != null) {
-        ref.invalidate(
-          userPlanDayContentFutureProvider(
-            PlanDaysParams(planId: planId, dayNumber: dayNumber),
-          ),
-        );
-        ref.invalidate(userPlanDaysCompletionStatusProvider(planId));
-      }
-    }
+    invalidatePlanProviders(ref, navContext);
     if (mounted) context.pop();
   }
 }
