@@ -307,6 +307,29 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     }
   }
 
+  /// Open translation panel for a segment
+  void openTranslation(String segmentId) {
+    if (_isDisposed) return;
+    state = state.copyWith(translationSegmentId: segmentId);
+  }
+
+  /// Close translation panel
+  void closeTranslation() {
+    if (_isDisposed) return;
+    state = state.copyWith(clearTranslationSegmentId: true);
+  }
+
+  /// Toggle translation panel
+  void toggleTranslation(String segmentId) {
+    if (_isDisposed) return;
+
+    if (state.translationSegmentId == segmentId) {
+      closeTranslation();
+    } else {
+      openTranslation(segmentId);
+    }
+  }
+
   /// Update split ratio for commentary panel
   void updateSplitRatio(double ratio) {
     if (_isDisposed) return;
