@@ -59,7 +59,7 @@ class TagCard extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: fontSize,
                   fontWeight: FontWeight.w600,
-                  height: lineHeight,
+                  height: 1.3,
                   color: Colors.white,
                   shadows: [
                     Shadow(
