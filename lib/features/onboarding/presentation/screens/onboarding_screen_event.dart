@@ -25,7 +25,7 @@ class OnboardingScreenEvent extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenEventState extends ConsumerState<OnboardingScreenEvent> {
-  /// Plan IDs currently checked by the user. All events are checked by default.
+  /// Plan IDs currently checked by the user. Empty by default — opt-in.
   late Set<String> _checkedPlanIds;
 
   bool _isLoading = false;
@@ -34,7 +34,7 @@ class _OnboardingScreenEventState extends ConsumerState<OnboardingScreenEvent> {
   @override
   void initState() {
     super.initState();
-    _checkedPlanIds = {for (final e in kOnboardingEvents) e.planId};
+    _checkedPlanIds = <String>{};
   }
 
   void _toggleEvent(String planId) {
@@ -106,7 +106,7 @@ class _OnboardingScreenEventState extends ConsumerState<OnboardingScreenEvent> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Optional · Uncheck to skip',
+                        'Check to enroll',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
@@ -307,7 +307,7 @@ class _ReminderNote extends StatelessWidget {
         const SizedBox(width: 6),
         Expanded(
           child: Text(
-            'Selected events will be added to your practice with a 9:00 AM daily reminder.',
+            'We\'ll send you a daily reminder at 9:00 AM. (Change anytime.)',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w400,
