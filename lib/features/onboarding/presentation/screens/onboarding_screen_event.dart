@@ -106,7 +106,7 @@ class _OnboardingScreenEventState extends ConsumerState<OnboardingScreenEvent> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Check to enroll',
+                        'Optional · Tap to enroll',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
@@ -307,7 +307,7 @@ class _ReminderNote extends StatelessWidget {
         const SizedBox(width: 6),
         Expanded(
           child: Text(
-            'We\'ll send you a daily reminder at 9:00 AM. (Change anytime.)',
+            'Selected events will be added to your practice with a 9:00 AM daily reminder.',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w400,

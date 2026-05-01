@@ -1,4 +1,5 @@
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/notifications/application/special_plan_enrollment_hook.dart';
 import 'package:flutter_pecha/features/plans/data/models/response/user_plan_list_response_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
 import 'package:flutter_pecha/features/plans/domain/usecases/user_plans_usecases.dart';
@@ -52,16 +53,36 @@ class EventEnrollmentService {
   /// Throws a descriptive [Exception] if a critical step fails and the UI
   /// should surface an error to the user.
   Future<List<UserPlansModel>> enrollInEvents(List<String> planIds) async {
+    _logger.info('[SP-ENROLL] enrollInEvents START planIds=$planIds');
     for (final planId in planIds) {
+      _logger.info('[SP-ENROLL] subscribing $planId');
       await _subscribeToPlan(planId);
+      _logger.info('[SP-ENROLL] adding routine block for $planId');
       await _addToRoutine(planId);
+    }
+
+    // Fetch the user's enrolled plans BEFORE persisting the routine so the
+    // special-plan startedAt cache is primed by the time
+    // [RoutineNotificationService.scheduleBlockNotification] is called inside
+    // [_persistRoutineLocallyAndScheduleNotifications]. Otherwise the first
+    // schedule on enrollment day would fall back to default routine content.
+    _logger.info('[SP-ENROLL] fetching enrolled plans');
+    final enrolledPlans = await _fetchEnrolledPlans(planIds);
+    _logger.info(
+      '[SP-ENROLL] fetched ${enrolledPlans.length} enrolled plans: '
+      '${enrolledPlans.map((p) => "${p.id}@${p.startedAt.toIso8601String()}").join(", ")}',
+    );
+    for (final plan in enrolledPlans) {
+      await onSpecialPlanEnrolled(plan);
     }
 
     // Mirror the practice-tab edit-routine save flow: persist the final
     // server routine to Hive and schedule device-local notifications.
+    _logger.info('[SP-ENROLL] persisting routine + scheduling notifications');
     await _persistRoutineLocallyAndScheduleNotifications();
 
-    return _fetchEnrolledPlans(planIds);
+    _logger.info('[SP-ENROLL] enrollInEvents DONE returning ${enrolledPlans.length} plans');
+    return enrolledPlans;
   }
 
   // ─── Step 1: Subscribe ───
