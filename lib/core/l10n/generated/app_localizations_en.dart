@@ -613,7 +613,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingSoonHeadline => 'Coming Soon';
 
   @override
-  String get routine_title => 'Your Practice Routine';
+  String get routine_title => 'My Practice Routine';
 
   @override
   String get routine_empty_title => 'Practice Routine';

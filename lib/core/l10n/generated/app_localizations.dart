@@ -1255,7 +1255,7 @@ abstract class AppLocalizations {
   /// No description provided for @routine_title.
   ///
   /// In en, this message translates to:
-  /// **'Your Practice Routine'**
+  /// **'My Practice Routine'**
   String get routine_title;
 
   /// No description provided for @routine_empty_title.
