@@ -1,19 +1,25 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/core/config/router/page_transitions.dart';
 import 'package:flutter_pecha/core/config/router/route_guard.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/ai/presentation/screens/ai_mode_screen.dart';
 import 'package:flutter_pecha/features/ai/presentation/screens/search_results_screen.dart';
+import 'package:flutter_pecha/core/config/router/pending_route_provider.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/login_page.dart';
+import 'package:flutter_pecha/features/auth/presentation/screens/splash_screen.dart';
+import 'package:flutter_pecha/features/home/domain/entities/series.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/plan_list_screen.dart';
+import 'package:flutter_pecha/features/home/presentation/screens/series_detail_screen.dart';
 import 'package:flutter_pecha/features/more/presentation/more_screen.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/providers/onboarding_datasource_providers.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_wrapper.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
+import 'package:flutter_pecha/features/plans/presentation/screens/plan_text_screen.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/plan_details.dart';
 import 'package:flutter_pecha/features/plans/presentation/plan_info.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_preview/plan_preview_details.dart';
@@ -21,6 +27,7 @@ import 'package:flutter_pecha/features/practice/presentation/screens/edit_routin
 import 'package:flutter_pecha/features/practice/presentation/screens/practice_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/select_plan_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/select_recitation_screen.dart';
+import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/presentation/screens/reader_screen.dart';
 import 'package:flutter_pecha/features/texts/presentation/screens/chapters/chapters_screen.dart';
@@ -42,31 +49,39 @@ final _logger = AppLogger('AppRouter');
 /// - Preserves deep links for post-login redirection
 /// - Automatically refreshes when auth state changes
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
-  final onboardingRepo = ref.watch(onboardingRepositoryProvider);
-
-  _logger.debug('Creating router with auth state: ${authState.isLoggedIn}');
+  // Use ref.read so the router is created once and never recreated on auth
+  // state changes.
+  final onboardingRepo = ref.read(onboardingRepositoryProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.home,
     debugLogDiagnostics: true,
 
-    // Refresh router when auth state changes
+    // Re-evaluate redirect whenever auth state changes.
     refreshListenable: GoRouterRefreshStream(
-      ref.watch(authProvider.notifier).stream,
+      ref.read(authProvider.notifier).stream,
     ),
 
-    // Route guard for authentication and authorization
+    // Route guard for authentication and authorization.
+    // Always reads the latest auth state — do NOT capture it in the closure.
     redirect: (context, state) async {
       return await RouteGuard.redirect(
         context,
         state,
-        authState,
+        ref.read(authProvider),
         onboardingRepo,
+        getPendingRoute: () => ref.read(pendingRouteProvider),
+        setPendingRoute: (route) =>
+            ref.read(pendingRouteProvider.notifier).state = route,
       );
     },
 
     routes: [
+      GoRoute(
+        path: '/splash',
+        name: 'splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: "/login",
         name: "login",
@@ -106,6 +121,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 },
               ),
             ],
+          ),
+          GoRoute(
+            path: "series/:id", // route - /home/series/:id
+            name: "home-series-detail",
+            builder: (context, state) {
+              final id = state.pathParameters['id'] ?? '';
+              final extra = state.extra as Map<String, dynamic>?;
+              final initialSeries = extra?['series'] as Series?;
+              return SeriesDetailScreen(
+                seriesId: id,
+                initialSeries: initialSeries,
+              );
+            },
           ),
           // settings route
           GoRoute(
@@ -156,7 +184,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: "edit-routine", // route - /practice/edit-routine
             name: "edit-routine",
-            builder: (context, state) => const EditRoutineScreen(),
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              final plan = extra?['initialPlan'] as Plan?;
+              return EditRoutineScreen(initialPlan: plan);
+            },
             routes: [
               GoRoute(
                 path:
@@ -186,7 +218,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               }
               return PlanDetails(
                 plan: plan,
-                selectedDay: selectedDay ?? 0,
+                selectedDay: selectedDay ?? 1,
                 startDate: startDate ?? DateTime.now(),
               );
             },
@@ -231,7 +263,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   }
                   return PlanDetails(
                     plan: plan,
-                    selectedDay: selectedDay ?? 0,
+                    selectedDay: selectedDay ?? 1,
                     startDate: startDate ?? DateTime.now(),
                   );
                 },
@@ -272,11 +304,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // notifications route
+      GoRoute(
+        path: AppRoutes.notifications,
+        name: "notifications",
+        builder: (context, state) => const NotificationSettingsScreen(),
+      ),
+
+      // plan text route - inline TEXT subtasks (sibling to /reader)
+      GoRoute(
+        path: "/plan-text/:subtaskId",
+        name: "plan-text",
+        pageBuilder: (context, state) {
+          final extra = state.extra;
+          if (extra is! NavigationContext) {
+            _logger.warning(
+              'plan-text route called without NavigationContext extra',
+            );
+            return const MaterialPage(child: MainNavigationScreen());
+          }
+          
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: PlanTextScreen(navigationContext: extra),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return buildPlanNavigationTransition(
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+                extra.navigationDirection,
+              );
+            },
+          );
+        },
+      ),
+
       // reader route - new refactored text reader
       GoRoute(
         path: "/reader/:textId",
         name: "reader",
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final textId = state.pathParameters['textId'] ?? '';
           final extra = state.extra;
           String? segmentId;
@@ -310,10 +378,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             );
           }
 
-          return ReaderScreen(
+          final screen = ReaderScreen(
             textId: textId,
             navigationContext: navigationContext,
             segmentId: segmentId,
+          );
+
+          // Use directional transition for plan navigation
+          if (navigationContext != null && 
+              navigationContext.source == NavigationSource.plan) {
+            final direction = navigationContext.navigationDirection;
+            return CustomTransitionPage(
+              key: state.pageKey,
+              child: screen,
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return buildPlanNavigationTransition(
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                  direction,
+                );
+              },
+            );
+          }
+
+          // Default MaterialPage for non-plan navigation
+          return MaterialPage(
+            key: state.pageKey,
+            child: screen,
           );
         },
         routes: [

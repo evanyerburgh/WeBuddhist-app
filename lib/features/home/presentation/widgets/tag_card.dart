@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
-import 'package:flutter_pecha/shared/utils/helper_functions.dart';
+import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class TagCard extends ConsumerWidget {
@@ -18,7 +18,6 @@ class TagCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(localeProvider);
-    final lineHeight = getLineHeight(locale.languageCode);
     final fontSize = locale.languageCode == 'bo' ? 16.0 : 14.0;
 
     return InkWell(
@@ -43,7 +42,7 @@ class TagCard extends ConsumerWidget {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.6),
+                    Colors.black.withValues(alpha: 0.8),
                   ],
                   stops: const [0.5, 1.0],
                 ),
@@ -55,11 +54,11 @@ class TagCard extends ConsumerWidget {
               right: 8,
               bottom: 8,
               child: Text(
-                _capitalizeFirstLetter(tag),
+                _applyTitleCase(tag),
                 style: TextStyle(
                   fontSize: fontSize,
                   fontWeight: FontWeight.w600,
-                  height: lineHeight,
+                  height: 1.3,
                   color: Colors.white,
                   shadows: [
                     Shadow(
@@ -69,7 +68,7 @@ class TagCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
               ),
@@ -91,16 +90,11 @@ class TagCard extends ConsumerWidget {
           },
         );
       }
-      return Image.network(
-        imageUrl!,
+      return CachedNetworkImageWidget(
+        imageUrl: imageUrl,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildPlaceholder(context);
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return _buildPlaceholder(context);
-        },
+        placeholder: _buildPlaceholder(context),
+        errorWidget: _buildPlaceholder(context),
       );
     }
     return _buildPlaceholder(context);
@@ -128,8 +122,12 @@ class TagCard extends ConsumerWidget {
     );
   }
 
-  String _capitalizeFirstLetter(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + text.substring(1);
+  String _applyTitleCase(String text) {
+    final String trimmedText = text.trim();
+    if (trimmedText.isEmpty) return text;
+    final List<String> words = trimmedText.split(RegExp(r'\s+'));
+    return words
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
   }
 }

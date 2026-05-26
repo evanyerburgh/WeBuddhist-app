@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_pecha/core/cache/cache_service.dart';
@@ -6,8 +8,12 @@ import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/network/connectivity_service.dart';
 import 'package:flutter_pecha/core/l10n/l10n.dart';
 import 'package:flutter_pecha/core/services/service_providers.dart';
+import 'package:flutter_pecha/core/storage/plan_metadata_store.dart';
+import 'package:flutter_pecha/core/storage/special_plan_started_at_store.dart';
 import 'package:flutter_pecha/core/theme/theme_notifier.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/notifications/application/plan_notification_bootstrap.dart';
+import 'package:flutter_pecha/features/notifications/application/special_plan_bootstrap.dart';
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/routine_local_storage.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_providers.dart';
@@ -25,6 +31,8 @@ final _logger = AppLogger('Main');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
 
   // Setup environment-aware logging
   AppLogger.init();
@@ -66,6 +74,24 @@ void main() async {
     }
   }
 
+  // Initialize notification service early so scheduled notifications can fire
+  // even when the app is in the background or was just launched from a tap.
+  try {
+    await NotificationService().initializeWithoutPermissions();
+    _logger.info('Notification service initialized');
+  } catch (e) {
+    _logger.warning('Error initializing notification service: $e');
+  }
+
+  // Prime notification caches so schedulers can read startedAt / totalDays
+  // synchronously without awaiting SharedPreferences at schedule time.
+  try {
+    await SpecialPlanStartedAtStore.init();
+    await PlanMetadataStore.init();
+  } catch (e) {
+    _logger.warning('Error initializing plan metadata stores: $e');
+  }
+
   // Initialize routine local storage (persistent user data, not cache)
   final routineStorage = RoutineLocalStorage();
   try {
@@ -101,7 +127,13 @@ class MyApp extends ConsumerWidget {
     // Initialize services in background via providers
     ref.watch(audioHandlerProvider);
     ref.watch(notificationServiceProvider);
+    // Bootstrap listeners — watched here so they stay alive for the app lifetime.
+    // specialPlanBootstrapProvider: mirrors startedAt for ITCC and other hardcoded series.
+    // planNotificationBootstrapProvider: mirrors startedAt + totalDays for all other plans.
+    ref.watch(specialPlanBootstrapProvider);
+    ref.watch(planNotificationBootstrapProvider);
     NotificationService.setRouter(router);
+    NotificationService().consumeLaunchNotification();
 
     // Add QueryClient provider wrapper
     return QueryClientProvider(

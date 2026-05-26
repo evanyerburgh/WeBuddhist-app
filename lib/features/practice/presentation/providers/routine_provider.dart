@@ -1,7 +1,7 @@
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/routine_local_storage.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
-import 'package:flutter_pecha/features/practice/data/services/routine_notification_service.dart';
+import 'package:flutter_pecha/features/notifications/data/services/routine_notification_service.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -33,16 +33,26 @@ class RoutineNotifier extends StateNotifier<RoutineData> {
     _loadRoutines();
   }
 
-  /// Load routines from local storage (Hive).
+  /// Load routines from local storage (Hive) and re-sync notifications.
+  /// Re-syncing on startup ensures alarms are registered even after app
+  /// updates or edge cases where AlarmManager entries were cleared.
   Future<void> _loadRoutines() async {
     try {
       final data = await _localStorage.loadRoutine();
       if (mounted) {
         state = data;
-        _logger.info('Loaded ${data.blocks.length} routine blocks from storage');
+        _logger.info('[ROUTINE-LOAD] Loaded ${data.blocks.length} blocks from storage');
+        if (data.blocks.isNotEmpty) {
+          _logger.info('[ROUTINE-LOAD] Re-syncing ${data.blocks.length} notifications on startup...');
+          final result = await _notificationService.syncNotifications(data.blocks);
+          _logger.info(
+            '[ROUTINE-LOAD] Startup sync done: scheduled=${result.scheduled} '
+            'cancelled=${result.cancelled} failed=${result.failed}',
+          );
+        }
       }
     } catch (e) {
-      _logger.error('Failed to load routines', e);
+      _logger.error('[ROUTINE-LOAD] Failed to load routines', e);
       if (mounted) {
         state = const RoutineData();
       }
@@ -50,25 +60,50 @@ class RoutineNotifier extends StateNotifier<RoutineData> {
   }
 
   /// Save routine blocks to persistent storage and sync notifications.
+  ///
+  /// Convenience for non-latency-sensitive callers (e.g. background enrolment,
+  /// reorder ops). Latency-sensitive UI flows (e.g. Edit Routine → "Done")
+  /// should call [saveRoutineLocalOnly] and run [syncNotifications]
+  /// unawaited so the slow notification reschedule never blocks navigation.
   Future<void> saveRoutine(List<RoutineBlock> blocks) async {
+    await saveRoutineLocalOnly(blocks);
+    await syncNotifications(blocks);
+  }
+
+  /// Persists [blocks] to Hive and updates in-memory state. Fast (~ms).
+  ///
+  /// Does NOT touch OS notifications — see [syncNotifications]. Splitting
+  /// these lets the UI navigate away the moment local state is durable,
+  /// while the (slow) platform-channel notification work continues in the
+  /// background.
+  Future<void> saveRoutineLocalOnly(List<RoutineBlock> blocks) async {
     final data = RoutineData(blocks: blocks).sortedByTime;
-
+    _logger.info('[ROUTINE-SAVE] persisting ${data.blocks.length} blocks (local only)');
     try {
-      // 1. Persist to Hive storage
       await _localStorage.saveRoutine(data);
-      _logger.info('Saved ${data.blocks.length} routine blocks to storage');
-
-      // 2. Sync notifications
-      await _notificationService.syncNotifications(data.blocks);
-
-      // 3. Update in-memory state
       if (mounted) {
         state = data;
       }
     } catch (e) {
-      _logger.error('Failed to save routine', e);
+      _logger.error('[ROUTINE-SAVE] local persist failed', e);
       rethrow;
     }
+  }
+
+  /// Reschedules OS notifications to match [blocks].
+  ///
+  /// Can be slow on plan blocks (60+ sequential platform-channel
+  /// cancel/schedule calls per plan). Safe to run unawaited from UI flows;
+  /// the startup bootstrap re-syncs on next launch so failures here are
+  /// recoverable.
+  Future<void> syncNotifications(List<RoutineBlock> blocks) async {
+    _logger.info('[ROUTINE-SAVE] syncing notifications for ${blocks.length} blocks');
+    final result = await _notificationService.syncNotifications(blocks);
+    _logger.info(
+      '[ROUTINE-SAVE] sync done: scheduled=${result.scheduled} '
+      'cancelled=${result.cancelled} failed=${result.failed} '
+      'errors=${result.errors}',
+    );
   }
 
   /// Clear all routine data from storage and cancel notifications.

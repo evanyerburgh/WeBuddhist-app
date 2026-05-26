@@ -1,8 +1,5 @@
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 
-/// Direction for swipe navigation
-enum SwipeDirection { next, previous }
-
 /// Service for handling plan-based navigation between texts
 class NavigationService {
   const NavigationService();
@@ -48,9 +45,10 @@ class NavigationService {
       source: NavigationSource.plan,
       planId: currentContext.planId,
       dayNumber: currentContext.dayNumber,
-      targetSegmentId: adjacentText.segmentId,
+      targetSegmentId: adjacentText.firstSegmentId,
       planTextItems: currentContext.planTextItems,
       currentTextIndex: newIndex,
+      navigationDirection: direction,
     );
   }
 

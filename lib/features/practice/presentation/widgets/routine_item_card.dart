@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
+import 'package:flutter_pecha/features/practice/presentation/widgets/routine_item_chip.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class RoutineItemCard extends StatelessWidget {
@@ -13,6 +14,7 @@ class RoutineItemCard extends StatelessWidget {
   final VoidCallback? onDelete;
   final int? reorderIndex;
   final RoutineItemType? type;
+  final String? startDateLabel;
 
   const RoutineItemCard({
     super.key,
@@ -22,6 +24,7 @@ class RoutineItemCard extends StatelessWidget {
     this.onDelete,
     this.reorderIndex,
     this.type,
+    this.startDateLabel,
   });
 
   @override
@@ -38,39 +41,67 @@ class RoutineItemCard extends StatelessWidget {
             if (onDelete != null) ...[
               GestureDetector(
                 onTap: onDelete,
-                child: Icon(PhosphorIconsRegular.minusCircle, size: 22),
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  margin: const EdgeInsets.only(left: 8),
+                  decoration: BoxDecoration(
+                    color:
+                        isDark
+                            ? AppColors.surfaceVariantDark
+                            : AppColors.grey100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    PhosphorIconsRegular.minus,
+                    size: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 20),
             ],
             type == RoutineItemType.recitation
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      AppAssets.weBuddhistLogo,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : CachedNetworkImageWidget(
-                    imageUrl: imageUrl ?? '',
-                    width: 60,
-                    height: 60,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    AppAssets.recitationCoverDefault,
+                    width: 74,
+                    height: 74,
                     fit: BoxFit.cover,
-                    borderRadius: BorderRadius.circular(10),
                   ),
+                )
+                : CachedNetworkImageWidget(
+                  imageUrl: imageUrl ?? '',
+                  width: 74,
+                  height: 74,
+                  fit: BoxFit.cover,
+                  borderRadius: BorderRadius.circular(10),
+                ),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color:
-                      isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color:
+                          isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (startDateLabel != null) ...[
+                    const SizedBox(height: 8),
+                    RoutineItemChip(label: startDateLabel!),
+                  ],
+                ],
               ),
             ),
             if (reorderIndex != null) ...[

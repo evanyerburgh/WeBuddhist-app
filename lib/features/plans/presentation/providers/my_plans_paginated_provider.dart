@@ -1,4 +1,3 @@
-
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
 import 'package:flutter_pecha/features/plans/domain/repositories/user_plans_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,6 +65,7 @@ class MyPlansNotifier extends StateNotifier<MyPlansState> {
       skip: 0,
       limit: _limit,
     );
+    print('loadInitial result:::::: $result');
 
     result.fold(
       (failure) {
@@ -74,13 +74,9 @@ class MyPlansNotifier extends StateNotifier<MyPlansState> {
         }
       },
       (response) {
-        // Sort plans by startedAt in descending order (latest first)
-        final sortedPlans = List<UserPlansModel>.from(response.userPlans)
-          ..sort((a, b) => b.startedAt.compareTo(a.startedAt));
-
         if (mounted) {
           state = state.copyWith(
-            plans: sortedPlans,
+            plans: response.userPlans,
             isLoading: false,
             hasMore: response.userPlans.length >= _limit,
             skip: response.userPlans.length,
@@ -141,9 +137,39 @@ class MyPlansNotifier extends StateNotifier<MyPlansState> {
     }
   }
 
-  /// Refresh from start
+  /// Refresh from start — keeps existing plans visible while re-fetching
   Future<void> refresh() async {
-    state = const MyPlansState();
-    await loadInitial();
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      skip: 0,
+      hasMore: true,
+    );
+
+    final result = await repository.getUserPlans(
+      language: languageCode,
+      skip: 0,
+      limit: _limit,
+    );
+
+    result.fold(
+      (failure) {
+        if (mounted) {
+          state = state.copyWith(isLoading: false, error: failure.message);
+        }
+      },
+      (response) {
+        if (mounted) {
+          state = state.copyWith(
+            plans: response.userPlans,
+            isLoading: false,
+            hasMore: response.userPlans.length >= _limit,
+            skip: response.userPlans.length,
+            total: response.total,
+            error: null,
+          );
+        }
+      },
+    );
   }
 }
