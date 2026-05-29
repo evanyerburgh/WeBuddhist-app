@@ -430,7 +430,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get settings_notifications => 'གསལ་བརྡ།';
 
   @override
-  String get notification_settings => 'གསལ་བརྡ་སྒྲིག་འགོད།';
+  String get notification_settings => 'གསལ་བརྡའི་སྒྲིག་འགོད།';
 
   @override
   String get settings_account => 'མིང་ཐོ།';
@@ -618,20 +618,20 @@ class AppLocalizationsBo extends AppLocalizations {
   String get comingSoonHeadline => ' མྱུར་དུ།';
 
   @override
-  String get routine_title => 'ཉམས་ལེན་གོམས་གཤིས།';
+  String get routine_title => 'འཆར་ཅན་ཉམས་ལེན།';
 
   @override
-  String get routine_empty_title => 'ཉམས་ལེན་གོམས་གཤིས།';
+  String get routine_empty_title => 'འཆར་ཅན་ཉམས་ལེན།';
 
   @override
   String get routine_edit => 'བཟོ་བཅོས།';
 
   @override
   String get routine_empty_description =>
-      'ཉམས་ལེན་གོམས་གཤིས་བཟོས་ནས་སྨོན་ལམ་གྱི་འཚོ་བར་རྒྱུན་མཐུད་གནས་རོགས། དུས་ཚོད་དང་ཉམས་ལེན་འདེམས་དང་ང་ཚོས་ཁྱེད་ལ་དྲན་སྐུལ་བྱེད་ཀྱི་ཡིན།';
+      'འཆར་ཅན་ཉམས་ལེན་འདེམས་སྒྲུག་བྱས་ཏེ་རང་གི་ཉམས་ལེན་གྱི་ལས་རིམ་ནང་སྣོན་སྒྲིག་བྱོས་དང་། ང་ཚོས་དུས་ལྟར་ཁྱེད་ལ་དྲན་གསོ་བྱེད་ཡོང་།';
 
   @override
-  String get routine_build => 'ཉམས་ལེན་གོམས་གཤིས་བཟོས།';
+  String get routine_build => 'ཉམས་ལེན་གསར་པ་སྣོན།';
 
   @override
   String get routine_session => 'ཉམས་ལེན།';
