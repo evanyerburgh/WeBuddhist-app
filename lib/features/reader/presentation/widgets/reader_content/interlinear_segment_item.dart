@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_number.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_pecha/features/texts/presentation/segment_html_widget.dart';
@@ -27,21 +29,14 @@ class InterlinearSegmentItem extends ConsumerWidget {
   final Segment segment;
   final int depth;
   final String primaryLanguage;
-
   final ReaderSlotConfig secondarySlot;
 
-  /// Lookup map of secondary version's content keyed by segment_number.
-  /// When present, we resolve the secondary line from this map first; if
-  /// the segment_number is missing we fall back to inline `segment.translation`,
-  /// then finally to a placeholder string.
+  /// Lookup map of secondary version content keyed by segment_number.
+  /// Falls back to a placeholder when the key is missing or while loading.
   final Map<int, String>? secondaryContentBySegmentNumber;
-
-  /// True while the secondary version is fetching its first/next/previous
-  /// page. Used to choose between a "Loading…" placeholder and the
-  /// "unavailable" placeholder.
   final bool secondaryIsLoading;
-
   final bool isSelected;
+  // Received from caller but visual highlight not yet applied in interlinear mode.
   final bool isHighlighted;
   final NavigationSource highlightSource;
   final bool isGreyedOut;
@@ -50,12 +45,14 @@ class InterlinearSegmentItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fontSize = ref.watch(fontSizeProvider);
-    final theme = Theme.of(context);
-    final content = segment.content ?? '';
-    final segmentNumber = segment.segmentNumber.toString().padLeft(2);
+    final primaryHtml = normalizeSegmentHtml(segment.content);
+    final secondary = _resolveSecondaryContent(context);
 
-    final secondaryContent = _resolveSecondaryContent();
-    final secondaryFontSize = fontSize * 0.78;
+    // Per Figma: the secondary (parallel) version uses a fixed muted tone that
+    // differs per theme so it reads as supporting text beneath the primary.
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color secondaryColor =
+        isDark ? const Color(0xFFE0E0E0) : const Color(0xFF707070);
 
     return AnimatedOpacity(
       opacity: isGreyedOut ? 0.3 : 1.0,
@@ -78,40 +75,39 @@ class InterlinearSegmentItem extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: SizedBox(
-                    width: ReaderConstants.segmentNumberWidth,
-                    child: Text(
-                      segmentNumber,
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        fontSize: fontSize * 0.6,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: getFontFamily(primaryLanguage),
-                        color: theme.textTheme.bodySmall?.color,
-                      ),
-                    ),
-                  ),
+                SegmentNumber(
+                  segmentNumber: segment.segmentNumber,
+                  fontSize: fontSize,
+                  language: primaryLanguage,
                 ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SegmentHtmlWidget(
-                        htmlContent: content,
+                        htmlContent: primaryHtml,
                         segmentIndex: segment.segmentNumber,
                         fontSize: fontSize,
                         language: primaryLanguage,
                         isSelected: isSelected,
                       ),
-                      const SizedBox(height: 4),
-                      _SecondaryLine(
-                        text: secondaryContent.text,
-                        isPlaceholder: secondaryContent.isPlaceholder,
-                        language: secondarySlot.languageCode,
-                        fontSize: secondaryFontSize,
-                      ),
+                      const SizedBox(height: 16),
+                      if (secondary.isPlaceholder)
+                        _SecondaryPlaceholder(
+                          text: secondary.text,
+                          language: secondarySlot.languageCode,
+                          fontSize: fontSize,
+                          color: secondaryColor,
+                        )
+                      else
+                        SegmentHtmlWidget(
+                          htmlContent: secondary.text,
+                          segmentIndex: segment.segmentNumber,
+                          fontSize: fontSize,
+                          language: secondarySlot.languageCode,
+                          isSelected: isSelected,
+                          textColor: secondaryColor,
+                        ),
                       const SizedBox(height: 2),
                     ],
                   ),
@@ -124,62 +120,60 @@ class InterlinearSegmentItem extends ConsumerWidget {
     );
   }
 
-  _SecondaryResolved _resolveSecondaryContent() {
-    // Strict ladder: picked secondary content → loading → unavailable.
-    // We intentionally do NOT fall back to the primary's inline
-    // `segment.translation` here — that field carries an inline default
-    // translation shipped with the primary response, and leaking it into
-    // the picked-secondary slot would mask the "unavailable" state and
-    // make version swaps look like no-ops.
+  _SecondaryResolved _resolveSecondaryContent(BuildContext context) {
     final fromMap = secondaryContentBySegmentNumber?[segment.segmentNumber];
     if (fromMap != null && fromMap.trim().isNotEmpty) {
-      return _SecondaryResolved(text: fromMap, isPlaceholder: false);
+      return _SecondaryResolved(
+        text: normalizeSegmentHtml(fromMap),
+        isPlaceholder: false,
+      );
     }
     if (secondaryIsLoading) {
-      return const _SecondaryResolved(text: 'Loading…', isPlaceholder: true);
+      return _SecondaryResolved(
+        text: context.l10n.loading,
+        isPlaceholder: true,
+      );
     }
-    return _SecondaryResolved(
-      text: 'Translation in ${secondarySlot.languageLabel} unavailable',
-      isPlaceholder: true,
-    );
+    // A version is selected but this particular segment has no translation.
+    // Show a quiet centered em-dash rather than a verbose error line.
+    return const _SecondaryResolved(text: '—', isPlaceholder: true);
   }
 }
 
 class _SecondaryResolved {
   final String text;
   final bool isPlaceholder;
-  const _SecondaryResolved({
-    required this.text,
-    required this.isPlaceholder,
-  });
+  const _SecondaryResolved({required this.text, required this.isPlaceholder});
 }
 
-class _SecondaryLine extends StatelessWidget {
-  const _SecondaryLine({
+class _SecondaryPlaceholder extends StatelessWidget {
+  const _SecondaryPlaceholder({
     required this.text,
-    required this.isPlaceholder,
     required this.language,
     required this.fontSize,
+    required this.color,
   });
 
   final String text;
-  final bool isPlaceholder;
   final String language;
   final double fontSize;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final baseColor = theme.colorScheme.onSurface.withValues(alpha: 0.55);
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: fontSize,
-        fontFamily: getFontFamily(language),
-        fontWeight: FontWeight.w400,
-        fontStyle: isPlaceholder ? FontStyle.italic : FontStyle.normal,
-        color: baseColor,
-        height: 1.4,
+    return SizedBox(
+      width: double.infinity,
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontFamily: getFontFamily(language),
+          fontWeight: FontWeight.w400,
+          fontStyle: FontStyle.italic,
+          color: color,
+          height: 1.4,
+        ),
       ),
     );
   }

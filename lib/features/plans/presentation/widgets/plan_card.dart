@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
-import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/shared/extensions/typography_extensions.dart';
+import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class PlanCard extends ConsumerWidget {
@@ -37,8 +39,8 @@ class PlanCard extends ConsumerWidget {
 }
 
 Widget _buildPlanImage(Plan plan) {
-  return CachedNetworkImageWidget(
-    imageUrl: plan.coverImageUrl ?? '',
+  return ResponsiveCoverImage(
+    image: plan.coverImage,
     width: 90,
     height: 90,
     fit: BoxFit.cover,
@@ -49,14 +51,14 @@ Widget _buildPlanImage(Plan plan) {
 
 Widget _buildPlanInfo(BuildContext context, Plan plan, WidgetRef ref) {
   final languageCode = ref.watch(localeProvider).languageCode;
-  final fontSize = languageCode == 'bo' ? 16.0 : 14.0;
+  final fontSize = getLocalizedFontSize(AppTextSize.label);
 
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       const SizedBox(height: 4),
       Text(
-        '${plan.totalDays} Days',
+        context.l10n.days_count(plan.totalDays),
         style: context.languageTextStyle(
           languageCode,
           fontSize: fontSize,

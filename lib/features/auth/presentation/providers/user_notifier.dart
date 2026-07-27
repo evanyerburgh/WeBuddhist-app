@@ -1,9 +1,14 @@
-import 'package:flutter_pecha/core/storage/storage_keys.dart';
+import 'dart:io';
+
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/auth/data/models/user_model.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
+import 'package:flutter_pecha/features/auth/domain/entities/username_update_result.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/get_current_user_usecase.dart';
+import 'package:flutter_pecha/features/auth/domain/usecases/update_user_info_usecase.dart';
+import 'package:flutter_pecha/features/auth/domain/usecases/update_username_usecase.dart';
+import 'package:flutter_pecha/features/auth/domain/usecases/upload_avatar_usecase.dart';
 import 'package:flutter_pecha/features/auth/presentation/state/user_state.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,12 +25,21 @@ final _logger = AppLogger('UserNotifier');
 /// - Proper error handling
 class UserNotifier extends StateNotifier<UserState> {
   final GetCurrentUserUseCase _getCurrentUserUseCase;
+  final UpdateUserInfoUseCase _updateUserInfoUseCase;
+  final UpdateUsernameUseCase _updateUsernameUseCase;
+  final UploadAvatarUseCase _uploadAvatarUseCase;
   final LocalStorageService _localStorageService;
 
   UserNotifier({
     required GetCurrentUserUseCase getCurrentUserUseCase,
+    required UpdateUserInfoUseCase updateUserInfoUseCase,
+    required UpdateUsernameUseCase updateUsernameUseCase,
+    required UploadAvatarUseCase uploadAvatarUseCase,
     required LocalStorageService localStorageService,
   }) : _getCurrentUserUseCase = getCurrentUserUseCase,
+       _updateUserInfoUseCase = updateUserInfoUseCase,
+       _updateUsernameUseCase = updateUsernameUseCase,
+       _uploadAvatarUseCase = uploadAvatarUseCase,
        _localStorageService = localStorageService,
        super(const UserState.initial());
 
@@ -37,10 +51,6 @@ class UserNotifier extends StateNotifier<UserState> {
 
     final userResult = await _getCurrentUserUseCase(const NoParams());
 
-    // First, get the onboarding status separately
-    final localOnboardingCompleted =
-        await _localStorageService.getOnboardingCompleted();
-
     userResult.fold(
       (failure) {
         _logger.error('Error getting user from API: ${failure.message}');
@@ -49,16 +59,8 @@ class UserNotifier extends StateNotifier<UserState> {
       },
       (user) {
         _logger.info('User data loaded from API: ${user.displayName}');
-
-        // Update user with local onboarding status
-        final userWithLocalOnboarding = user.copyWith(
-          onboardingCompleted: localOnboardingCompleted,
-        );
-
-        state = UserState.loaded(userWithLocalOnboarding);
-
-        // Cache locally for offline access
-        _cacheUserLocally(userWithLocalOnboarding);
+        state = UserState.loaded(user);
+        _cacheUserLocally(user);
       },
     );
   }
@@ -66,10 +68,6 @@ class UserNotifier extends StateNotifier<UserState> {
   /// Refresh user data from API
   Future<void> refreshUser() async {
     final userResult = await _getCurrentUserUseCase(const NoParams());
-
-    // First, get the onboarding status separately
-    final localOnboardingCompleted =
-        await _localStorageService.getOnboardingCompleted();
 
     userResult.fold(
       (failure) {
@@ -79,14 +77,8 @@ class UserNotifier extends StateNotifier<UserState> {
       },
       (user) {
         _logger.debug('User data refreshed: ${user.displayName}');
-
-        // Update user with local onboarding status
-        final userWithLocalOnboarding = user.copyWith(
-          onboardingCompleted: localOnboardingCompleted,
-        );
-
-        state = UserState.loaded(userWithLocalOnboarding);
-        _cacheUserLocally(userWithLocalOnboarding);
+        state = UserState.loaded(user);
+        _cacheUserLocally(user);
       },
     );
   }
@@ -100,12 +92,6 @@ class UserNotifier extends StateNotifier<UserState> {
       // Cache locally
       await _cacheUserLocally(updatedUser);
 
-      // Sync onboarding status separately to local storage
-      await _localStorageService.set(
-        StorageKeys.onboardingCompleted,
-        updatedUser.onboardingCompleted,
-      );
-
       _logger.debug('User data updated: ${updatedUser.displayName}');
     } catch (e) {
       _logger.error('Error updating user', e);
@@ -113,28 +99,94 @@ class UserNotifier extends StateNotifier<UserState> {
     }
   }
 
-  /// Update onboarding status
-  Future<void> updateOnboardingStatus(bool completed) async {
-    try {
-      // Update local storage first (primary source of truth)
-      await _localStorageService.set(
-        StorageKeys.onboardingCompleted,
-        completed,
-      );
+  /// Save profile changes to the backend (POST /users/info).
+  ///
+  /// Returns an error message on failure, or null on success.
+  Future<String?> saveProfile({
+    String? firstName,
+    String? lastName,
+    String? aboutMe,
+    String? avatarUrl,
+    String? title,
+    String? organization,
+    String? location,
+    List<String>? educations,
+    List<Map<String, String>>? socialProfiles,
+  }) async {
+    final result = await _updateUserInfoUseCase(
+      UpdateUserInfoParams(
+        firstName: firstName,
+        lastName: lastName,
+        aboutMe: aboutMe,
+        avatarUrl: avatarUrl,
+        title: title,
+        organization: organization,
+        location: location,
+        educations: educations,
+        socialProfiles: socialProfiles,
+      ),
+    );
 
-      // Update user object if it exists
-      if (state.user != null) {
-        final updatedUser = state.user!.copyWith(
-          onboardingCompleted: completed,
-        );
+    return result.fold(
+      (failure) {
+        _logger.error('Failed to update user info: ${failure.message}');
+        return failure.message;
+      },
+      (updatedUser) {
+        _logger.info('Profile saved: ${updatedUser.displayName}');
         state = UserState.loaded(updatedUser);
-        await _cacheUserLocally(updatedUser);
-      }
+        _cacheUserLocally(updatedUser);
+        return null;
+      },
+    );
+  }
 
-      _logger.debug('Onboarding status updated: $completed');
-    } catch (e) {
-      _logger.error('Error updating onboarding status', e);
-    }
+  /// Update username via PATCH /users/username.
+  ///
+  /// Returns [UsernameUpdateResult] on success/conflict, or null on network
+  /// / auth failure.
+  Future<UsernameUpdateResult?> updateUsername(String username) async {
+    final result = await _updateUsernameUseCase(username);
+
+    return result.fold(
+      (failure) {
+        _logger.error('Failed to update username: ${failure.message}');
+        return null;
+      },
+      (usernameResult) {
+        if (usernameResult.isAvailable && usernameResult.updatedUsername != null) {
+          // Optimistically update local user state with the confirmed username.
+          if (state.user != null) {
+            final updated = state.user!.copyWith(
+              username: usernameResult.updatedUsername,
+            );
+            state = UserState.loaded(updated);
+            _cacheUserLocally(updated);
+          }
+        }
+        return usernameResult;
+      },
+    );
+  }
+
+  /// Upload a local [file] as the user's avatar via POST /users/upload.
+  ///
+  /// Returns the hosted URL on success, or null on failure.
+  /// The caller is responsible for passing the URL to [saveProfile] so that
+  /// it is included in the POST /users/info request when the user taps Save.
+  Future<({String? url, String? error})> uploadAvatar(File file) async {
+    final uploadResult = await _uploadAvatarUseCase(file);
+
+    return uploadResult.fold(
+      (failure) {
+        _logger.error('Failed to upload avatar: ${failure.message}');
+        return (url: null, error: failure.message);
+      },
+      (avatarUrl) {
+        _logger.info('Avatar uploaded: $avatarUrl');
+        return (url: avatarUrl, error: null);
+      },
+    );
   }
 
   /// Clear user data (on logout)

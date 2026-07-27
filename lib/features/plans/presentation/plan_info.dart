@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
-import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/providers/event_enrollment_providers.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
+import 'package:flutter_pecha/features/plans/data/utils/plan_date_format.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/author_detail_screen.dart';
 import 'package:flutter_pecha/shared/extensions/typography_extensions.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 class PlanInfo extends ConsumerStatefulWidget {
   const PlanInfo({super.key, required this.plan, this.author});
@@ -46,6 +48,10 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(AppAssets.arrowLeft),
+          onPressed: () => context.pop(),
+        ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         scrolledUnderElevation: 0,
         title: Text(localizations.plan_info, style: TextStyle(fontSize: 20)),
@@ -82,8 +88,8 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
   }
 
   Widget _buildPlanImage(BuildContext context) {
-    return CachedNetworkImageWidget(
-      imageUrl: widget.plan.coverImageUrl ?? '',
+    return ResponsiveCoverImage(
+      image: widget.plan.coverImage,
       width: double.infinity,
       height: MediaQuery.of(context).size.height * 0.25,
       fit: BoxFit.cover,
@@ -109,7 +115,7 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  '${widget.plan.totalDays} Days',
+                  context.l10n.days_count(widget.plan.totalDays),
                   style: context.languageTextStyle(
                     language,
                     fontWeight: FontWeight.w500,
@@ -169,6 +175,13 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
     AppLocalizations localizations,
   ) {
     final isSubscribed = enrolledPlanIds.contains(widget.plan.id);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final enrollBackgroundColor =
+        isDark ? AppColors.surfaceWhite : AppColors.scaffoldBackgroundDark;
+    final enrollForegroundColor =
+        isDark ? AppColors.textPrimary : AppColors.textPrimaryDark;
+    final subscribedBackgroundColor = isDark ? AppColors.grey800 : Colors.grey;
+    final subscribedForegroundColor = AppColors.onPrimary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,8 +216,20 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
                       }
                     },
             style: FilledButton.styleFrom(
-              backgroundColor: isSubscribed ? Colors.grey : Colors.black,
-              foregroundColor: Colors.white,
+              backgroundColor:
+                  isSubscribed
+                      ? subscribedBackgroundColor
+                      : enrollBackgroundColor,
+              foregroundColor:
+                  isSubscribed
+                      ? subscribedForegroundColor
+                      : enrollForegroundColor,
+              disabledBackgroundColor: enrollBackgroundColor.withValues(
+                alpha: 0.5,
+              ),
+              disabledForegroundColor: enrollForegroundColor.withValues(
+                alpha: 0.5,
+              ),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -212,16 +237,18 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
             ),
             child:
                 _isEnrolling
-                    ? const SizedBox(
+                    ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: enrollForegroundColor,
                       ),
                     )
                     : Text(
-                      isSubscribed ? 'Go to Practice' : 'Enroll',
+                      isSubscribed
+                          ? localizations.plan_go_to_practice
+                          : localizations.plan_enroll,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -234,6 +261,7 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
   }
 
   Future<void> _handleEnroll(BuildContext context) async {
+    final localizations = context.l10n;
     setState(() => _isEnrolling = true);
     try {
       final service = ref.read(eventEnrollmentServiceProvider);
@@ -246,21 +274,21 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
       if (startDate != null) {
         final today = DateUtils.dateOnly(DateTime.now());
         final normalizedStart = DateUtils.dateOnly(startDate.toLocal());
-        final formattedDate = DateFormat('MMMM d, y').format(normalizedStart);
+        final formattedDate = PlanDateFormat.formatDate(normalizedStart);
 
         if (today.isBefore(normalizedStart)) {
           await showDialog<void>(
             context: context,
             builder:
                 (ctx) => AlertDialog(
-                  title: const Text('Plan Starts Soon'),
+                  title: Text(localizations.plan_starts_soon_title),
                   content: Text(
-                    'This plan starts on $formattedDate. You can browse the content now.',
+                    localizations.plan_starts_soon_message(formattedDate),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Got it'),
+                      child: Text(localizations.got_it),
                     ),
                   ],
                 ),
@@ -270,14 +298,14 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
             context: context,
             builder:
                 (ctx) => AlertDialog(
-                  title: const Text('Joining After Start Date'),
+                  title: Text(localizations.plan_joining_late_title),
                   content: Text(
-                    'This plan started on $formattedDate. You can complete past day tasks.',
+                    localizations.plan_joining_late_message(formattedDate),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Got it'),
+                      child: Text(localizations.got_it),
                     ),
                   ],
                 ),
@@ -286,9 +314,9 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Enrollment failed. Please try again.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(localizations.enrollError)));
       }
     } finally {
       if (mounted) setState(() => _isEnrolling = false);

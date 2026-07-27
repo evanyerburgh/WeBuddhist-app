@@ -44,10 +44,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-
-# Ignore generated entitlements
-ios/Runner/Runner.entitlements
-
 # env
 .env
 .env.*
@@ -74,3 +70,4 @@ lib/features/practice/specs/routines-openapi.yaml
 
 # claude
 CLAUDE.md
+/docs/notification/notification.md

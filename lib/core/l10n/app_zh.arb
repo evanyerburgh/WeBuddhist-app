@@ -1,167 +1,383 @@
 {
   "@@locale": "zh",
   "appTitle": "WeBuddhist",
-  "pechaHeading": "WeBuddhist",
-  "learnLiveShare": "Learn, Live, and Share",
-  "themeLight": "浅色模式",
-  "themeDark": "深色模式",
-  "switchToLight": "切换到浅色模式",
-  "switchToDark": "切换到深色模式",
   "sign_in": "登錄",
   "logout": "登出",
   "onboarding_welcome": "歡迎來到",
-  "onboarding_description": "在這裡每天學習、生活與分享佛教智慧",
-  "onboarding_quote": "Drop by drop is the water pot filled. Likewise, the wise person, gathering it little by little, fills themselves with good.",  
+  "onboarding_setup_subtitle": "讓我們為您設定，只需一分鐘",
+  "onboarding_tagline": "學習、修持、連結。每日。",
+  "onboarding_quote": "滴水穿石 ‧ 聚沙成塔",
   "onboarding_find_peace": "立即開始",
   "onboarding_continue": "下一步",
-  "onboarding_first_question": "选择您的语言：",
-  "onboarding_second_question": "Which path or school do you feel drawn to?",
-  "onboarding_choose_option": "至少选择一项：",
-  "onboarding_all_set": "您已準備就緒",
-  "onboarding_all_set_description": "我們已根據您的傳承為您量身打造體驗。每天出現——哪怕片刻——見證您的修行成長。",
-  "onboarding_begin_practice": "開始您的修行",
+  "onboarding_first_question": "選擇您的語言：",
+  "onboarding_choose_option": "至少選擇一項",
+  "onboarding_all_set": "一切就緒",
+  "onboarding_all_set_description": "以下是為您的修行準備的內容。",
+  "onboarding_all_set_feature_practices": "持咒、累積、禪修和學習計畫供您選擇",
+  "onboarding_all_set_feature_reminders": "溫和的日常提醒，隨時為您準備好",
+  "onboarding_begin_practice": "尋找您的第一項修持",
+  "onboarding_2_title": "接下來，看看它是如何運作的。",
+  "onboarding_2_subtitle": "養成習慣的三個小步驟",
+  "onboarding_2_step1_title": "選擇您的修持方式",
+  "onboarding_2_step1_desc": "持咒、數念珠、設定禪坐計時器，或跟隨您傳承中的學習計畫。",
+  "onboarding_2_step2_title": "融入您的日常生活",
+  "onboarding_2_step2_desc": "建立日常日程，我們會發送溫和的提醒，幫助您堅持。",
+  "onboarding_2_step3_title": "每天修持幾分鐘",
+  "onboarding_2_step3_desc": "哪怕只是一刻也有意義。日復一日，您的修持會不斷成長。",
   "home_today": "今天",
   "home_good_morning": "早上好",
   "home_good_afternoon": "下午好",
   "home_good_evening": "晚上好",
-  "home_meditationTitle": "禪修時刻",
-  "home_prayerTitle": "Prayer of the Day",
-  "home_scripture": "Guided Scripture",
-  "home_meditation": "Guided Meditation",
-  "home_goDeeper": "深入了解",
-  "home_intention": "今日心願",
+  "home_meditationTitle": "禪修",
+  "home_prayerTitle": "今日祈願",
+  "home_scripture": "導讀經典",
+  "home_meditation": "導引禪修",
+  "home_goDeeper": "深入學習",
+  "home_intention": "我今日的意願",
   "home_recitation": "持誦",
-  "home_bringing": "融入生活",
-  "home_profile": "Profile",
-  "no_feature_content": "尚無內容",
+  "home_overall_stats": "整體統計",
+  "home_plans": "計劃",
+  "home_plans_count": "{count} 計劃",
+  "@home_plans_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "home_recitation_count": "{count} 持誦",
+  "@home_recitation_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "home_shortcut_plans": "計劃",
+  "home_chants": "持誦",
+  "home_mala": "念珠",
+  "session_mala": "念珠",
+  "bookmark_mala": "念珠",
+  "bookmark_timers": "計時",
+  "bookmark_texts": "經文",
+  "mala_add_to_practice": "加入我的修持",
+  "mala_add_mala_round": "Add mala round",
+  "mala_add_rounds_title": "Add mala rounds:",
+  "mala_add_rounds_message": "Add the number of mala rounds you did outside this app.",
+  "mala_add_to_bookmark": "書籤",
+  "mala_sound": "聲音",
+  "mala_vibration": "震動",
+  "mala_reset_count": "重設計數",
+  "mala_reset_title": "重設此念珠？",
+  "mala_reset_count_confirm": "目前的計數將歸零，但您的累積仍會保留在終身總數中。",
+  "mala_reset_confirm": "重設",
+  "mala_action_coming_soon": "即將推出",
+  "mala_rounds_count": "{count, plural, =0{0 遍} =1{1 遍} other{{count} 遍}}",
+  "@mala_rounds_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mala_counter_semantics": "計數 {bead}/{total}，{rounds}",
+  "@mala_counter_semantics": {
+    "placeholders": {
+      "bead": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "rounds": {
+        "type": "String"
+      }
+    }
+  },
+  "mala_group_accumulations": "Group accumulations",
+  "mala_groups_section": "Groups",
+  "mala_group_untitled": "Untitled group",
+  "home_timer": "計時",
+  "preset_timers": "預設計時",
+  "meditation_timer": "禪修計時",
+  "timer_min": "分鐘",
+  "timer_start": "開始",
+  "timer_finish": "完成",
+  "timer_discard_session": "放弃练习",
+  "home_hello_prefix": "你好，",
+  "home_greeting_fallback_name": "朋友",
+  "home_share_prompt": "喜歡 {appName} 嗎？",
+  "@home_share_prompt": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "no_feature_content": "尚無精選內容",
   "nav_home": "首頁",
   "nav_explore": "探索",
-  "nav_texts": "文本",
-  "nav_learn": "学习",
-  "nav_practice": "修持計劃",
-  "nav_settings": "设置",
-  "nav_connect": "连接",
-  "nav_me": "我",
-  "text_browseTheLibrary": "瀏覽文庫",
+  "nav_learn": "學習",
+  "nav_practice": "修持計畫",
+  "nav_settings": "設定",
+  "nav_connect": "社群",
+  "nav_me": "個人",
+  "tab_practices": "修持計畫",
   "text_search": "搜尋",
-  "text_detail_rootText": "原文本",
-  "text_detail_commentaryText": "釋論",
-  "text_toc_continueReading": "Continue Reading",
-  "text_toc_content": "內容",
   "text_toc_versions": "版本",
   "text_commentary": "注釋",
-  "text_translations": "翻譯",
-  "text_close_translation": "關閉翻譯",
+  "resources": "資源",
   "no_translation": "尚無相關翻譯",
   "text_close_commentary": "關閉注釋",
-  "commentary_total": "總計",
   "show_more": "顯示更多",
   "show_less": "顯示較少",
-  "read_more": "閱讀更多",
+  "more": "更多",
+  "less": "較少",
   "no_content": "尚無相關內容",
-  "no_version": "尚無相關版本",
   "no_commentary": "尚無相關注釋",
-  "no_commentary_message": "此偈誦尚無相關注釋",
+  "commentary_not_available_for_language": "暫無 {language} 註釋",
+  "@commentary_not_available_for_language": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
   "loading": "加載中...",
-  "choose_image": "選擇圖像",
-  "choose_bg_image": "選擇背景",
-  "create_image": "創建圖像",
+  "choose_image": "選擇圖片",
+  "choose_bg_image": "選擇背景圖片",
+  "create_image": "建立圖片",
   "save": "儲存",
   "done": "完成",
-  "customise_message": "點擊自訂以調整字型大小",
-  "download_image": "下載圖像",
+  "customise_message": "點擊按鈕以調整文字樣式",
+  "download_image": "下載圖片",
   "no_images_available": "沒有可用的圖片",
-  "customise_text": "自訂文字",
+  "customise_text": "自訂文字樣式",
   "text_size": "文字大小",
   "text_color": "文字顏色",
   "text_shadow": "文字陰影",
-  "apply": "執行",
-  "practice_nav_title": "修持計劃",
+  "apply": "套用",
   "my_plans": "我的計畫",
-  "find_plans": "尋找計劃",
-  "browse_plans": "尋找計劃",
-  "plan_info": "計畫內容",
-  "start_plan": "開始計畫",
-  "start_reading": "開始閱讀",
-  "continue_plan": "繼續計劃",
-  "tibetan": "Tibetan",
-  "sanskrit": "Sanskrit",
-  "english": "English",
-  "chinese": "Chinese",
+  "browse_plans": "瀏覽修持計畫",
+  "plan_info": "修持計畫內容",
+  "start_reading": "立即修持",
+  "tibetan": "藏文",
+  "sanskrit": "梵文",
+  "english": "英文",
+  "chinese": "白話中文",
+  "classicalChinese": "佛經文體",
+  "pali": "巴利文",
   "language": "語言",
-  "dailyPracticeNotificationTitle": "每日修持提醒",
-  "timeForDailyPractice": "到了每天修持的時間了",
-  "recitation_reminder": "持誦提醒",
-  "moment_to_pray": "這一刻讓我們一起祈願",
-  "plan_unenroll": "退出計劃",
+  "plan_unenroll": "退出計畫",
   "unenroll_confirmation": "確定要退出嗎",
-  "unenroll_message": "您的進度將永久丟失，且無法恢復",
-  "practice_plan": "修持計劃幫助您在修持中保持穩定。我們有許多計劃可供選擇，也有時間長短不同的計劃。",
+  "unenroll_message": "您的進度將被永久刪除，且無法復原",
+  "practice_plan": "建立每日修持。探索適合您的內容",
   "search_plans": "搜尋計畫...",
-  "search_for_plans": "搜尋計劃",
-  "no_plans_found": "無相關計劃",
-  "no_days_available": "無此天數",
-  "notification_turn_on": "請開啟通知",
-  "notification_enable_message": "開啟通知以收取每日修持、持誦提醒",
-  "enable_notification": "開啟通知",
-  "notification_daily_practice": "每日修持",
-  "notification_select_time": "設定時間",
-  "reminderTime": "提醒時間",
-  "notification_daily_recitation": "每日持誦",
-  "text_noContent": "所選語言下無可用文本",
-  "text_switchToTibetan": "切換成藏文",
+  "search_for_plans": "搜尋計畫",
+  "no_plans_found": "找不到相關計畫 ",
+  "no_days_available": "找不到相關天數",
   "recitations_title": "唱頌",
   "recitations_my_recitations": "我的清單",
-  "browse_recitations": "唱頌",
+  "browse_recitations": "瀏覽唱誦列表",
   "recitations_search": "搜索",
   "recitations_search_for": "尋找持誦內容",
   "recitations_no_found": "尚無相關持誦內容",
-  "recitations_saved": "已保存持誦",
-  "recitations_unsaved": "已移除持誦",
   "recitations_no_content": "沒有可用的持誦",
   "recitations_no_saved": "沒有已保存的持誦",
   "recitations_login_prompt": "請登錄以查看您保存的持誦",
-  "recitations_save": "保存持誦",
-  "recitations_unsave": "從已保存中移除",
-  "recitations_translation": "翻譯",
-  "no_available": "無法",
-  "recitations_no_data_message": "此持誦的內容目前不可用。\n請稍後再查看。",
-  "recitations_show_translation": "顯示翻譯",
-  "recitations_hide_translation": "隱藏翻譯",
-  "recitations_show_transliteration": "顯示音譯",
-  "recitations_hide_transliteration": "隱藏音譯",
-  "recitations_show_recitation": "顯示持誦",
-  "recitations_hide_recitation": "隱藏持誦",
-  "recitations_show_adaptation": "顯示改編",
-  "recitations_hide_adaptation": "隱藏改編",
-  "next_recitation": "下一步",
-  "settings_appearance": "外觀",
-  "settings_notifications": "通知",
   "notification_settings": "通知設定",
-  "settings_account": "帳號",
+  "notification_allow_title": "允許通知",
+  "notification_allow_subtitle_enabled": "此應用程式已啟用通知",
+  "notification_allow_subtitle_disabled": "需要權限。請點此前往「設定」授權。",
+  "notification_allow_subtitle_paused": "提醒已暫停。點此恢復。",
+  "notification_routine_title": "計畫提醒",
+  "notification_routine_subtitle_enabled": "您的修持計畫每日提醒",
+  "notification_routine_subtitle_disabled": "計畫提醒已暫停。點此恢復。",
+  "notification_battery_title": "背景提醒通知",
+  "notification_battery_subtitle_enabled": "即使應用程式已關閉，您的提醒通知仍會準時發送。",
+  "notification_battery_subtitle_disabled": "部分 Android 手機會暫停背景應用程式以節省電池使用量，這可能導致提醒通知延遲或遺漏。點此確保應用程式持續運行。",
+  "notification_recitation_title": "持誦提醒",
+  "notification_recitation_subtitle_enabled": "每日持誦提醒",
+  "notification_recitation_subtitle_disabled": "持誦提醒已暫停。點此恢復。",
+  "notification_practice_title": "念珠提醒",
+  "notification_practice_subtitle_enabled": "每日念珠修持提醒",
+  "notification_practice_subtitle_disabled": "念珠提醒已暫停。點此恢復。",
+  "notification_timer_title": "計時器提醒",
+  "notification_timer_subtitle_enabled": "每日計時器練習提醒",
+  "notification_timer_subtitle_disabled": "計時器提醒已暫停。點此恢復。",
+  "notification_battery_info_title": "關於背景提醒",
+  "notification_battery_info_body": "部分 Android 手機會暫停背景應用程式以節省電池，這可能導致已排程的提醒延遲或取消。豁免應用程式可讓您的提醒準時可靠地發送。",
+  "notification_snack_permission_denied": "通知已被封鎖。請在「設定」中開啟",
+  "notification_snack_disable_alarms_in_settings": "在「設定」中關閉鬧鐘與提醒",
+  "notification_snack_battery_reenable": "在「設定 → 電池」中還原「電池最佳化設定」",
+  "profile_default_bio": "歡迎來到 WeBuddhist",
+  "profile_guest_title": "訪客",
+  "profile_guest_subtitle": "您正以訪客身分瀏覽",
+  "profile_guest_benefits_header": "登入以解鎖：",
+  "profile_guest_benefit_save_progress": "儲存您的進度",
+  "profile_guest_benefit_personalized": "個人化內容",
+  "profile_guest_benefit_notifications": "自訂通知",
+  "auth_drawer_title": "請先登入帳號再繼續",
+  "auth_drawer_subtitle": "隨時隨地，在任何裝置上繼續您的修持",
+  "routine_delete_block_message": "這將刪除該時段及其中所有內容",
+  "something_went_wrong": "出了點問題。請再試一次",
+  "onboarding_quote_citation": "— 法句經 122",
+  "onboarding_traditions_question": "您跟隨哪些傳承？",
+  "onboarding_tradition_title": "您如何追随佛陀的教导？",
+  "onboarding_tradition_subtitle": "我们将为您展示您所选修行路径的实践与经典。您可以随时在应用设置中更改此设置。",
+  "onboarding_tradition_option_intro": "通過：",
+  "onboarding_tradition_show_all_title": "顯示所有內容",
+  "onboarding_tradition_show_all_description": "每條道路的實踐和經典",
+  "onboarding_skip_for_now": "暫時跳過",
+  "onboarding_add_another_tradition": "添加另一個傳承",
+  "onboarding_select_all": "全選",
+  "onboarding_event_enrollment_error": "無法完成註冊。請檢查您的網路連線，然後再試一次",
+  "audio_init_error": "無法初始化音訊播放器。請檢查網路連線後重試",
+  "meditation_audio_load_error": "無法載入。請檢查網路連線後重試",
+  "prayer_audio_load_error": "無法載入音訊。請檢查網路連線後重試",
+  "home_no_series_found": "未找到系列",
+  "onboarding_event_question": "加入即將舉辦的活動？",
+  "onboarding_event_optional": "選填 · 點擊以加入",
+  "onboarding_event_duration": "{description} · {days} 天",
+  "@onboarding_event_duration": {
+    "placeholders": {
+      "description": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "onboarding_event_reminder_note": "我們將在每天早上 7:30 提醒您。(可隨時更改。)",
+  "tradition_theravada": "上座部佛教",
+  "tradition_zen": "禪宗",
+  "tradition_tibetan_buddhism": "藏傳佛教",
+  "tradition_pure_land": "淨土宗",
+  "tradition_ambedkar_buddhism": "安貝卡佛教",
+  "plan_go_to_practice": "前往修持計畫",
+  "plan_starts_soon_title": "計畫即將開始",
+  "plan_joining_late_title": "在開始日期後加入",
+  "got_it": "明白了",
+  "plan_no_tasks_error": "無法載入任務",
+  "plan_day_tasks_load_error": "無法載入當日任務",
+  "plans_empty_title": "更多內容即將推出",
+  "plans_empty_subtitle": "我們將持續添增修持課程，歡迎隨時回來瀏覽。",
+  "find_plans_load_error": "無法載入計畫，\n請稍後再試",
+  "connect_coming_soon_subtitle": "在修行路上支持您前行的良師、社群、修持挑戰與相關活動",
+  "explore_coming_soon_subtitle": "探索修持、教法與社群活動的精選空間。",
+  "learn_coming_soon_subtitle": "專為您日常生活設計的個人學習計畫",
+  "creator_featured_plan": "精選計畫",
+  "home_no_tags_found": "找不到該標籤",
+  "home_celebrated_by": "慶祝者：",
+  "reader_settings_tooltip": "閱讀器設定",
+  "reader_font_size_tooltip": "字體大小",
+  "reader_version_title": "版本 · {language}",
+  "@reader_version_title": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_script_title": "字體 · {language}",
+  "@reader_script_title": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_versions_load_error": "載入版本失敗。",
+  "reader_scripts_load_error": "載入字體失敗。",
+  "reader_languages_load_error": "語言載入失敗",
+  "reader_no_versions_in_language": "{language} 尚無可用的版本。",
+  "@reader_no_versions_in_language": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_no_scripts_in_language": "{language} 尚無可用的字體。",
+  "@reader_no_scripts_in_language": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_no_languages": "此文本尚無可用的語言。",
+  "reader_license": "授權",
+  "reader_version_details_load_error": "無法載入版本詳情。",
+  "reader_no_version_info": "此版本沒有其他可用的資訊。",
+  "recitation_unavailable": "此唱誦內容目前無法使用。\n請稍後再試或聯絡客服。",
+  "recitation_sign_in_required": "請登入以使用此唱誦。",
+  "my_recitations_load_error": "無法載入。請檢查您的網路連線，然後再試一次。",
+  "recitations_load_error": "無法載入唱誦。\n請稍後再試。",
+  "text_search_hint": "輸入以搜尋",
+  "text_search_press_button": "按下搜尋按鈕以搜尋",
+  "text_search_error": "無法執行搜尋，請再試一次",
+  "unknown_error": "未知錯誤",
+  "image_share_error": "無法分享：{error}",
+  "@image_share_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "create_image_capture_error": "圖片生成失敗，請再試一次",
+  "create_image_share_error": "無法分享，請再試一次",
+  "create_image_save_success": "圖片已儲存",
+  "create_image_save_error": "無法儲存圖片。請確認應用程式已獲得相片存取權限後再試一次",
+  "create_image_download_error": "無法下載您的圖片，請稍後再試",
+  "create_image_customize_tooltip": "自訂",
+  "create_image_text_too_long": "文字太長，無法放大字體",
+  "version_search_no_results": "找不到「{query}」的版本",
+  "@version_search_no_results": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "my_plans_sign_in_prompt": "登入以查看您的計畫",
+  "plan_starts_soon_message": "此計畫將於 {date} 開始。您可以先瀏覽內容。",
+  "@plan_starts_soon_message": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "plan_joining_late_message": "此計畫已於 {date} 開始。您可以完成過去幾天的任務。",
+  "@plan_joining_late_message": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "select_language": "語言設定",
   "logout_confirmation": "您確定要登出嗎？",
   "cancel": "取消",
   "copy": "複製",
   "copied": "已複製",
   "share": "分享",
+  "bookmark": "书签",
   "image": "圖片",
-  "feedback": "回饋",
-  "feedback_wishlist": "回饋及願望清單",
+  "feedback": "意見回饋",
   "author": "作者",
-  "plans_created": "參與設計的計劃",
-  "ask_ai": "向 AI 提问",
+  "plans_created": "參與設計的計畫",
   "ai_chat_history": "對話紀錄",
   "ai_buddhist_assistant": "佛法AI助手",
   "ai_new_chat": "新對話",
   "ai_retry": "重試",
   "ai_dismiss": "略過",
-  "ai_sign_in_prompt": "請登入以使用佛法AI助手，並展開有深度的對話",
+  "ai_sign_in_prompt": "登入後即可向佛法 AI 助理提問",
   "ai_explore_wisdom": "探索佛法的智慧",
-  "ai_suggestion_self": "什麼是自我？",
-  "ai_suggestion_enlightenment": "如何證悟？",
-  "ai_ask_question": "問一個問題...",
-  "ai_loading_conversation": "加載對話...",
+  "ai_ask_question": "請輸入問題．．．．．．",
   "ai_search_chats": "搜尋對話紀錄",
   "ai_chats": "對話紀錄",
   "ai_chat_deleted": "對話已刪除",
@@ -172,158 +388,118 @@
   "ai_delete_warning": "此操作執行後將無法復原",
   "ai_confirm": "確認",
   "ai_delete": "刪除",
-  "ai_greeting": "Hi {name}",
-  "ai_text_not_found": "Text Not Found",
-  "ai_text_not_found_message": "Could not find the text for \"{title}\".\n\nPlease try another source.",
-  "ai_sources": "Sources",
-  "ai_sources_count": "{count} sources",
-  "search_no_results": "No results found for \"{query}\"",
-  "search_show_more": "Show More",
-  "search_contents": "Contents",
-  "search_titles": "Titles",
-  "search_all": "All",
-  "search_author": "Author",
-  "search_tab_ai_mode": "AI Mode",
-  "search_error": "Error: {message}",
-  "search_retrying": "Retrying...",
-  "search_no_titles_found": "No titles found for \"{query}\"",
-  "search_no_contents_found": "No contents found for \"{query}\"",
-  "search_no_authors_found": "No authors found for \"{query}\"",
-  "search_coming_soon": "即将推出",
-  "search_buddhist_texts": "Search Buddhist texts...",
-  "common_ok": "OK",
+  "ai_greeting": " {name}，您好！",
+  "ai_text_not_found": "搜尋不到該文本",
+  "ai_text_not_found_message": "搜尋不到標題為《{title}》的文本。\n\n請嘗試其他名稱或換一種方式搜尋。",
+  "ai_sources": "來源",
+  "ai_sources_count": "{count} 個來源",
+  "search_no_results": "找不到「{query}」的結果",
+  "search_show_more": "顯示更多",
+  "search_contents": "內容",
+  "search_titles": "標題",
+  "search_all": "全部",
+  "search_author": "作者",
+  "search_tab_ai_mode": "AI 模式",
+  "search_error": "錯誤：{message}",
+  "search_retrying": "重試中...",
+  "search_no_titles_found": "找不到「{query}」的標題",
+  "search_no_contents_found": "找不到「{query}」的內容",
+  "search_no_authors_found": "找不到「{query}」的作者",
+  "search_buddhist_texts": "搜尋佛教文本...",
+  "common_ok": "確定",
   "comingSoonHeadline": "即将推出",
   "routine_title": "日常修持",
+  "bookmarks": "书签",
   "routine_empty_title": "日常修持",
   "routine_edit": "編輯",
-  "routine_empty_description": "建立您的日常修持，保持祈禱生活的穩定。選擇時間和課程，我們會提醒您祈禱！",
+  "routine_empty_description": "探索更多課程與修持計畫，加入學習選單或新增至您的修持安排",
   "routine_build": "建立日常修持",
-  "routine_session": "課程",
-  "routine_time": "時間",
-  "routine_notification": "通知",
-  "routine_save": "保存日常修持",
-  "routine_morning": "早晨",
-  "routine_afternoon": "下午",
-  "routine_evening": "晚上",
   "routine_add_session": "添加課程",
-  "routine_select_time": "選擇時間",
-  "routine_remind_me": "提醒我",
   "routine_edit_title": "編輯日常修持",
-  "routine_delete_block": "刪除區塊",
-  "routine_delete_time_block": "刪除區塊",
-  "routine_add_plan": "添加計劃",
+  "routine_delete_block": "刪除時段",
+  "routine_delete_time_block": "移除時段",
+  "routine_add_plan": "添加計畫",
   "routine_add_recitation": "添加持誦",
-  "routine_add_plan_to_routine": "Add to Routine",
-  "routine_go_to_practice": "Go to Practice",
-  "routine_load_error": "無法載入你的日常修持，請重試。",
-  "routine_empty_block_title_singular": "空白時間區塊",
-  "routine_empty_block_title_plural": "空白時間區塊 ({count})",
+  "routine_add_plan_to_routine": "新增至日常修持",
+  "routine_load_error": "無法載入。請檢查您的網路連線，然後再試一次。",
+  "routine_empty_block_title_singular": "空白時段",
+  "routine_empty_block_title_plural": "空白時段 ({count})",
   "@routine_empty_block_title_plural": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
-  "routine_empty_block_message_singular": "此時間區塊沒有任何項目。你要添加項目還是刪除區塊？",
-  "routine_empty_block_message_plural": "你有 {count} 個時間區塊沒有任何項目。你要添加項目還是刪除這些區塊？",
+  "routine_empty_block_message_singular": "此時段尚未新增內容。請新增或將其從您的修持安排中移除",
+  "routine_empty_block_message_plural": "有 {count} 個時段尚未新增內容。請新增，或從您的修持安排中移除",
   "@routine_empty_block_message_plural": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
-  "routine_empty_block_add_items": "添加項目",
-  "routine_empty_block_delete_singular": "刪除區塊",
-  "routine_empty_block_delete_plural": "刪除空白區塊",
-  "routine_notification_title": "讓祈禱成為日常",
-  "routine_notification_description": "允許通知以接收祈禱提醒。",
+  "routine_empty_block_add_items": "新增清單",
+  "routine_empty_block_delete_singular": "刪除時段",
+  "routine_empty_block_delete_plural": "刪除空白時段",
+  "routine_notification_title": "讓修持成為習慣",
+  "routine_notification_description": "請開啟通知權限，以便我們提醒您進行修持。",
   "routine_notification_enable": "啟用通知",
   "routine_notification_skip": "跳過",
-  "routine_time_adjusted": "已調整為 {time}（最少 {gap} 分鐘間隔）",
+  "routine_time_adjusted": "已調整為 {time}（最少 {gap} 分鐘的間隔）",
   "@routine_time_adjusted": {
     "placeholders": {
-      "time": { "type": "String" },
-      "gap": { "type": "int" }
+      "time": {
+        "type": "String"
+      },
+      "gap": {
+        "type": "int"
+      }
     }
   },
-  "routine_add_block_label": "時間區塊",
+  "routine_add_block_label": "時段",
   "continueWithGoogle": "使用 Google 繼續",
   "continueWithApple": "使用 Apple 繼續",
   "continueAsGuest": "以訪客身份繼續",
+  "exploreAsGuest": "以訪客身份探索",
   "signIn": "登入",
   "profileError": "加載個人資料時出錯",
   "profileTitle": "個人資料",
-  "notLoggedIn": "未登入",
+  "notLoggedIn": "尚未登入",
   "retry": "重試",
   "back": "返回",
   "delete": "刪除",
   "close": "關閉",
   "tryAgain": "再試一次",
   "pleaseTryAgain": "請再試一次",
-  "successfully": "成功",
-  "failedTo": "失敗",
-  "unableTo": "無法",
   "error": "錯誤",
   "anonymous": "匿名",
   "noContentAvailable": "沒有可用內容",
-  "missingParameters": "缺少必需參數",
-  "invalidParameters": "無效參數",
-  "cannotOpenLink": "無法打開此鏈接",
-  "invalidUrlFormat": "無效的URL格式",
-  "cannotOpenEmail": "無法打開此郵件",
-  "invalidEmailFormat": "無效的郵件格式",
-  "unableToLoad": "無法加載，請再試一次",
+  "unableToLoad": "無法載入，請再試一次",
   "somethingWrong": "出了點問題，請檢查您的連接並重試",
-  "typing": "正在輸入...",
   "source": "來源",
   "searchResults": "搜索結果",
-  "deleteConversation": "刪除對話？",
-  "errorOops": "哎呀，請再試一次",
-  "tabAll": "全部",
-  "tabAuthors": "作者",
-  "tabContents": "內容",
-  "tabTitles": "標題",
-  "option1": "選項 1",
-  "option2": "選項 2",
-  "option3": "選項 3",
-  "languageTibetan": "藏文",
-  "languageEnglish": "英文",
   "noTasks": "沒有可用任務",
   "taskNotFound": "找不到任務",
   "updateTaskError": "無法更新任務狀態",
-  "enrollSuccess": "成功加入 {planTitle}",
-  "enrollError": "無法加入計劃，請再試一次",
-  "enrollErrorDetail": "無法加入計劃",
+  "enrollError": "無法完成註冊。請檢查您的網路連線，然後再試一次。",
   "unenrollSuccess": "您已退出 {planTitle}",
-  "unenrollError": "目前無法退出，請再試一次",
-  "unenrollGenericError": "出了點問題，請檢查您的連接並重試",
-  "notFound": "找不到計劃，請再試一次",
+  "unenrollError": "無法取消註冊。請檢查您的網路連線，然後再試一次",
+  "unenrollGenericError": "發生錯誤。請檢查您的網路連線，然後再試一次",
+  "notFound": "此內容已無法使用。請重新編輯您的修持安排，以進行更新。",
   "noTimeSlot": "沒有可用的時間段，請先移除一個區塊",
-  "maxBlocks": "已達到 {max} 個時間區塊的上限",
+  "maxBlocks": "已達最多 {max} 個可選時間區段上限。",
   "duplicateItem": "此項目已在區塊中",
   "removeItem": "移除項目",
-  "removeConfirmation": "要從此區塊中移除「{itemName}」嗎？",
-  "shareError": "無法分享",
-  "updateOrderError": "無法更新順序，請再試一次",
-  "noCollections": "沒有可用的收藏",
-  "loadCollectionsError": "無法加載收藏",
-  "loadFailed": "加載收藏失敗",
-  "captureError": "捕獲二維碼失敗，請再試一次",
-  "qrShareError": "無法分享二維碼，請稍後再試",
+  "removeConfirmation": "要從此時段中移除「{itemName}」嗎？",
+  "shareError": "無法分享。請再試一次",
+  "updateOrderError": "無法更新順序。請再試一次",
+  "loadFailed": "無法載入。請檢查您的網路連線，然後再試一次。",
+  "captureError": "QR code 掃描失敗，請再試一次",
+  "qrShareError": "無法分享QRcode，請稍後再試",
   "errorDetail": "錯誤：{error}",
   "@errorDetail": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "@enrollSuccess": {
-    "placeholders": {
-      "planTitle": {
-        "type": "String"
-      }
-    }
-  },
-  "@enrollErrorDetail": {
     "placeholders": {
       "error": {
         "type": "String"
@@ -358,8 +534,7 @@
       }
     }
   },
-  "text_qrCode": "二維碼",
-  "missedDaysCount": "{count, plural, =0{0 missed days} =1{1 missed day} other{{count} missed days}}",
+  "missedDaysCount": "{count, plural, =0{未錯過天數} =1{錯過1天} other{錯過{count}天}}",
   "@missedDaysCount": {
     "placeholders": {
       "count": {
@@ -367,13 +542,291 @@
       }
     }
   },
-  "plan_enrolled": "已加入",
+  "plan_status_on_track": "進度正常！",
   "start_now": "立即開始",
   "plan_enroll": "加入",
-  "plan_starts_on": "開始於 {date}",
-  "@plan_starts_on": {
+  "show_second_version": "顯示次要版本",
+  "enable_add_msg": "開啟以同時對讀主文的其他翻譯或音譯",
+  "main_version": "主要版本",
+  "second_version": "次要版本",
+  "second_version_msg": "次要版本將會顯示在主要版本的內文下方",
+  "version": "所有版本",
+  "parallel_version": "對讀版本",
+  "version_not_available": "無可用版本",
+  "read_full_text": "閱讀完整文本",
+  "reader_source_label": "來源",
+  "reader_license_label": "授權",
+  "series_stats": "{planCount} 個章節 · {totalDays} 天",
+  "force_update_title": "需要更新",
+  "force_update_message": "有新版本可用，請更新後繼續使用。",
+  "force_update_button": "立即更新",
+  "settings_section_personalisation": "個人化",
+  "settings_section_more": "更多",
+  "settings_section_account": "帳號",
+  "settings_edit_profile": "編輯個人檔案",
+  "settings_theme": "主題",
+  "settings_notification_row": "通知",
+  "settings_feedback_row": "意見回饋",
+  "edit_profile_title": "編輯個人檔案",
+  "edit_profile_save": "儲存",
+  "edit_profile_first_name": "名字",
+  "edit_profile_last_name": "姓氏",
+  "edit_profile_bio": "自我介紹",
+  "edit_profile_bio_hint": "向大家介紹一下自己",
+  "edit_profile_delete_account": "刪除帳號",
+  "edit_profile_photo_not_uploaded": "相片尚未上傳",
+  "edit_profile_photo_too_large": "圖片過大，請選擇 1 MB 以下的相片後再試一次",
+  "edit_profile_photo_upload_failed": "無法上傳您的相片，請再試一次",
+  "edit_profile_choose_from_library": "從相簿選擇",
+  "edit_profile_take_photo": "拍照",
+  "edit_profile_offline": "您目前離線，請連接網路後再試一次",
+  "edit_profile_save_failed": "無法儲存您的變更，請再試一次",
+  "edit_profile_traditions": "傳承",
+  "edit_profile_choose_traditions": "選擇您的傳承",
+  "edit_profile_tradition_remove_failed": "無法移除傳承，請再試一次",
+  "edit_profile_tradition_save_failed": "無法儲存傳承，請再試一次",
+  "username_label": "使用者名稱",
+  "username_taken": "這個名稱已被使用",
+  "username_available_label": "可使用：",
+  "username_check_error": "無法檢查使用者名稱，請再試一次",
+  "username_invalid_format": "使用者名稱格式無效",
+  "username_min_length": "使用者名稱至少需 3 個字元",
+  "username_max_length": "使用者名稱不可超過 30 個字元",
+  "username_no_spaces": "使用者名稱不可包含空格",
+  "username_invalid_chars": "僅允許字母、數字、_ . -",
+  "username_must_start_alphanumeric": "使用者名稱須以字母或數字開頭",
+  "username_must_end_alphanumeric": "使用者名稱須以字母或數字結尾",
+  "person_name_min_length": "至少需要 1 個字元",
+  "person_name_max_length": "不得超過 50 個字元",
+  "person_name_invalid_chars": "僅允許字母、空格、連字號和撇號",
+  "about_title": "關於",
+  "about_connect_with_us": "與我們交流",
+  "about_description": "我們協助佛教徒透過每日的學習、修持與交流，減少惡行、增長善行，更深入地了解自己的心。並希望藉此，讓一切眾生皆能離苦得樂。",
+  "about_social_website": "網頁",
+  "me_guest_headline": "體驗完整功能",
+  "me_guest_subtitle": "建立免費帳號以儲存您的進度",
+  "me_my_stats": "我的統計",
+  "me_day_streak": "連續 {count} 天",
+  "@me_day_streak": {
     "placeholders": {
-      "date": { "type": "String" }
+      "count": {
+        "type": "int"
+      }
     }
-  }
+  },
+  "me_best_streak": "最長連續：{count} 天",
+  "@me_best_streak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accumulations": "累積",
+  "accumulations_search": "搜索累積",
+  "accumulations_search_for": "尋找累積內容",
+  "accumulations_no_found": "尚無相關累積內容",
+  "me_accumulation": "累積總數",
+  "me_counts": "次",
+  "me_minutes": "分鐘",
+  "me_hours": "小時",
+  "me_total_meditation_time": "禪修總時間",
+  "me_days_plan_practiced_suffix": "天計畫已完成",
+  "me_streak_share_message": "我在 {appName} 已連續 {count} 天！",
+  "@me_streak_share_message": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "me_streak_share_quote": "我在 WeBuddhist 的連續紀錄！",
+  "me_streak_days_count": "{count} 天",
+  "@me_streak_days_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "share_this_streak": "分享我的連續紀錄",
+  "me_streak_share_error": "無法分享連續紀錄，請重試",
+  "delete_account_title": "刪除帳號",
+  "delete_account_description": "若您刪除帳號，您在 WeBuddhist 中的所有資料、紀錄與個人化設定將被永久刪除。請注意，此操作無法復原。如欲繼續，請點按下方按鈕。",
+  "delete_account_button": "刪除帳號",
+  "delete_account_confirm_message": "您確定要刪除您的 WeBuddhist 帳號嗎？",
+  "legal_title": "法律資訊",
+  "legal_terms_of_service": "使用條款",
+  "legal_privacy_policy": "隱私政策",
+  "follow": "追蹤",
+  "following": "追蹤中",
+  "calendar_title": "日历",
+  "calendar_upcoming_events": "近期活动",
+  "calendar_day_short": "日",
+  "calendar_day_label": "日",
+  "calendar_day_month": "藏历{month}月{day}日",
+  "@calendar_day_month": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "month": {
+        "type": "int"
+      }
+    }
+  },
+  "calendar_lunar_month": "藏历{ordinal}月",
+  "@calendar_lunar_month": {
+    "placeholders": {
+      "ordinal": {
+        "type": "String"
+      }
+    }
+  },
+  "moon_phase_new_moon": "新月",
+  "moon_phase_waxing_crescent": "蛾眉月",
+  "moon_phase_first_quarter": "上弦月",
+  "moon_phase_waxing_gibbous": "盈凸月",
+  "moon_phase_full_moon": "满月",
+  "moon_phase_waning_gibbous": "亏凸月",
+  "moon_phase_last_quarter": "下弦月",
+  "moon_phase_waning_crescent": "残月",
+
+  "join": "加入",
+  "joined": "已加入",
+  "group_member": "位成員",
+  "group_members": "位成員",
+  "group_tab_members": "成員",
+  "group_tab_followers": "追蹤者",
+  "group_members_heading": "成員({count})",
+  "group_followers_heading": "追蹤者({count})",
+  "@group_members_heading": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@group_followers_heading": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_invite": "邀請",
+  "group_members_load_error": "無法載入成員，請再試一次。",
+  "group_followers_load_error": "無法載入追蹤者，請再試一次。",
+  "group_members_empty": "尚無成員",
+  "group_followers_empty": "尚無追蹤者",
+  "group_follower": "位追蹤者",
+  "group_followers": "位追蹤者",
+  "group_links_title": "連結",
+  "group_and_more_links": "及另外 {count} 個連結",
+  "group_practice_with_us": "與我們一起修行",
+  "series_practicing_with_group": "與 {groupName} 一起修行",
+  "group_join_to_contribute": "加入以貢獻",
+  "group_accumulator_join_error": "無法加入累積，請再試一次。",
+  "group_accumulator_participants": "{count} 位參與者",
+  "group_accumulator_leaderboard": "排行榜",
+  "group_accumulator_my_contributions": "我的貢獻",
+  "group_accumulator_recited": "已誦讀",
+  "group_accumulator_total": "總數",
+  "group_accumulator_contributions_empty": "加入此累積以追蹤您的貢獻。",
+  "group_accumulator_recite_now": "立即誦念",
+
+  "share_this_quote": "分享这句话",
+  "shared_from": "分享自",
+  "verse_share_error": "无法分享引文，请重试",
+  "share_app_message": "我一直在用这款应用培养每日佛法修行的习惯，觉得你也会喜欢。",
+  "share_streak_message": "我一直在养成每日修行的好习惯，想和你分享。有朋友一起坚持会更容易。来WeBuddhist和我一起吧。",
+  "share_chant_message": "我想和你分享这段诵文。你可以在WeBuddhist上练习它，还能找到整个诵文和经典库。",
+  "share_quote_message": "我喜欢WeBuddhist上的这段引语，想和你分享。在WeBuddhist应用上阅读更多深刻的引语。",
+  "share_mala_message": "我一直在WeBuddhist上使用这串电子念珠，想和你分享。这是一个随时随地修行的便捷方式。",
+  "share_passage_message": "我喜欢这段经文，想和你分享。你可以在WeBuddhist上阅读完整的上下文。",
+  "share_timer_message": "我想和你分享WeBuddhist上的这个禅修计时器。它让建立禅修习惯变得更轻松。",
+  "share_plan_message": "我正在跟随这个佛法修行计划，想和你分享。你可以在WeBuddhist上免费和我一起修行。",
+  "share_plan_subject": "在WeBuddhist上和我一起吧",
+  "share_group_invite_message": "我希望你能加入我们的群组。让我们在WeBuddhist上一起修行吧。",
+  "connect_subtitle": "尋找你的社群，一起修持",
+  "discover_groups": "探索社群",
+  "my_groups": "我的社群",
+  "see_all": "查看全部",
+  "search_groups": "搜尋社群",
+  "search_for_groups": "搜尋社群",
+  "no_groups_found": "找不到符合的社群",
+  "connect_groups_empty_title": "尚無社群",
+  "connect_groups_empty_subtitle": "恭喜，你已加入我們所有的社群！請稍後再來，更多社群即將推出",
+  "connect_groups_load_error": "無法載入社群，\n請檢查網路連線後重試",
+  "weekday_monday": "週一",
+  "weekday_tuesday": "週二",
+  "weekday_wednesday": "週三",
+  "weekday_thursday": "週四",
+  "weekday_friday": "週五",
+  "weekday_saturday": "週六",
+  "weekday_sunday": "週日",
+
+  "reader_search_failed": "搜尋失敗。\n請重試",
+  "reader_swipe_up_for_more": "向上滑動查看更多",
+  "reader_videos": "影片",
+  "reader_about_this_version": "關於此版本",
+  "reader_version_count": "{count, plural, other{{count} 個版本}}",
+  "mala_no_mantras": "暫無咒語",
+  "mala_count_load_error": "無法載入您的計數",
+  "mala_mantra_label": "咒語",
+  "bookmarks_empty_all_title": "尚無書籤。",
+  "bookmarks_empty_all_subtitle": "將任何內容加入書籤即可儲存於此。",
+  "bookmarks_empty_plans_title": "尚無已加書籤的計畫。",
+  "bookmarks_empty_plans_subtitle": "將計畫加入書籤即可儲存於此。",
+  "bookmarks_empty_malas_title": "尚無已加書籤的念珠。",
+  "bookmarks_empty_malas_subtitle": "將念珠加入書籤即可儲存於此。",
+  "bookmarks_empty_timers_title": "尚無已加書籤的計時器。",
+  "bookmarks_empty_timers_subtitle": "將計時器加入書籤即可儲存於此。",
+  "bookmarks_empty_texts_title": "尚無已加書籤的文本。",
+  "bookmarks_empty_texts_subtitle": "將文本加入書籤即可儲存於此。",
+  "bookmark_removed": "已移除書籤",
+  "bookmark_remove_failed": "移除書籤失敗",
+  "bookmark_saved": "書籤已儲存",
+  "bookmark_save_failed": "儲存書籤失敗",
+  "bookmarks_yesterday": "昨天",
+  "webview_timeout_error": "頁面載入時間過長。請檢查您的網路連線。",
+  "webview_load_failed": "頁面載入失敗",
+  "privacy_policy_load_error": "無法載入隱私政策頁面。",
+  "terms_of_service_load_error": "無法載入服務條款頁面。",
+  "series_enroll_error": "加入系列失敗",
+  "series_share_message": "和我一起在 WeBuddhist 上修習 {title}。\n\n{url}",
+  "player_back_10": "後退 10 秒",
+  "player_pause": "暫停",
+  "player_play": "播放",
+  "player_forward_10": "快進 10 秒",
+  "session_plans_load_error": "無法載入計畫。\n請稍後重試。",
+  "session_chants_load_error": "無法載入課誦",
+  "session_no_chants": "未找到課誦",
+  "session_malas_load_error": "無法載入念珠",
+  "session_no_malas": "未找到念珠",
+  "session_timers_load_error": "無法載入計時器",
+  "session_no_timers": "未找到計時器",
+  "days_count": "{count, plural, other{{count} 天}}",
+  "timer_minute_session": "{minutes} 分鐘練習",
+  "ai_use_search_instead": "改用搜尋",
+  "ai_mode_label": "AI",
+  "plan_day_of": "第 {day} 天，共 {total} 天",
+  "pagination_position": "{current} / {total}",
+  "plan_shorts_title": "社群短片",
+  "author_details_load_error": "無法載入作者資訊。\n請重試。",
+  "link_cannot_open": "無法開啟此連結",
+  "link_invalid": "無效的網址",
+  "author_no_plans": "尚未建立計畫",
+  "author_plans_load_error": "無法載入計畫",
+  "source_with_value": "來源：{value}",
+  "license_with_value": "授權：{value}",
+  "loading_previous_pages": "正在載入上文……（{count} 頁）",
+  "loading_more_pages": "正在載入更多……（{count} 頁）",
+  "drag_to_resize": "拖動以調整大小",
+  "day_completion_share_message": "我刚在 WeBuddhist 上完成了一天的修行练习。加入我，一起培养每日修行的好习惯。",
+  "group_accumulator_share_message": "我正在 WeBuddhist 上参加 {group} 的累积活动「{accumulation}」，快来加入我吧！",
+  "group_accumulator_share_message_no_group": "我正在 WeBuddhist 上参加累积活动「{accumulation}」，快来加入我吧！"
 }

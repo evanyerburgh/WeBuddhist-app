@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/constants/app_config.dart';
+import 'package:flutter_pecha/core/di/core_providers.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/theme/theme_notifier.dart';
-import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/shared/widgets/app_toggle_switch.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_pecha/core/constants/app_config.dart';
 
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
@@ -19,6 +22,9 @@ class MoreScreen extends ConsumerWidget {
     Locale(AppConfig.englishLanguageCode),
     Locale(AppConfig.chineseLanguageCode),
     Locale(AppConfig.tibetanLanguageCode),
+    Locale(AppConfig.hindiLanguageCode),
+    Locale(AppConfig.mongolianLanguageCode),
+    Locale(AppConfig.nepaliLanguageCode),
   ];
 
   String _getLanguageName(Locale locale) {
@@ -29,6 +35,12 @@ class MoreScreen extends ConsumerWidget {
         return '中文';
       case AppConfig.tibetanLanguageCode:
         return 'བོད་ཡིག';
+      case AppConfig.hindiLanguageCode:
+        return 'हिन्दी';
+      case AppConfig.mongolianLanguageCode:
+        return 'Монгол';
+      case AppConfig.nepaliLanguageCode:
+        return 'नेपाली';
       default:
         return locale.languageCode;
     }
@@ -44,9 +56,16 @@ class MoreScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(AppAssets.arrowLeft),
+          onPressed: () => context.pop(),
+        ),
         elevation: 0,
         title: Text(
           localizations.nav_settings,
+          strutStyle: context.tibetanStrutStyle(
+            Theme.of(context).textTheme.headlineSmall?.fontSize ?? 24,
+          ),
           style: Theme.of(
             context,
           ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -57,117 +76,82 @@ class MoreScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           children: [
-            // Profile Section
-            if (authState.isLoggedIn && !authState.isGuest) ...[
-              _buildProfileSection(context, ref),
-              const SizedBox(height: 32),
-            ],
-
-            // Appearance Section
-            _buildSectionHeader(context, localizations.settings_appearance),
+            // Personalisation Section
+            _buildSectionHeader(
+              context,
+              localizations.settings_section_personalisation,
+            ),
             const SizedBox(height: 12),
+            if (authState.isLoggedIn && !authState.isGuest)
+              _buildSettingsRow(
+                context,
+                icon: AppAssets.profile,
+                title: localizations.settings_edit_profile,
+                onTap: () => context.push(AppRoutes.profile),
+              ),
+            _buildLanguageRow(context, ref, locale),
+            _buildNotificationRow(context, localizations),
             _buildThemeToggleRow(context, ref, isDarkMode, localizations),
             const SizedBox(height: 24),
 
-            // Language Section
-            _buildSectionHeader(context, localizations.language),
-            const SizedBox(height: 12),
-            _buildLanguageRow(context, ref, locale),
-            const SizedBox(height: 24),
-
-            // Notifications Section
-            _buildSectionHeader(context, localizations.notification_settings),
+            // More Section
+            _buildSectionHeader(context, localizations.settings_section_more),
             const SizedBox(height: 12),
             _buildSettingsRow(
               context,
-              icon: PhosphorIconsRegular.bell,
-              title: localizations.notification_settings,
-              onTap: () => context.push(NotificationSettingsScreen.routeName),
+              icon: AppAssets.about,
+              title: localizations.about_title,
+              onTap: () => context.push(AppRoutes.about),
             ),
-            const SizedBox(height: 24),
-
-            // Account Section
-            _buildSectionHeader(context, localizations.settings_account),
-            const SizedBox(height: 12),
-            if (!authState.isLoggedIn || authState.isGuest) ...[
-              _buildSettingsRow(
-                context,
-                icon: PhosphorIconsRegular.signIn,
-                title: localizations.sign_in,
-                onTap: () => LoginDrawer.show(context, ref),
-              ),
-            ] else ...[
-              _buildSettingsRow(
-                context,
-                icon: PhosphorIconsRegular.signOut,
-                title: localizations.logout,
-                onTap: () => _showLogoutDialog(context, ref),
-              ),
-            ],
-            const SizedBox(height: 16),
             _buildSettingsRow(
               context,
-              icon: PhosphorIconsRegular.chatCircleText,
-              title: localizations.feedback_wishlist,
+              icon: AppAssets.legal,
+              title: localizations.legal_title,
+              onTap: () => context.push(AppRoutes.legal),
+            ),
+            _buildSettingsRow(
+              context,
+              icon: AppAssets.feedback,
+              title: localizations.settings_feedback_row,
+              trailingIcon: AppAssets.arrowSquareOut,
               onTap: () async {
                 final url =
                     "https://app-webuddhist.ideas.userback.io/p/5omSMHB8A9VMUrD6vLrE";
                 await launchUrl(Uri.parse(url));
               },
             ),
+            const SizedBox(height: 24),
+
+            // Account Section
+            _buildSectionHeader(
+              context,
+              localizations.settings_section_account,
+            ),
+            const SizedBox(height: 12),
+            if (!authState.isLoggedIn || authState.isGuest) ...[
+              _buildSettingsRow(
+                context,
+                icon: AppAssets.signIn,
+                title: localizations.sign_in,
+                onTap:
+                    () =>
+                        LoginDrawer.show(context, ref, useRootNavigator: true),
+              ),
+            ] else ...[
+              _buildSettingsRow(
+                context,
+                icon: AppAssets.signOut,
+                title: localizations.logout,
+                onTap: () => _showLogoutDialog(context, ref),
+                isDestructive: true,
+              ),
+            ],
+            const SizedBox(height: 32),
+            _buildVersionFooter(context, ref),
+            const SizedBox(height: 8),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildProfileSection(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(userProvider).user;
-    final avatarUrl = user?.avatarUrl ?? '';
-
-    return Row(
-      children: [
-        Hero(
-          tag: 'profile-avatar',
-          child: CircleAvatar(
-            radius: 48,
-            backgroundColor: AppColors.grey300,
-            backgroundImage:
-                avatarUrl.isNotEmpty
-                    ? avatarUrl.cachedNetworkImageProvider
-                    : null,
-            child:
-                avatarUrl.isEmpty
-                    ? Icon(
-                      PhosphorIconsRegular.user,
-                      size: 40,
-                      color: AppColors.grey600,
-                    )
-                    : null,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                user?.fullName ?? 'User',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                user?.email ?? '',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: AppColors.grey600),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -177,50 +161,60 @@ class MoreScreen extends ConsumerWidget {
     bool isDarkMode,
     AppLocalizations localizations,
   ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          isDarkMode ? localizations.themeDark : localizations.themeLight,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-        _ThemeToggle(
-          isDarkMode: isDarkMode,
-          onChanged: (value) {
-            ref
-                .read(themeModeProvider.notifier)
-                .setTheme(value ? ThemeMode.dark : ThemeMode.light);
-          },
-        ),
-      ],
+    return _buildSettingsRow(
+      context,
+      icon: isDarkMode ? AppAssets.themeMoon : AppAssets.theme,
+      title: localizations.settings_theme,
+      onTap: () {
+        ref
+            .read(themeModeProvider.notifier)
+            .setTheme(isDarkMode ? ThemeMode.light : ThemeMode.dark);
+      },
+      trailing: _ThemeToggle(
+        isDarkMode: isDarkMode,
+        onChanged: (value) {
+          ref
+              .read(themeModeProvider.notifier)
+              .setTheme(value ? ThemeMode.dark : ThemeMode.light);
+        },
+      ),
+    );
+  }
+
+  Widget _buildNotificationRow(
+    BuildContext context,
+    AppLocalizations localizations,
+  ) {
+    return _buildSettingsRow(
+      context,
+      icon: AppAssets.notification,
+      title: localizations.settings_notification_row,
+      onTap: () => context.push(NotificationSettingsScreen.routeName),
     );
   }
 
   Widget _buildLanguageRow(BuildContext context, WidgetRef ref, Locale locale) {
+    final currentLanguageName = _getLanguageName(locale);
     return InkWell(
       onTap: () => _showLanguageBottomSheet(context, ref, locale),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
             Icon(
-              PhosphorIconsRegular.globe,
+              AppAssets.language,
               size: 24,
               color: Theme.of(context).iconTheme.color,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                _getLanguageName(locale),
+                currentLanguageName,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
-            Icon(
-              PhosphorIconsRegular.caretRight,
-              size: 20,
-              color: AppColors.grey600,
-            ),
+            Icon(AppAssets.caretRight, size: 24, color: AppColors.grey600),
           ],
         ),
       ),
@@ -232,21 +226,61 @@ class MoreScreen extends ConsumerWidget {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    Widget? trailing,
+    IconData? trailingIcon,
+    bool isDestructive = false,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Icon(icon, size: 24, color: Theme.of(context).iconTheme.color),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(title, style: Theme.of(context).textTheme.bodyLarge),
-            ),
-          ],
+    final color =
+        isDestructive ? Colors.red.shade600 : Theme.of(context).iconTheme.color;
+    final textColor = isDestructive ? Colors.red.shade600 : null;
+
+    final rowContent = Row(
+      children: [
+        Icon(icon, size: 24, color: color),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: textColor),
+          ),
         ),
+        if (trailing == null)
+          Icon(
+            trailingIcon ?? AppAssets.caretRight,
+            size: 24,
+            color: isDestructive ? Colors.red.shade600 : AppColors.grey600,
+          ),
+      ],
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(8),
+              child: rowContent,
+            ),
+          ),
+          if (trailing != null) trailing,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVersionFooter(BuildContext context, WidgetRef ref) {
+    final versionLabel = ref.watch(appVersionLabelProvider);
+    if (versionLabel.isEmpty) return const SizedBox.shrink();
+    return Center(
+      child: Text(
+        versionLabel,
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: AppColors.grey600),
       ),
     );
   }
@@ -266,69 +300,79 @@ class MoreScreen extends ConsumerWidget {
     WidgetRef ref,
     Locale? currentLocale,
   ) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder:
-          (context) => SafeArea(
-            child: Container(
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color:
-                    isDarkMode ? AppColors.surfaceDark : AppColors.surfaceWhite,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Handle bar
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12, bottom: 24),
-                    child: Container(
-                      width: 80,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isDarkMode ? AppColors.grey600 : Colors.black,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  // Language options container
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
+      isScrollControlled: true,
+      useRootNavigator: true,
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        final selected = currentLocale ?? Localizations.localeOf(sheetContext);
+        return SafeArea(
+          top: false,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(sheetContext).size.height * 0.7,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
                     decoration: BoxDecoration(
-                      color:
-                          isDarkMode ? AppColors.cardDark : AppColors.grey100,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children:
-                          _supportedLocales.map((localeItem) {
-                            final isSelected =
-                                (currentLocale ??
-                                    Localizations.localeOf(context)) ==
-                                localeItem;
-                            return _buildLanguageOption(
-                              context,
-                              ref,
-                              localeItem,
-                              isSelected,
-                              isDarkMode,
-                            );
-                          }).toList(),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    l10n.language,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  itemCount: _supportedLocales.length,
+                  separatorBuilder:
+                      (_, __) => Divider(
+                        height: 1,
+                        color: theme.dividerColor.withValues(alpha: 0.4),
+                      ),
+                  itemBuilder: (_, index) {
+                    final localeItem = _supportedLocales[index];
+                    final isSelected = selected == localeItem;
+                    return _buildLanguageOption(
+                      sheetContext,
+                      ref,
+                      localeItem,
+                      isSelected,
+                      theme,
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
             ),
           ),
+        );
+      },
     );
   }
 
@@ -337,30 +381,41 @@ class MoreScreen extends ConsumerWidget {
     WidgetRef ref,
     Locale localeItem,
     bool isSelected,
-    bool isDarkMode,
+    ThemeData theme,
   ) {
-    return InkWell(
-      onTap: () {
-        ref.read(localeProvider.notifier).setLocale(localeItem);
-        Navigator.pop(context);
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? (isDarkMode
-                      ? AppColors.surfaceVariantDark
-                      : AppColors.goldAccent)
-                  : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          _getLanguageName(localeItem),
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+    final activeColor = theme.colorScheme.primary;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          ref.read(localeProvider.notifier).setLocale(localeItem);
+          Navigator.pop(context);
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _getLanguageName(localeItem),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color:
+                        isSelected
+                            ? activeColor
+                            : theme.textTheme.titleMedium?.color,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 18,
+                child:
+                    isSelected
+                        ? Icon(AppAssets.check, size: 18, color: activeColor)
+                        : const SizedBox.shrink(),
+              ),
+            ],
           ),
         ),
       ),
@@ -392,9 +447,9 @@ class MoreScreen extends ConsumerWidget {
                 child: Text(localizations.cancel),
               ),
               TextButton(
-                onPressed: () {
-                  ref.read(authProvider.notifier).logout();
+                onPressed: () async {
                   Navigator.pop(context);
+                  await ref.read(authProvider.notifier).logout();
                 },
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.red.shade600,
@@ -416,74 +471,11 @@ class _ThemeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onChanged(!isDarkMode),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 64,
-        height: 32,
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: isDarkMode ? AppColors.grey800 : AppColors.goldAccent,
-        ),
-        child: Stack(
-          children: [
-            // Sun icon (visible in light mode, on the left)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 200),
-              left: isDarkMode ? 32 : 0,
-              top: 0,
-              bottom: 0,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: isDarkMode ? 0.0 : 1.0,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.surfaceWhite,
-                  ),
-                  child: Center(
-                    child: Icon(
-                      PhosphorIconsRegular.sun,
-                      size: 18,
-                      color: Colors.amber.shade600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Moon icon (visible in dark mode, on the right)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 200),
-              right: isDarkMode ? 0 : 32,
-              top: 0,
-              bottom: 0,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: isDarkMode ? 1.0 : 0.0,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.grey600,
-                  ),
-                  child: Center(
-                    child: Icon(
-                      PhosphorIconsFill.cloudMoon,
-                      size: 18,
-                      color: AppColors.surfaceDark,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return AppToggleSwitch(
+      value: isDarkMode,
+      onChanged: onChanged,
+      thumbOnColor: AppColors.surfaceWhite,
+      thumbOffColor: AppColors.surfaceWhite,
     );
   }
 }

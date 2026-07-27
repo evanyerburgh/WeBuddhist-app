@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
+import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/onboarding/application/onboarding_state.dart';
 import 'package:flutter_pecha/features/onboarding/domain/usecases/onboarding_usecases.dart';
@@ -16,10 +20,14 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     required SaveOnboardingPreferencesUseCase saveOnboardingPreferencesUseCase,
     required CompleteOnboardingUseCase completeOnboardingUseCase,
     required ClearOnboardingPreferencesUseCase clearOnboardingPreferencesUseCase,
+    required AnalyticsService analyticsService,
+    void Function()? onCompleted,
   })  : _loadSavedPreferencesUseCase = loadSavedPreferencesUseCase,
         _saveOnboardingPreferencesUseCase = saveOnboardingPreferencesUseCase,
         _completeOnboardingUseCase = completeOnboardingUseCase,
         _clearOnboardingPreferencesUseCase = clearOnboardingPreferencesUseCase,
+        _analytics = analyticsService,
+        _onCompleted = onCompleted,
         super(OnboardingState.initial()) {
     loadSavedPreferences();
   }
@@ -28,6 +36,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   final SaveOnboardingPreferencesUseCase _saveOnboardingPreferencesUseCase;
   final CompleteOnboardingUseCase _completeOnboardingUseCase;
   final ClearOnboardingPreferencesUseCase _clearOnboardingPreferencesUseCase;
+  final AnalyticsService _analytics;
+  /// Called when onboarding is successfully completed so the auth layer can
+  /// update its in-state flag without a network round-trip.
+  final void Function()? _onCompleted;
 
   /// Load saved preferences from local storage on initialization.
   Future<void> loadSavedPreferences() async {
@@ -98,8 +110,8 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     }
   }
 
-  /// Submit preferences and mark onboarding as complete.
-  /// Returns true only when completion was successfully persisted to storage.
+  /// Submit preferences and mark onboarding as complete via the API.
+  /// Returns true only when completion was successfully persisted.
   Future<bool> submitPreferences() async {
     state = state.copyWithLoading(true);
     try {
@@ -123,6 +135,11 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
           completed = true;
         },
       );
+
+      if (completed) {
+        unawaited(_analytics.track(AnalyticsEvents.onboardingCompleted));
+        _onCompleted?.call();
+      }
 
       state = state.copyWithLoading(false);
       return completed;

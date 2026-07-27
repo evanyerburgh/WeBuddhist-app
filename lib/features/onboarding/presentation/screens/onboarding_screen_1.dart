@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -19,22 +20,26 @@ class OnboardingScreen1 extends StatelessWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 60),
-              // Title: "Welcome to WeBuddhist"
-              _buildTitle(context),
-              const Spacer(),
-              // Center logo with concentric circles
-              _buildLogoSection(size),
-              const Spacer(),
-              // Quote text
-              _buildQuote(context),
-              const SizedBox(height: 32),
-              // CTA Button
-              _buildCTAButton(context),
-              const SizedBox(height: 24),
+          child: CustomScrollView(
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 50),
+                    _buildTitle(context),
+                    const SizedBox(height: 100),
+                    _buildLogoSection(size),
+                    const SizedBox(height: 24),
+                    const Spacer(),
+                    _buildTagline(context),
+                    const Spacer(),
+                    _buildCTAButton(context),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -43,21 +48,43 @@ class OnboardingScreen1 extends StatelessWidget {
   }
 
   Widget _buildTitle(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
     return Column(
       children: [
         Text(
           context.l10n.onboarding_welcome,
-          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w500),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: onSurface,
+          ),
         ),
         Text(
           context.l10n.appTitle,
+          textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 36,
+            fontSize: 28,
             fontWeight: FontWeight.w600,
             fontFamily: getFontFamily('en'),
+            color: onSurface,
           ),
         ),
+        const SizedBox(height: 12),
       ],
+    );
+  }
+
+  Widget _buildTagline(BuildContext context) {
+    return Text(
+      context.l10n.onboarding_tagline,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w400,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
     );
   }
 
@@ -68,7 +95,7 @@ class OnboardingScreen1 extends StatelessWidget {
         height: 200,
         child: Center(
           child: Image.asset(
-            'assets/images/webuddhist_gold.png',
+            AppAssets.weBuddhistLogo,
             width: 200,
             height: 200,
             errorBuilder: (context, error, stackTrace) {
@@ -76,38 +103,12 @@ class OnboardingScreen1 extends StatelessWidget {
               return const Icon(
                 Icons.self_improvement_rounded,
                 size: 48,
-                color: AppColors.primary,
+                color: AppColors.brandblue,
               );
             },
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildQuote(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          "\"${context.l10n.onboarding_quote}\"",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            fontFamily: getFontFamily('en'),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          "— Dhammapada 122",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            fontFamily: getFontFamily('en'),
-          ),
-        ),
-      ],
     );
   }
 
@@ -118,21 +119,17 @@ class OnboardingScreen1 extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onNext,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.brandblue,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(28),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16),
         ),
         child: Text(
           context.l10n.onboarding_find_peace,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.306,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
     );

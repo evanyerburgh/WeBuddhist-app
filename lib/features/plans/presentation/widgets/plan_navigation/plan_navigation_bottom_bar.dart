@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 
 /// Shared bottom navigation strip used by both `ReaderScreen` (for
-/// SOURCE_REFERENCE items) and `PlanTextScreen` (for inline TEXT items).
+/// SOURCE_REFERENCE items) and `PlanTextScreen` (for inline TEXT/IMAGE items).
 ///
 /// Renders one of three layouts based on the navigation context:
 /// - **Full controls** (canSwipe): prev arrow, "X of N" + title, next arrow,
@@ -55,9 +57,10 @@ class PlanNavigationBottomBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: canSwipe
-            ? _buildFullControls(context, ctx)
-            : isPlanNavigation
+        child:
+            canSwipe
+                ? _buildFullControls(context, ctx)
+                : isPlanNavigation
                 ? _buildSingleItemControls(context, ctx)
                 : _buildMinimalTitle(context),
       ),
@@ -77,73 +80,92 @@ class PlanNavigationBottomBar extends StatelessWidget {
 
   Widget _buildSingleItemControls(BuildContext context, NavigationContext ctx) {
     final title = ctx.currentItem?.title ?? fallbackTitle;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: _TitleText(
-            text: title,
-            fontFamily: fallbackTitleFontFamily,
+    final onFinish = onFinishedTap ?? () => Navigator.of(context).maybePop();
+    return _buildBalancedRow(
+      center: _TitleText(text: title, fontFamily: fallbackTitleFontFamily),
+      trailing:
+          () => _NavigationButton(
+            icon: AppAssets.check,
+            onTap: onFinish,
           ),
-        ),
-        _NavigationButton(
-          icon: Icons.check,
-          isEnabled: true,
-          onTap: onFinishedTap ?? () => Navigator.of(context).maybePop(),
-        ),
-      ],
     );
   }
 
   Widget _buildFullControls(BuildContext context, NavigationContext ctx) {
     final hasPrevious = ctx.hasPreviousText;
     final hasNext = ctx.hasNextText;
-    final progress =
-        '${(ctx.currentTextIndex ?? 0) + 1} of ${ctx.planTextItems!.length}';
+    final progress = context.l10n.pagination_position(
+      (ctx.currentTextIndex ?? 0) + 1,
+      ctx.planTextItems!.length,
+    );
     final title = ctx.currentItem?.title ?? fallbackTitle;
+    void onPop() => Navigator.of(context).maybePop();
+
+    return _buildBalancedRow(
+      center: Column(
+        children: [
+          _TitleText(text: title),
+          Text(
+            progress,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(
+                context,
+              ).textTheme.bodySmall?.color?.withAlpha(180),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+      leading:
+          hasPrevious
+              ? () => _NavigationButton(
+                icon: AppAssets.caretLeft,
+                onTap: onPreviousTap ?? onPop,
+              )
+              : null,
+      trailing:
+          () =>
+              hasNext
+                  ? _NavigationButton(
+                    icon: AppAssets.caretRight,
+                    onTap: onNextTap ?? onPop,
+                  )
+                  : _NavigationButton(
+                    icon: AppAssets.check,
+                    onTap: onFinishedTap ?? onPop,
+                  ),
+    );
+  }
+
+  /// Keeps [center] visually centred by mirroring whichever side slot is empty
+  /// with an invisible copy of the opposite navigation button.
+  Widget _buildBalancedRow({
+    required Widget center,
+    Widget Function()? leading,
+    Widget Function()? trailing,
+  }) {
+    assert(
+      leading != null || trailing != null,
+      'At least one side slot is required for balance',
+    );
+
+    final leadingWidget =
+        leading?.call() ?? _invisibleSlot(trailing!.call());
+    final trailingWidget =
+        trailing?.call() ?? _invisibleSlot(leading!.call());
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        if (hasPrevious)
-          _NavigationButton(
-            icon: Icons.chevron_left,
-            isEnabled: true,
-            onTap: onPreviousTap ?? () => Navigator.of(context).maybePop(),
-          ),
-        Expanded(
-          child: Column(
-            children: [
-              _TitleText(text: title),
-              Text(
-                progress,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.color
-                          ?.withAlpha(180),
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-            ],
-          ),
-        ),
-        if (hasNext)
-          _NavigationButton(
-            icon: Icons.chevron_right,
-            isEnabled: true,
-            onTap: onNextTap ?? () => Navigator.of(context).maybePop(),
-          )
-        else
-          _NavigationButton(
-            icon: Icons.check,
-            isEnabled: true,
-            onTap: onFinishedTap ?? () => Navigator.of(context).maybePop(),
-          ),
+        leadingWidget,
+        Expanded(child: center),
+        trailingWidget,
       ],
     );
+  }
+
+  Widget _invisibleSlot(Widget child) {
+    return Opacity(opacity: 0, child: IgnorePointer(child: child));
   }
 }
 
@@ -155,53 +177,36 @@ class _TitleText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontSize = Theme.of(context).textTheme.titleMedium?.fontSize ?? 16;
+
     return Text(
       text,
       overflow: TextOverflow.ellipsis,
       maxLines: 1,
       textAlign: TextAlign.center,
+      strutStyle: context.tibetanStrutStyle(fontSize),
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontFamily: fontFamily,
-            fontWeight: FontWeight.bold,
-          ),
+        fontFamily: fontFamily,
+        fontWeight: FontWeight.bold,
+      ),
     );
   }
 }
 
 class _NavigationButton extends StatelessWidget {
   final IconData icon;
-  final bool isEnabled;
   final VoidCallback onTap;
 
   const _NavigationButton({
     required this.icon,
-    required this.isEnabled,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = isEnabled
-        ? Theme.of(context).colorScheme.onSurface
-        : Theme.of(context).colorScheme.onSurface.withAlpha(80);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: color.withAlpha(isEnabled ? 100 : 50),
-              width: 1,
-            ),
-          ),
-          child: Icon(icon, size: 24, color: color),
-        ),
-      ),
+    return IconButton(
+      onPressed: onTap,
+      icon: Icon(icon, size: 24),
     );
   }
 }

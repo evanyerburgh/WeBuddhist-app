@@ -14,7 +14,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.4.3+59
+version: 2.18.0+105
 
 environment:
   sdk: ^3.7.2
@@ -29,14 +29,19 @@ dependencies:
   flutter:
     sdk: flutter
 
+  airbridge_flutter_sdk: ^4.9.0 # check latest at pub.dev
+
   # Audio
   just_audio: ^0.9.36
 
   # Localization
-  cupertino_icons: ^1.0.8
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
+
+  # Tibetan calendar (date conversion) + calendar grid UI
+  tibetan_calendar: ^2.0.0
+  table_calendar: ^3.1.2
 
   # Routing
   go_router: ^15.1.1
@@ -45,9 +50,11 @@ dependencies:
   flutter_html: ^3.0.0
   html: ^0.15.6
 
+  # Markdown
+  flutter_markdown_plus: ^1.0.7
+
   # State management
   flutter_riverpod: ^2.6.1
-  flutter_gen: ^5.10.0
 
   # Authentication
   auth0_flutter: ^1.9.0
@@ -61,17 +68,12 @@ dependencies:
   # Networking
   http: ^1.3.0
   dio: ^5.7.0
-  pretty_dio_logger: ^1.4.0
-  dio_cache_interceptor: ^3.4.0
 
   # Secure Storage
-  flutter_secure_storage: ^9.2.2
+  flutter_secure_storage: ^10.3.1
 
   # Functional Programming
   fpdart: ^1.1.0
-
-  # Carousel
-  carousel_slider: ^5.1.1
 
   # FQuery
   fquery: ^1.5.4-beta.2
@@ -90,13 +92,9 @@ dependencies:
   # Permissions
   permission_handler: ^12.0.1
 
-  # Story view
-  story_view: ^0.16.6
   url_launcher: ^6.3.2
-  flutter_story_presenter: ^1.0.7
 
   # Audio service
-  just_audio_background: ^0.0.1-beta.17
   audio_service: ^0.18.18
 
   # Equatable
@@ -107,7 +105,6 @@ dependencies:
   google_fonts: ^6.2.1
 
   # Hive
-  hive: ^2.2.3
   hive_flutter: ^1.1.0
 
   # Icons
@@ -116,17 +113,21 @@ dependencies:
 
   # Shared preferences
   shared_preferences: ^2.5.3
-  share_plus: ^11.0.0
+  share_plus: ^12.0.2
+  app_links: ^6.4.0
   screenshot: ^3.0.0
   path_provider: ^2.1.5
   scrollable_positioned_list: ^0.3.8
-  video_player: ^2.10.0
   youtube_player_flutter: ^9.1.1
   image_gallery_saver_plus: ^4.0.1
+  image_picker: ^1.1.2
 
   # Network connectivity
   connectivity_plus: ^6.1.1
-  upgrader: ^12.3.0
+  upgrader: ^13.5.0
+
+  # WebView
+  webview_flutter: ^4.10.0
   # QR code generation
   qr_flutter: ^4.1.0
   skeletonizer: ^2.1.2
@@ -137,9 +138,14 @@ dependencies:
 
   # UUID generation
   uuid: ^4.5.1
-  firebase_core: ^4.6.0
-  firebase_analytics: ^12.2.0
-  firebase_crashlytics: ^5.1.0
+  firebase_core: ^4.11.0
+  firebase_analytics: ^12.4.3
+  firebase_crashlytics: ^5.2.4
+  # Required by Airbridge SDK for uninstall tracking (RemoteMessage at R8 minify time)
+  firebase_messaging: ^16.4.1
+  posthog_flutter: ^5.24.0
+  package_info_plus: ^9.0.0
+  flutter_image_compress: ^2.4.0
 
 dev_dependencies:
   flutter_test:
@@ -158,8 +164,10 @@ flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   remove_alpha_ios: true
-  image_path: "assets/images/webuddhist_gold.png"
+  image_path: "assets/launcher/app_icon.png"
   min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/launcher/app_icon_fg.png"
 
 # The following section is specific to Flutter packages.
 flutter:
@@ -179,20 +187,16 @@ flutter:
     - assets/audios/
     - assets/audios/routine.caf
     - assets/audios/routine.ogg
+    - assets/images/moon/
     - .env.dev
     - .env.staging
     - .env.prod
 
   fonts:
     # Tibetan fonts
-    - family: SambhotaUnicode
+    - family: BabelStoneTibetan
       fonts:
-        - asset: assets/fonts/sambhotaunicodeweb.ttf
-          style: normal
-
-    - family: Atisha
-      fonts:
-        - asset: assets/fonts/Atisha.ttf
+        - asset: assets/fonts/BabelStoneTibetan.ttf
           style: normal
 # To add assets to your application, add an assets section, like this:
 # assets:

@@ -27,14 +27,8 @@ class StorageKeys {
   // ========== ONBOARDING ==========
   /// Onboarding preferences JSON
   static const String onboardingPreferences = 'onboarding_preferences';
-  /// Device-level onboarding completion flag (legacy / guest fallback)
-  static const String onboardingCompleted = 'onboarding_completed';
-  /// Per-user onboarding completion key — one entry per user ID.
-  /// Use this to check/set completion for a specific account.
-  static String onboardingCompletedForUser(String userId) =>
-      'onboarding_completed_$userId';
   /// ID of the currently logged-in user, written before the router fires
-  /// so the route guard can read the correct per-user onboarding key.
+  /// so feature code can resolve the active account.
   static const String currentUserId = 'current_user_id';
   /// Current onboarding step
   static const String onboardingStep = 'onboarding_step';
@@ -56,23 +50,26 @@ class StorageKeys {
   static const String dailyReminderTime = 'daily_reminder_time';
   /// Daily reminder enabled flag
   static const String dailyReminderEnabled = 'daily_reminder_enabled';
-
-  // Special-plan (ITCC and similar) keys — hardcoded per-day content series.
-  /// Per-plan startedAt prefix. Full key: `special_plan_started_at_<planId>` → ISO8601 string.
-  static const String specialPlanStartedAtPrefix = 'special_plan_started_at_';
-  /// Idempotency flag preventing duplicate immediate fires on any series day.
-  /// Full key: `special_plan_day1_shown_<planId>_<yyyy-MM-dd>` → bool.
-  /// Note: key prefix is kept for backwards compatibility with stored data.
-  static const String specialPlanDay1ShownPrefix = 'special_plan_day1_shown_';
-
-  // General plan duration-based notification keys — all other enrolled plans.
-  /// Per-plan startedAt prefix. Full key: `plan_started_at_<planId>` → ISO8601 string.
-  static const String planStartedAtPrefix = 'plan_started_at_';
-  /// Per-plan totalDays prefix. Full key: `plan_total_days_<planId>` → int.
-  static const String planTotalDaysPrefix = 'plan_total_days_';
-  /// Idempotency flag preventing duplicate immediate fires.
-  /// Full key: `plan_immediate_shown_<planId>_<yyyy-MM-dd>` → bool.
-  static const String planImmediateShownPrefix = 'plan_immediate_shown_';
+  /// App-level master notification toggle. When false the app cancels all
+  /// scheduled notifications without touching OS permission. Re-enabling
+  /// re-schedules from the stored routine. Default: true.
+  static const String notificationMasterEnabled = 'notification_master_enabled';
+  /// App-level toggle for routine (plan) block notifications. Default: true.
+  static const String notificationRoutineEnabled = 'notification_routine_enabled';
+  /// App-level toggle for recitation block notifications. Default: true.
+  static const String notificationRecitationEnabled = 'notification_recitation_enabled';
+  /// App-level toggle for practice (mala / accumulator) block notifications.
+  /// Default: true.
+  static const String notificationPracticeEnabled = 'notification_practice_enabled';
+  /// App-level toggle for timer block notifications (the "starting now"
+  /// reminder). Default: true.
+  static const String notificationTimerEnabled = 'notification_timer_enabled';
+  /// Latest Firebase Cloud Messaging registration token for this install.
+  static const String fcmToken = 'fcm_token';
+  /// Stable per-install identifier sent as `device_id` when registering the
+  /// push token, so token refreshes update the same backend record. Generated
+  /// once (UUID) and persisted for the lifetime of the install.
+  static const String pushDeviceId = 'push_device_id';
 
   // ========== FEATURES ==========
   /// Profile data JSON
@@ -82,6 +79,13 @@ class StorageKeys {
   /// and live in memory only — they don't survive navigating to a different
   /// text because `versionId` is text-scoped and won't resolve elsewhere.
   static const String readerSecondaryEnabled = 'reader_secondary_enabled';
+  /// Bead-tap sound on the mala counter. Default: true.
+  static const String malaSoundEnabled = 'mala_sound_enabled';
+  /// Haptic feedback on the mala counter. Default: true.
+  static const String malaVibrationEnabled = 'mala_vibration_enabled';
+  /// Per-preset accumulation source: `personal` or `group:{uuid}`.
+  static const String malaAccumulationSelectionPrefix =
+      'mala_accumulation_selection_';
 
   // ========== BUSINESS LOGIC ==========
   /// Last profile update timestamp

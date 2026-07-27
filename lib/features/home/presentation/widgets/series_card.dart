@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
-import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 
-class SeriesCard extends ConsumerWidget {
+class SeriesCard extends StatelessWidget {
   const SeriesCard({super.key, required this.series, required this.onTap});
 
   final Series series;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final locale = ref.watch(localeProvider);
-    final fontSize = locale.languageCode == 'bo' ? 16.0 : 14.0;
+  Widget build(BuildContext context) {
+    final fontSize = getLocalizedFontSize(AppTextSize.label);
 
     return InkWell(
       onTap: onTap,
@@ -27,8 +25,8 @@ class SeriesCard extends ConsumerWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            CachedNetworkImageWidget(
-              imageUrl: series.imageUrl,
+            ResponsiveCoverImage(
+              image: series.coverImage,
               fallbackAsset: 'assets/images/tag_cover/cover_image.jpg',
               fit: BoxFit.cover,
               placeholder: _buildPlaceholder(context),
@@ -43,7 +41,7 @@ class SeriesCard extends ConsumerWidget {
                     Colors.transparent,
                     Colors.black.withValues(alpha: 0.8),
                   ],
-                  stops: const [0.5, 1.0],
+                  stops: const [0.8, 1.0],
                 ),
               ),
             ),
@@ -55,7 +53,7 @@ class SeriesCard extends ConsumerWidget {
                 series.title,
                 style: TextStyle(
                   fontSize: fontSize,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w900,
                   height: 1.3,
                   color: Colors.white,
                   shadows: [

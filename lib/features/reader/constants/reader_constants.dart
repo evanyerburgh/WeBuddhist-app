@@ -1,3 +1,5 @@
+import 'package:flutter_pecha/core/theme/font_config.dart';
+
 /// Constants for reader feature
 class ReaderConstants {
   ReaderConstants._(); // Private constructor to prevent instantiation
@@ -12,6 +14,10 @@ class ReaderConstants {
   static const double minSplitRatio = 0.0;
   static const double maxSplitRatio = 0.8;
   static const double commentaryDividerHeight = 8.0;
+
+  /// Minimum visible panel height (logical px) before the panel auto-dismisses
+  /// when the user drags the handle downwards.
+  static const double minPanelHeightBeforeDismiss = 120.0;
 
   // Scroll behavior
   static const Duration scrollDebounce = Duration(milliseconds: 100);
@@ -45,11 +51,16 @@ class ReaderConstants {
   static const double segmentHorizontalPadding = 12.0;
   static const double segmentVerticalPadding = 6.0;
   static const double segmentNumberWidth = 28.0;
-  static const double segmentBorderRadius = 8.0;
+  static const double segmentBorderRadius = 16.0;
+
+  /// Segment numbers render at a fraction of the segment's content font size.
+  static const double segmentNumberFontScale = 0.6;
 
   // Font sizes
-  static const double tibetanBaseFontSize = 22.0;
-  static const double defaultBaseFontSize = 22.0;
-  static const double sectionTitleFontSizeTibetan = 26.0;
-  static const double sectionTitleFontSizeDefault = 22.0;
+  static const double tibetanBaseFontSize = AppFontConfig.contentFontSize;
+  static const double defaultBaseFontSize = AppFontConfig.contentFontSize;
+  static const double sectionTitleFontSizeTibetan =
+      AppFontConfig.tibetanDisplayFontSize;
+  static const double sectionTitleFontSizeDefault =
+      AppFontConfig.displayFontSize;
 }

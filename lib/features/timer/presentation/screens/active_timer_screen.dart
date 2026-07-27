@@ -1,0 +1,334 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
+import 'package:flutter_pecha/features/timer/domain/usecases/stop_user_timer_usecase.dart';
+import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
+import 'package:flutter_pecha/features/timer/presentation/services/timer_sound_player.dart';
+import 'package:flutter_pecha/features/timer/presentation/widgets/timer_progress_ring.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+enum _TimerPhase { countdown, running, finished }
+
+class ActiveTimerScreen extends ConsumerStatefulWidget {
+  const ActiveTimerScreen({super.key, required this.presetTimer});
+
+  final PresetTimer presetTimer;
+
+  @override
+  ConsumerState<ActiveTimerScreen> createState() => _ActiveTimerScreenState();
+}
+
+class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen> {
+  static const _countdownStart = 5;
+  static const _ringSize = 280.0;
+  static const _controlsSpacing = 48.0;
+  static const _controlsHeight = 56.0;
+  static const _centerTextHeight = 48.0;
+  static const _durationFontSize = 40.0;
+
+  final _logger = AppLogger('ActiveTimerScreen');
+
+  _TimerPhase _phase = _TimerPhase.countdown;
+  int _countdownValue = _countdownStart;
+  int _remainingMs = 0;
+  bool _isPaused = false;
+
+  Timer? _timer;
+  late final TimerSoundPlayer _soundPlayer;
+
+  int get _totalMs => widget.presetTimer.durationMs;
+
+  int get _elapsedMs => _totalMs - _remainingMs;
+
+  double get _elapsedProgress {
+    if (_totalMs <= 0) return 1;
+    if (_phase == _TimerPhase.countdown) return 0;
+    return ((_totalMs - _remainingMs) / _totalMs).clamp(0.0, 1.0);
+  }
+
+  bool get _showFinish =>
+      _phase == _TimerPhase.finished ||
+      (_phase == _TimerPhase.running && _isPaused);
+
+  bool get _showDiscard =>
+      _phase == _TimerPhase.finished ||
+      (_phase == _TimerPhase.running && _isPaused);
+
+  @override
+  void initState() {
+    super.initState();
+    _remainingMs = _totalMs;
+    _soundPlayer = TimerSoundPlayer();
+    _soundPlayer.init();
+    _startCountdown();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _soundPlayer.dispose();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    _timer?.cancel();
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _onCountdownTick(),
+    );
+  }
+
+  void _onCountdownTick() {
+    if (!mounted) return;
+
+    if (_countdownValue <= 1) {
+      _timer?.cancel();
+      _startMainTimer();
+      return;
+    }
+
+    setState(() => _countdownValue--);
+  }
+
+  void _startMainTimer() {
+    _soundPlayer.play();
+
+    setState(() {
+      _phase = _TimerPhase.running;
+      _remainingMs = _totalMs;
+      _isPaused = false;
+    });
+
+    _timer?.cancel();
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _onMainTimerTick(),
+    );
+  }
+
+  void _onMainTimerTick() {
+    if (!mounted || _isPaused || _phase != _TimerPhase.running) return;
+
+    setState(() {
+      _remainingMs -= 1000;
+      if (_remainingMs <= 0) {
+        _remainingMs = 0;
+        _phase = _TimerPhase.finished;
+        _timer?.cancel();
+        _soundPlayer.play();
+        _reportTimerStop();
+      }
+    });
+  }
+
+  void _togglePause() {
+    if (_phase != _TimerPhase.running) return;
+
+    final enteringPause = !_isPaused;
+    setState(() => _isPaused = !_isPaused);
+
+    if (enteringPause) {
+      _reportTimerStop();
+    }
+  }
+
+  void _finish() {
+    _timer?.cancel();
+    if (_phase == _TimerPhase.running) {
+      _reportTimerStop();
+    }
+    context.pop();
+  }
+
+  void _discardSession() {
+    _timer?.cancel();
+    context.pop();
+  }
+
+  void _reportTimerStop() {
+    final useCase = ref.read(stopUserTimerUseCaseProvider);
+    useCase(
+      StopUserTimerParams(
+        timerId: widget.presetTimer.id,
+        durationMs: _elapsedMs,
+      ),
+    ).then((result) {
+      result.fold(
+        (failure) => _logger.warning('Failed to report timer stop: $failure'),
+        (_) {},
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final textTheme = Theme.of(context).textTheme;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final finishFontSize = textTheme.labelLarge?.fontSize ?? 16.0;
+
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TimerProgressRing(
+                        size: _ringSize,
+                        progress: _elapsedProgress,
+                        child: _buildCenterContent(textColor),
+                      ),
+                      const SizedBox(height: _controlsSpacing),
+                      SizedBox(
+                        height: _controlsHeight,
+                        child:
+                            _phase == _TimerPhase.running
+                                ? IconButton(
+                                  onPressed: _togglePause,
+                                  iconSize: 40,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: _controlsHeight,
+                                    minHeight: _controlsHeight,
+                                  ),
+                                  icon: Icon(
+                                    _isPaused
+                                        ? AppAssets.play
+                                        : AppAssets.pause,
+                                    color: textColor,
+                                  ),
+                                )
+                                : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Visibility(
+                visible: _phase != _TimerPhase.countdown,
+                maintainSize: true,
+                maintainAnimation: true,
+                maintainState: true,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IgnorePointer(
+                        ignoring: !_showFinish,
+                        child: Opacity(
+                          opacity: _showFinish ? 1 : 0,
+                          child: Center(
+                            child: OutlinedButton(
+                              onPressed: _finish,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: textColor,
+                                side: BorderSide(color: textColor),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 46,
+                                  vertical: 16,
+                                ),
+                                shape: const StadiumBorder(),
+                                backgroundColor:
+                                    Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? AppColors.surfaceDark
+                                        : AppColors.surfaceWhite,
+                              ),
+                              child: Text(
+                                l10n.timer_finish,
+                                strutStyle: context.tibetanStrutStyle(
+                                  finishFontSize,
+                                ),
+                                style: textTheme.labelLarge?.copyWith(
+                                  color: textColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      IgnorePointer(
+                        ignoring: !_showDiscard,
+                        child: Opacity(
+                          opacity: _showDiscard ? 1 : 0,
+                          child: TextButton(
+                            onPressed: _discardSession,
+                            style: TextButton.styleFrom(
+                              foregroundColor: textColor,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                            ),
+                            child: Text(
+                              l10n.timer_discard_session,
+                              strutStyle: context.tibetanStrutStyle(
+                                finishFontSize,
+                              ),
+                              style: textTheme.labelLarge?.copyWith(
+                                color: textColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCenterContent(Color textColor) {
+    final textTheme = Theme.of(context).textTheme;
+    final text =
+        _phase == _TimerPhase.countdown
+            ? '$_countdownValue'
+            : _formatDuration(_remainingMs);
+
+    return SizedBox(
+      height: _centerTextHeight,
+      child: Center(
+        child: Text(
+          text,
+          style: textTheme.displaySmall?.copyWith(
+            fontSize: _durationFontSize,
+            fontWeight: FontWeight.w600,
+            height: 1,
+            letterSpacing: 1,
+            color: textColor,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDuration(int ms) {
+    final totalSeconds = (ms / 1000).ceil();
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    final minutesText = minutes.toString().padLeft(2, '0');
+    final secondsText = seconds.toString().padLeft(2, '0');
+    return '$minutesText : $secondsText';
+  }
+}

@@ -1,25 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_day_share.dart';
 
-class DayCompletionBottomSheet extends StatelessWidget {
+class DayCompletionBottomSheet extends StatefulWidget {
   final int dayNumber;
   final int totalDays;
   final int completedDays;
-  final String? imageUrl;
+  final String? fallbackImageUrl;
+  final String? thumbnailUrl;
+  final String? shareableImageUrl;
   final String planTitle;
+  final String planId;
+  final String planLanguage;
 
   const DayCompletionBottomSheet({
     super.key,
     required this.dayNumber,
     required this.totalDays,
     required this.completedDays,
-    required this.imageUrl,
+    required this.fallbackImageUrl,
+    this.thumbnailUrl,
+    this.shareableImageUrl,
     required this.planTitle,
+    required this.planId,
+    required this.planLanguage,
   });
 
   @override
+  State<DayCompletionBottomSheet> createState() =>
+      _DayCompletionBottomSheetState();
+}
+
+class _DayCompletionBottomSheetState extends State<DayCompletionBottomSheet> {
+  final GlobalKey _shareButtonKey = GlobalKey();
+  bool _isSharing = false;
+
+  bool get _hasShareableImage =>
+      widget.shareableImageUrl?.trim().isNotEmpty == true;
+
+  @override
   Widget build(BuildContext context) {
-    final progress = totalDays > 0 ? completedDays / totalDays : 0.0;
+    final progress =
+        widget.totalDays > 0 ? widget.completedDays / widget.totalDays : 0.0;
 
     return Container(
       width: double.infinity,
@@ -39,8 +63,10 @@ class DayCompletionBottomSheet extends StatelessWidget {
           const SizedBox(height: 20),
           _buildPlanImageCard(context),
           const SizedBox(height: 30),
-          _buildProgressBar(context, progress),
-          const SizedBox(height: 25)
+          _hasShareableImage
+              ? _buildShareButton(context)
+              : _buildProgressBar(context, progress),
+          const SizedBox(height: 25),
         ],
       ),
     );
@@ -51,9 +77,9 @@ class DayCompletionBottomSheet extends StatelessWidget {
       width: 40,
       height: 4,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(
-          alpha: 0.4,
-        ),
+        color: Theme.of(
+          context,
+        ).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -80,7 +106,7 @@ class DayCompletionBottomSheet extends StatelessWidget {
 
   Widget _buildDayText(BuildContext context) {
     return Text(
-      'Day $dayNumber of $totalDays',
+      context.l10n.plan_day_of(widget.dayNumber, widget.totalDays),
       style: TextStyle(
         fontSize: 24,
         fontWeight: FontWeight.bold,
@@ -92,15 +118,19 @@ class DayCompletionBottomSheet extends StatelessWidget {
 
   Widget _buildPlanImageCard(BuildContext context) {
     final imageWidth = MediaQuery.of(context).size.width - 80;
+    final displayImageUrl =
+        widget.thumbnailUrl?.trim().isNotEmpty == true
+            ? widget.thumbnailUrl!.trim()
+            : widget.fallbackImageUrl?.trim();
 
-    if (imageUrl == null || imageUrl!.isEmpty) {
+    if (displayImageUrl == null || displayImageUrl.isEmpty) {
       return _buildPlaceholderImage(context, imageWidth);
     }
 
     return CachedNetworkImageWidget(
-      imageUrl: imageUrl!,
+      imageUrl: displayImageUrl,
       width: imageWidth,
-      height: 160,
+      height: 180,
       fit: BoxFit.cover,
       borderRadius: BorderRadius.circular(12),
     );
@@ -109,7 +139,7 @@ class DayCompletionBottomSheet extends StatelessWidget {
   Widget _buildPlaceholderImage(BuildContext context, double width) {
     return Container(
       width: width,
-      height: 160,
+      height: 180,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         gradient: LinearGradient(
@@ -129,6 +159,66 @@ class DayCompletionBottomSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildShareButton(BuildContext context) {
+    final buttonWidth = MediaQuery.of(context).size.width - 48;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return SizedBox(
+      width: buttonWidth,
+      height: 56,
+      child: FilledButton.icon(
+        key: _shareButtonKey,
+        onPressed: _isSharing ? null : _shareImage,
+        icon:
+            _isSharing
+                ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colorScheme.surface.withValues(alpha: 0.85),
+                  ),
+                )
+                : const Icon(AppAssets.readerShare, size: 22),
+        label: Text(
+          context.l10n.share,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: colorScheme.onSurface,
+          foregroundColor: colorScheme.surface,
+          disabledBackgroundColor: colorScheme.onSurface.withValues(alpha: 0.5),
+          disabledForegroundColor: colorScheme.surface.withValues(alpha: 0.85),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _shareImage() async {
+    final url = widget.shareableImageUrl?.trim();
+    if (url == null || url.isEmpty || _isSharing) return;
+
+    setState(() => _isSharing = true);
+
+    try {
+      await sharePlanDayImage(
+        context: context,
+        shareableImageUrl: url,
+        dayNumber: widget.dayNumber,
+        planId: widget.planId,
+        planLanguage: widget.planLanguage,
+        shareButtonKey: _shareButtonKey,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSharing = false);
+      }
+    }
   }
 
   Widget _buildProgressBar(BuildContext context, double progress) {

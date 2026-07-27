@@ -1,4 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AppBottomNavItem<T> extends StatelessWidget {
@@ -15,7 +17,6 @@ class AppBottomNavItem<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-
     // Active color uses primary color, inactive uses grey (dark mode friendly)
     final activeColor =
         theme.colorScheme.brightness == Brightness.dark
@@ -24,36 +25,104 @@ class AppBottomNavItem<T> extends StatelessWidget {
     final inactiveColor =
         isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600;
 
+    final isSelected = model.type == selectedType;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
-          child:
-              model.type == selectedType
-                  ? PhosphorIcon(
-                    model.selectedIconData,
-                    size: 24,
-                    color: activeColor,
-                  )
-                  : PhosphorIcon(
-                    model.unSelectedIconData,
-                    size: 24,
-                    color: inactiveColor,
-                  ),
+          child: _buildLeading(
+            isSelected: isSelected,
+            activeColor: activeColor,
+            inactiveColor: inactiveColor,
+          ),
         ),
         const SizedBox(height: 2),
         Text(
           model.label,
+          strutStyle: context.tibetanStrutStyle(
+            Theme.of(context).textTheme.bodySmall?.fontSize ?? 12,
+            compact: true,
+          ),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontWeight:
-                model.type == selectedType
-                    ? FontWeight.bold
-                    : FontWeight.normal,
-            color: model.type == selectedType ? activeColor : inactiveColor,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? activeColor : inactiveColor,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildLeading({
+    required bool isSelected,
+    required Color activeColor,
+    required Color inactiveColor,
+  }) {
+    final avatarUrl = model.avatarUrl;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      return _NavProfileAvatar(
+        key: ValueKey(isSelected),
+        avatarUrl: avatarUrl,
+        isSelected: isSelected,
+        activeColor: activeColor,
+        inactiveColor: inactiveColor,
+        fallbackIcon:
+            isSelected ? model.selectedIconData : model.unSelectedIconData,
+        iconColor: isSelected ? activeColor : inactiveColor,
+      );
+    }
+
+    return PhosphorIcon(
+      isSelected ? model.selectedIconData : model.unSelectedIconData,
+      size: 24,
+      color: isSelected ? activeColor : inactiveColor,
+    );
+  }
+}
+
+class _NavProfileAvatar extends StatelessWidget {
+  const _NavProfileAvatar({
+    super.key,
+    required this.avatarUrl,
+    required this.isSelected,
+    required this.activeColor,
+    required this.inactiveColor,
+    required this.fallbackIcon,
+    required this.iconColor,
+  });
+
+  final String avatarUrl;
+  final bool isSelected;
+  final Color activeColor;
+  final Color inactiveColor;
+  final IconData fallbackIcon;
+  final Color iconColor;
+
+  static const _size = 26.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: _size,
+      height: _size,
+      decoration: BoxDecoration(shape: BoxShape.circle),
+      child: ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: avatarUrl,
+          cacheKey:
+              Uri.tryParse(
+                avatarUrl,
+              )?.replace(query: '', fragment: '').toString() ??
+              avatarUrl,
+          width: _size,
+          height: _size,
+          fit: BoxFit.cover,
+          errorWidget:
+              (context, url, error) =>
+                  PhosphorIcon(fallbackIcon, size: _size, color: iconColor),
+        ),
+      ),
     );
   }
 }
@@ -63,6 +132,7 @@ class AppBottomBarItemModel<T> {
   final IconData unSelectedIconData;
   final String label;
   final Widget? selectedWidget;
+  final String? avatarUrl;
 
   final T type;
 
@@ -72,6 +142,7 @@ class AppBottomBarItemModel<T> {
     required this.selectedWidget,
     required this.label,
     required this.type,
+    this.avatarUrl,
   });
 
   @override

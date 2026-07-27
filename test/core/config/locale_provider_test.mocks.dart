@@ -59,23 +59,6 @@ class MockLocalStorageService extends _i1.Mock
           as _i3.Future<void>);
 
   @override
-  _i3.Future<void> setOnboardingCompleted(bool? completed) =>
-      (super.noSuchMethod(
-            Invocation.method(#setOnboardingCompleted, [completed]),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
-          )
-          as _i3.Future<void>);
-
-  @override
-  _i3.Future<bool> getOnboardingCompleted() =>
-      (super.noSuchMethod(
-            Invocation.method(#getOnboardingCompleted, []),
-            returnValue: _i3.Future<bool>.value(false),
-          )
-          as _i3.Future<bool>);
-
-  @override
   _i3.Future<T?> get<T>(String? key) =>
       (super.noSuchMethod(
             Invocation.method(#get, [key]),

@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/features/texts/data/models/commentary/segment_commentary_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/segment_detail_with_text.dart';
+import 'package:flutter_pecha/features/texts/data/models/segment_info.dart';
 import 'package:flutter_pecha/features/texts/data/models/translation/segment_translation_response.dart';
 
 class SegmentRemoteDatasource {
@@ -34,6 +36,61 @@ class SegmentRemoteDatasource {
     }
   }
 
+  Future<SegmentDetailWithText> getSegmentWithTextDetails(
+    String segmentId,
+  ) async {
+    try {
+      final response = await dio.get(
+        '/segments/$segmentId',
+        queryParameters: {'text_details': 'true'},
+      );
+
+      if (response.statusCode == 200) {
+        return SegmentDetailWithText.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      } else {
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('Segment not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException(
+            'Failed to load segment: ${response.statusCode}',
+          );
+        }
+      }
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to load segment');
+    }
+  }
+
+  Future<SegmentInfo> getSegmentInfo(String segmentId) async {
+    try {
+      final response = await dio.get('/segments/$segmentId/info');
+
+      if (response.statusCode == 200) {
+        return SegmentInfo.fromJson(response.data as Map<String, dynamic>);
+      } else {
+        if (response.statusCode == 401) {
+          throw const AuthenticationException('Unauthorized');
+        } else if (response.statusCode == 404) {
+          throw const NotFoundException('Segment info not found');
+        } else if (response.statusCode == 429) {
+          throw const RateLimitException('Too many requests');
+        } else {
+          throw ServerException(
+            'Failed to load segment info: ${response.statusCode}',
+          );
+        }
+      }
+    } on DioException catch (e) {
+      _throwDioException(e, 'Failed to load segment info');
+    }
+  }
+
   // get all segment commentaries
   Future<SegmentCommentaryResponse> getSegmentCommentaries(
     String segmentId,
@@ -51,7 +108,9 @@ class SegmentRemoteDatasource {
         } else if (response.statusCode == 429) {
           throw const RateLimitException('Too many requests');
         } else {
-          throw ServerException('Failed to load segment commentaries: ${response.statusCode}');
+          throw ServerException(
+            'Failed to load segment commentaries: ${response.statusCode}',
+          );
         }
       }
     } on DioException catch (e) {
@@ -78,7 +137,9 @@ class SegmentRemoteDatasource {
         } else if (response.statusCode == 429) {
           throw const RateLimitException('Too many requests');
         } else {
-          throw ServerException('Failed to load segment translations: ${response.statusCode}');
+          throw ServerException(
+            'Failed to load segment translations: ${response.statusCode}',
+          );
         }
       }
     } on DioException catch (e) {

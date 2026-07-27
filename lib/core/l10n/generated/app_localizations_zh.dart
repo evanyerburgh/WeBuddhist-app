@@ -12,24 +12,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => 'WeBuddhist';
 
   @override
-  String get pechaHeading => 'WeBuddhist';
-
-  @override
-  String get learnLiveShare => 'Learn, Live, and Share';
-
-  @override
-  String get themeLight => '浅色模式';
-
-  @override
-  String get themeDark => '深色模式';
-
-  @override
-  String get switchToLight => '切换到浅色模式';
-
-  @override
-  String get switchToDark => '切换到深色模式';
-
-  @override
   String get sign_in => '登錄';
 
   @override
@@ -39,11 +21,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_welcome => '歡迎來到';
 
   @override
-  String get onboarding_description => '在這裡每天學習、生活與分享佛教智慧';
+  String get onboarding_setup_subtitle => '讓我們為您設定，只需一分鐘';
 
   @override
-  String get onboarding_quote =>
-      'Drop by drop is the water pot filled. Likewise, the wise person, gathering it little by little, fills themselves with good.';
+  String get onboarding_tagline => '學習、修持、連結。每日。';
+
+  @override
+  String get onboarding_quote => '滴水穿石 ‧ 聚沙成塔';
 
   @override
   String get onboarding_find_peace => '立即開始';
@@ -52,24 +36,52 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_continue => '下一步';
 
   @override
-  String get onboarding_first_question => '选择您的语言：';
+  String get onboarding_first_question => '選擇您的語言：';
 
   @override
-  String get onboarding_second_question =>
-      'Which path or school do you feel drawn to?';
+  String get onboarding_choose_option => '至少選擇一項';
 
   @override
-  String get onboarding_choose_option => '至少选择一项：';
+  String get onboarding_all_set => '一切就緒';
 
   @override
-  String get onboarding_all_set => '您已準備就緒';
+  String get onboarding_all_set_description => '以下是為您的修行準備的內容。';
 
   @override
-  String get onboarding_all_set_description =>
-      '我們已根據您的傳承為您量身打造體驗。每天出現——哪怕片刻——見證您的修行成長。';
+  String get onboarding_all_set_feature_practices => '持咒、累積、禪修和學習計畫供您選擇';
 
   @override
-  String get onboarding_begin_practice => '開始您的修行';
+  String get onboarding_all_set_feature_reminders => '溫和的日常提醒，隨時為您準備好';
+
+  @override
+  String get onboarding_begin_practice => '尋找您的第一項修持';
+
+  @override
+  String get onboarding_2_title => '接下來，看看它是如何運作的。';
+
+  @override
+  String get onboarding_2_subtitle => '養成習慣的三個小步驟';
+
+  @override
+  String get onboarding_2_step1_title => '選擇您的修持方式';
+
+  @override
+  String get onboarding_2_step1_desc => '持咒、數念珠、設定禪坐計時器，或跟隨您傳承中的學習計畫。';
+
+  @override
+  String get onboarding_2_step2_title => '融入您的日常生活';
+
+  @override
+  String get onboarding_2_step2_desc => '建立日常日程，我們會發送溫和的提醒，幫助您堅持。';
+
+  @override
+  String get onboarding_2_step3_title => '每天修持幾分鐘';
+
+  @override
+  String get onboarding_2_step3_desc => '哪怕只是一刻也有意義。日復一日，您的修持會不斷成長。';
+
+  @override
+  String get home_recitation => '持誦';
 
   @override
   String get home_today => '今天';
@@ -84,34 +96,157 @@ class AppLocalizationsZh extends AppLocalizations {
   String get home_good_evening => '晚上好';
 
   @override
-  String get home_meditationTitle => '禪修時刻';
+  String get home_meditationTitle => '禪修';
 
   @override
-  String get home_prayerTitle => 'Prayer of the Day';
+  String get home_prayerTitle => '今日祈願';
 
   @override
-  String get home_scripture => 'Guided Scripture';
+  String get home_scripture => '導讀經典';
 
   @override
-  String get home_meditation => 'Guided Meditation';
+  String get home_meditation => '導引禪修';
 
   @override
-  String get home_goDeeper => '深入了解';
+  String get home_goDeeper => '深入學習';
 
   @override
-  String get home_intention => '今日心願';
+  String get home_intention => '我今日的意願';
 
   @override
-  String get home_recitation => '持誦';
+  String get home_overall_stats => '整體統計';
 
   @override
-  String get home_bringing => '融入生活';
+  String get home_plans => '計劃';
 
   @override
-  String get home_profile => 'Profile';
+  String home_plans_count(int count) {
+    return '$count 計劃';
+  }
 
   @override
-  String get no_feature_content => '尚無內容';
+  String home_recitation_count(int count) {
+    return '$count 持誦';
+  }
+
+  @override
+  String get home_shortcut_plans => '計劃';
+
+  @override
+  String get home_chants => '持誦';
+
+  @override
+  String get home_mala => '念珠';
+
+  @override
+  String get session_mala => '念珠';
+
+  @override
+  String get bookmark_mala => '念珠';
+
+  @override
+  String get bookmark_timers => '計時';
+
+  @override
+  String get bookmark_texts => '經文';
+
+  @override
+  String get mala_add_to_practice => '加入我的修持';
+
+  @override
+  String get mala_add_mala_round => 'Add mala round';
+
+  @override
+  String get mala_add_rounds_title => 'Add mala rounds:';
+
+  @override
+  String get mala_add_rounds_message =>
+      'Add the number of mala rounds you did outside this app.';
+
+  @override
+  String get mala_add_to_bookmark => '書籤';
+
+  @override
+  String get mala_sound => '聲音';
+
+  @override
+  String get mala_vibration => '震動';
+
+  @override
+  String get mala_reset_count => '重設計數';
+
+  @override
+  String get mala_reset_title => '重設此念珠？';
+
+  @override
+  String get mala_reset_count_confirm => '目前的計數將歸零，但您的累積仍會保留在終身總數中。';
+
+  @override
+  String get mala_reset_confirm => '重設';
+
+  @override
+  String get mala_action_coming_soon => '即將推出';
+
+  @override
+  String mala_rounds_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 遍',
+      one: '1 遍',
+      zero: '0 遍',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mala_counter_semantics(int bead, int total, String rounds) {
+    return '計數 $bead/$total，$rounds';
+  }
+
+  @override
+  String get mala_group_accumulations => 'Group accumulations';
+
+  @override
+  String get mala_groups_section => 'Groups';
+
+  @override
+  String get mala_group_untitled => 'Untitled group';
+
+  @override
+  String get home_timer => '計時';
+
+  @override
+  String get preset_timers => '預設計時';
+
+  @override
+  String get meditation_timer => '禪修計時';
+
+  @override
+  String get timer_min => '分鐘';
+
+  @override
+  String get timer_start => '開始';
+
+  @override
+  String get timer_finish => '完成';
+
+  @override
+  String get timer_discard_session => '放弃练习';
+
+  @override
+  String get home_hello_prefix => '你好，';
+
+  @override
+  String get home_greeting_fallback_name => '朋友';
+
+  @override
+  String home_share_prompt(String appName) {
+    return '喜歡 $appName 嗎？';
+  }
+
+  @override
+  String get no_feature_content => '尚無精選內容';
 
   @override
   String get nav_home => '首頁';
@@ -120,40 +255,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get nav_explore => '探索';
 
   @override
-  String get nav_texts => '文本';
+  String get nav_learn => '學習';
 
   @override
-  String get nav_learn => '学习';
+  String get nav_practice => '修持計畫';
 
   @override
-  String get nav_practice => '修持計劃';
+  String get nav_settings => '設定';
 
   @override
-  String get nav_settings => '设置';
+  String get nav_connect => '社群';
 
   @override
-  String get nav_connect => '连接';
+  String get nav_me => '個人';
 
   @override
-  String get nav_me => '我';
-
-  @override
-  String get text_browseTheLibrary => '瀏覽文庫';
+  String get tab_practices => '修持計畫';
 
   @override
   String get text_search => '搜尋';
-
-  @override
-  String get text_detail_rootText => '原文本';
-
-  @override
-  String get text_detail_commentaryText => '釋論';
-
-  @override
-  String get text_toc_continueReading => 'Continue Reading';
-
-  @override
-  String get text_toc_content => '內容';
 
   @override
   String get text_toc_versions => '版本';
@@ -162,10 +282,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get text_commentary => '注釋';
 
   @override
-  String get text_translations => '翻譯';
-
-  @override
-  String get text_close_translation => '關閉翻譯';
+  String get resources => '資源';
 
   @override
   String get no_translation => '尚無相關翻譯';
@@ -174,40 +291,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get text_close_commentary => '關閉注釋';
 
   @override
-  String get commentary_total => '總計';
-
-  @override
   String get show_more => '顯示更多';
 
   @override
   String get show_less => '顯示較少';
 
   @override
-  String get read_more => '閱讀更多';
+  String get more => '更多';
+
+  @override
+  String get less => '較少';
 
   @override
   String get no_content => '尚無相關內容';
 
   @override
-  String get no_version => '尚無相關版本';
-
-  @override
   String get no_commentary => '尚無相關注釋';
 
   @override
-  String get no_commentary_message => '此偈誦尚無相關注釋';
+  String commentary_not_available_for_language(String language) {
+    return '暫無 $language 註釋';
+  }
 
   @override
   String get loading => '加載中...';
 
   @override
-  String get choose_image => '選擇圖像';
+  String get choose_image => '選擇圖片';
 
   @override
-  String get choose_bg_image => '選擇背景';
+  String get choose_bg_image => '選擇背景圖片';
 
   @override
-  String get create_image => '創建圖像';
+  String get create_image => '建立圖片';
 
   @override
   String get save => '儲存';
@@ -216,16 +332,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get done => '完成';
 
   @override
-  String get customise_message => '點擊自訂以調整字型大小';
+  String get customise_message => '點擊按鈕以調整文字樣式';
 
   @override
-  String get download_image => '下載圖像';
+  String get download_image => '下載圖片';
 
   @override
   String get no_images_available => '沒有可用的圖片';
 
   @override
-  String get customise_text => '自訂文字';
+  String get customise_text => '自訂文字樣式';
 
   @override
   String get text_size => '文字大小';
@@ -237,109 +353,64 @@ class AppLocalizationsZh extends AppLocalizations {
   String get text_shadow => '文字陰影';
 
   @override
-  String get apply => '執行';
-
-  @override
-  String get practice_nav_title => '修持計劃';
+  String get apply => '套用';
 
   @override
   String get my_plans => '我的計畫';
 
   @override
-  String get find_plans => '尋找計劃';
+  String get browse_plans => '瀏覽修持計畫';
 
   @override
-  String get browse_plans => '尋找計劃';
+  String get plan_info => '修持計畫內容';
 
   @override
-  String get plan_info => '計畫內容';
+  String get start_reading => '立即修持';
 
   @override
-  String get start_plan => '開始計畫';
+  String get tibetan => '藏文';
 
   @override
-  String get start_reading => '開始閱讀';
+  String get sanskrit => '梵文';
 
   @override
-  String get continue_plan => '繼續計劃';
+  String get english => '英文';
 
   @override
-  String get tibetan => 'Tibetan';
+  String get chinese => '白話中文';
 
   @override
-  String get sanskrit => 'Sanskrit';
+  String get classicalChinese => '佛經文體';
 
   @override
-  String get english => 'English';
-
-  @override
-  String get chinese => 'Chinese';
+  String get pali => '巴利文';
 
   @override
   String get language => '語言';
 
   @override
-  String get dailyPracticeNotificationTitle => '每日修持提醒';
-
-  @override
-  String get timeForDailyPractice => '到了每天修持的時間了';
-
-  @override
-  String get recitation_reminder => '持誦提醒';
-
-  @override
-  String get moment_to_pray => '這一刻讓我們一起祈願';
-
-  @override
-  String get plan_unenroll => '退出計劃';
+  String get plan_unenroll => '退出計畫';
 
   @override
   String get unenroll_confirmation => '確定要退出嗎';
 
   @override
-  String get unenroll_message => '您的進度將永久丟失，且無法恢復';
+  String get unenroll_message => '您的進度將被永久刪除，且無法復原';
 
   @override
-  String get practice_plan => '修持計劃幫助您在修持中保持穩定。我們有許多計劃可供選擇，也有時間長短不同的計劃。';
+  String get practice_plan => '建立每日修持。探索適合您的內容';
 
   @override
   String get search_plans => '搜尋計畫...';
 
   @override
-  String get search_for_plans => '搜尋計劃';
+  String get search_for_plans => '搜尋計畫';
 
   @override
-  String get no_plans_found => '無相關計劃';
+  String get no_plans_found => '找不到相關計畫 ';
 
   @override
-  String get no_days_available => '無此天數';
-
-  @override
-  String get notification_turn_on => '請開啟通知';
-
-  @override
-  String get notification_enable_message => '開啟通知以收取每日修持、持誦提醒';
-
-  @override
-  String get enable_notification => '開啟通知';
-
-  @override
-  String get notification_daily_practice => '每日修持';
-
-  @override
-  String get notification_select_time => '設定時間';
-
-  @override
-  String get reminderTime => '提醒時間';
-
-  @override
-  String get notification_daily_recitation => '每日持誦';
-
-  @override
-  String get text_noContent => '所選語言下無可用文本';
-
-  @override
-  String get text_switchToTibetan => '切換成藏文';
+  String get no_days_available => '找不到相關天數';
 
   @override
   String get recitations_title => '唱頌';
@@ -348,7 +419,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recitations_my_recitations => '我的清單';
 
   @override
-  String get browse_recitations => '唱頌';
+  String get browse_recitations => '瀏覽唱誦列表';
 
   @override
   String get recitations_search => '搜索';
@@ -360,12 +431,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recitations_no_found => '尚無相關持誦內容';
 
   @override
-  String get recitations_saved => '已保存持誦';
-
-  @override
-  String get recitations_unsaved => '已移除持誦';
-
-  @override
   String get recitations_no_content => '沒有可用的持誦';
 
   @override
@@ -375,58 +440,379 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recitations_login_prompt => '請登錄以查看您保存的持誦';
 
   @override
-  String get recitations_save => '保存持誦';
-
-  @override
-  String get recitations_unsave => '從已保存中移除';
-
-  @override
-  String get recitations_translation => '翻譯';
-
-  @override
-  String get no_available => '無法';
-
-  @override
-  String get recitations_no_data_message => '此持誦的內容目前不可用。\n請稍後再查看。';
-
-  @override
-  String get recitations_show_translation => '顯示翻譯';
-
-  @override
-  String get recitations_hide_translation => '隱藏翻譯';
-
-  @override
-  String get recitations_show_transliteration => '顯示音譯';
-
-  @override
-  String get recitations_hide_transliteration => '隱藏音譯';
-
-  @override
-  String get recitations_show_recitation => '顯示持誦';
-
-  @override
-  String get recitations_hide_recitation => '隱藏持誦';
-
-  @override
-  String get recitations_show_adaptation => '顯示改編';
-
-  @override
-  String get recitations_hide_adaptation => '隱藏改編';
-
-  @override
-  String get next_recitation => '下一步';
-
-  @override
-  String get settings_appearance => '外觀';
-
-  @override
-  String get settings_notifications => '通知';
-
-  @override
   String get notification_settings => '通知設定';
 
   @override
-  String get settings_account => '帳號';
+  String get notification_allow_title => '允許通知';
+
+  @override
+  String get notification_allow_subtitle_enabled => '此應用程式已啟用通知';
+
+  @override
+  String get notification_allow_subtitle_disabled => '需要權限。請點此前往「設定」授權。';
+
+  @override
+  String get notification_allow_subtitle_paused => '提醒已暫停。點此恢復。';
+
+  @override
+  String get notification_routine_title => '計畫提醒';
+
+  @override
+  String get notification_routine_subtitle_enabled => '您的修持計畫每日提醒';
+
+  @override
+  String get notification_routine_subtitle_disabled => '計畫提醒已暫停。點此恢復。';
+
+  @override
+  String get notification_battery_title => '背景提醒通知';
+
+  @override
+  String get notification_battery_subtitle_enabled => '即使應用程式已關閉，您的提醒通知仍會準時發送。';
+
+  @override
+  String get notification_battery_subtitle_disabled =>
+      '部分 Android 手機會暫停背景應用程式以節省電池使用量，這可能導致提醒通知延遲或遺漏。點此確保應用程式持續運行。';
+
+  @override
+  String get notification_recitation_title => '持誦提醒';
+
+  @override
+  String get notification_recitation_subtitle_enabled => '每日持誦提醒';
+
+  @override
+  String get notification_recitation_subtitle_disabled => '持誦提醒已暫停。點此恢復。';
+
+  @override
+  String get notification_practice_title => '念珠提醒';
+
+  @override
+  String get notification_practice_subtitle_enabled => '每日念珠修持提醒';
+
+  @override
+  String get notification_practice_subtitle_disabled => '念珠提醒已暫停。點此恢復。';
+
+  @override
+  String get notification_timer_title => '計時器提醒';
+
+  @override
+  String get notification_timer_subtitle_enabled => '每日計時器練習提醒';
+
+  @override
+  String get notification_timer_subtitle_disabled => '計時器提醒已暫停。點此恢復。';
+
+  @override
+  String get notification_battery_info_title => '關於背景提醒';
+
+  @override
+  String get notification_battery_info_body =>
+      '部分 Android 手機會暫停背景應用程式以節省電池，這可能導致已排程的提醒延遲或取消。豁免應用程式可讓您的提醒準時可靠地發送。';
+
+  @override
+  String get notification_snack_permission_denied => '通知已被封鎖。請在「設定」中開啟';
+
+  @override
+  String get notification_snack_disable_alarms_in_settings => '在「設定」中關閉鬧鐘與提醒';
+
+  @override
+  String get notification_snack_battery_reenable => '在「設定 → 電池」中還原「電池最佳化設定」';
+
+  @override
+  String get profile_default_bio => '歡迎來到 WeBuddhist';
+
+  @override
+  String get profile_guest_title => '訪客';
+
+  @override
+  String get profile_guest_subtitle => '您正以訪客身分瀏覽';
+
+  @override
+  String get profile_guest_benefits_header => '登入以解鎖：';
+
+  @override
+  String get profile_guest_benefit_save_progress => '儲存您的進度';
+
+  @override
+  String get profile_guest_benefit_personalized => '個人化內容';
+
+  @override
+  String get profile_guest_benefit_notifications => '自訂通知';
+
+  @override
+  String get auth_drawer_title => '請先登入帳號再繼續';
+
+  @override
+  String get auth_drawer_subtitle => '隨時隨地，在任何裝置上繼續您的修持';
+
+  @override
+  String get routine_delete_block_message => '這將刪除該時段及其中所有內容';
+
+  @override
+  String get something_went_wrong => '出了點問題。請再試一次';
+
+  @override
+  String get onboarding_quote_citation => '— 法句經 122';
+
+  @override
+  String get onboarding_traditions_question => '您跟隨哪些傳承？';
+
+  @override
+  String get onboarding_tradition_title => '您如何追随佛陀的教导？';
+
+  @override
+  String get onboarding_tradition_subtitle =>
+      '我们将为您展示您所选修行路径的实践与经典。您可以随时在应用设置中更改此设置。';
+
+  @override
+  String get onboarding_tradition_option_intro => '通過：';
+
+  @override
+  String get onboarding_tradition_show_all_title => '顯示所有內容';
+
+  @override
+  String get onboarding_tradition_show_all_description => '每條道路的實踐和經典';
+
+  @override
+  String get onboarding_skip_for_now => '暫時跳過';
+
+  @override
+  String get onboarding_add_another_tradition => '添加另一個傳承';
+
+  @override
+  String get onboarding_select_all => '全選';
+
+  @override
+  String get onboarding_event_enrollment_error => '無法完成註冊。請檢查您的網路連線，然後再試一次';
+
+  @override
+  String get onboarding_event_question => '加入即將舉辦的活動？';
+
+  @override
+  String get onboarding_event_optional => '選填 · 點擊以加入';
+
+  @override
+  String onboarding_event_duration(String description, int days) {
+    return '$description · $days 天';
+  }
+
+  @override
+  String get onboarding_event_reminder_note => '我們將在每天早上 7:30 提醒您。(可隨時更改。)';
+
+  @override
+  String get tradition_theravada => '上座部佛教';
+
+  @override
+  String get tradition_zen => '禪宗';
+
+  @override
+  String get tradition_tibetan_buddhism => '藏傳佛教';
+
+  @override
+  String get tradition_pure_land => '淨土宗';
+
+  @override
+  String get tradition_ambedkar_buddhism => '安貝卡佛教';
+
+  @override
+  String get plan_go_to_practice => '前往修持計畫';
+
+  @override
+  String get plan_starts_soon_title => '計畫即將開始';
+
+  @override
+  String get plan_joining_late_title => '在開始日期後加入';
+
+  @override
+  String get got_it => '明白了';
+
+  @override
+  String get plan_no_tasks_error => '無法載入任務';
+
+  @override
+  String get plan_day_tasks_load_error => '無法載入當日任務';
+
+  @override
+  String get plans_empty_title => '更多內容即將推出';
+
+  @override
+  String get plans_empty_subtitle => '我們將持續添增修持課程，歡迎隨時回來瀏覽。';
+
+  @override
+  String get find_plans_load_error => '無法載入計畫，\n請稍後再試';
+
+  @override
+  String get connect_coming_soon_subtitle => '在修行路上支持您前行的良師、社群、修持挑戰與相關活動';
+
+  @override
+  String get connect_subtitle => '尋找你的社群，一起修持';
+
+  @override
+  String get discover_groups => '探索社群';
+
+  @override
+  String get my_groups => '我的社群';
+
+  @override
+  String get see_all => '查看全部';
+
+  @override
+  String get connect_groups_load_error => '無法載入社群，\n請檢查網路連線後重試';
+
+  @override
+  String get connect_groups_empty_title => '尚無社群';
+
+  @override
+  String get connect_groups_empty_subtitle => '恭喜，你已加入我們所有的社群！請稍後再來，更多社群即將推出';
+
+  @override
+  String get search_groups => '搜尋社群';
+
+  @override
+  String get search_for_groups => '搜尋社群';
+
+  @override
+  String get no_groups_found => '找不到符合的社群';
+
+  @override
+  String get explore_coming_soon_subtitle => '探索修持、教法與社群活動的精選空間。';
+
+  @override
+  String get learn_coming_soon_subtitle => '專為您日常生活設計的個人學習計畫';
+
+  @override
+  String get creator_featured_plan => '精選計畫';
+
+  @override
+  String get audio_init_error => '無法初始化音訊播放器。請檢查網路連線後重試';
+
+  @override
+  String get meditation_audio_load_error => '無法載入。請檢查網路連線後重試';
+
+  @override
+  String get prayer_audio_load_error => '無法載入音訊。請檢查網路連線後重試';
+
+  @override
+  String get home_no_series_found => '未找到系列';
+
+  @override
+  String get home_no_tags_found => '找不到該標籤';
+
+  @override
+  String get home_celebrated_by => '慶祝者：';
+
+  @override
+  String get reader_settings_tooltip => '閱讀器設定';
+
+  @override
+  String get reader_font_size_tooltip => '字體大小';
+
+  @override
+  String reader_version_title(String language) {
+    return '版本 · $language';
+  }
+
+  @override
+  String reader_script_title(String language) {
+    return '字體 · $language';
+  }
+
+  @override
+  String get reader_versions_load_error => '載入版本失敗。';
+
+  @override
+  String get reader_scripts_load_error => '載入字體失敗。';
+
+  @override
+  String get reader_languages_load_error => '語言載入失敗';
+
+  @override
+  String reader_no_versions_in_language(String language) {
+    return '$language 尚無可用的版本。';
+  }
+
+  @override
+  String reader_no_scripts_in_language(String language) {
+    return '$language 尚無可用的字體。';
+  }
+
+  @override
+  String get reader_no_languages => '此文本尚無可用的語言。';
+
+  @override
+  String get reader_license => '授權';
+
+  @override
+  String get reader_version_details_load_error => '無法載入版本詳情。';
+
+  @override
+  String get reader_no_version_info => '此版本沒有其他可用的資訊。';
+
+  @override
+  String get recitation_unavailable => '此唱誦內容目前無法使用。\n請稍後再試或聯絡客服。';
+
+  @override
+  String get recitation_sign_in_required => '請登入以使用此唱誦。';
+
+  @override
+  String get my_recitations_load_error => '無法載入。請檢查您的網路連線，然後再試一次。';
+
+  @override
+  String get recitations_load_error => '無法載入唱誦。\n請稍後再試。';
+
+  @override
+  String get text_search_hint => '輸入以搜尋';
+
+  @override
+  String get text_search_press_button => '按下搜尋按鈕以搜尋';
+
+  @override
+  String get text_search_error => '無法執行搜尋，請再試一次';
+
+  @override
+  String get unknown_error => '未知錯誤';
+
+  @override
+  String image_share_error(String error) {
+    return '無法分享：$error';
+  }
+
+  @override
+  String get create_image_capture_error => '圖片生成失敗，請再試一次';
+
+  @override
+  String get create_image_share_error => '無法分享，請再試一次';
+
+  @override
+  String get create_image_save_success => '圖片已儲存';
+
+  @override
+  String get create_image_save_error => '無法儲存圖片。請確認應用程式已獲得相片存取權限後再試一次';
+
+  @override
+  String get create_image_download_error => '無法下載您的圖片，請稍後再試';
+
+  @override
+  String get create_image_customize_tooltip => '自訂';
+
+  @override
+  String get create_image_text_too_long => '文字太長，無法放大字體';
+
+  @override
+  String version_search_no_results(String query) {
+    return '找不到「$query」的版本';
+  }
+
+  @override
+  String get my_plans_sign_in_prompt => '登入以查看您的計畫';
+
+  @override
+  String plan_starts_soon_message(String date) {
+    return '此計畫將於 $date 開始。您可以先瀏覽內容。';
+  }
+
+  @override
+  String plan_joining_late_message(String date) {
+    return '此計畫已於 $date 開始。您可以完成過去幾天的任務。';
+  }
 
   @override
   String get select_language => '語言設定';
@@ -447,22 +833,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get share => '分享';
 
   @override
+  String get bookmark => '书签';
+
+  @override
   String get image => '圖片';
 
   @override
-  String get feedback => '回饋';
-
-  @override
-  String get feedback_wishlist => '回饋及願望清單';
+  String get feedback => '意見回饋';
 
   @override
   String get author => '作者';
 
   @override
-  String get plans_created => '參與設計的計劃';
-
-  @override
-  String get ask_ai => '向 AI 提问';
+  String get plans_created => '參與設計的計畫';
 
   @override
   String get ai_chat_history => '對話紀錄';
@@ -480,22 +863,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ai_dismiss => '略過';
 
   @override
-  String get ai_sign_in_prompt => '請登入以使用佛法AI助手，並展開有深度的對話';
+  String get ai_sign_in_prompt => '登入後即可向佛法 AI 助理提問';
 
   @override
   String get ai_explore_wisdom => '探索佛法的智慧';
 
   @override
-  String get ai_suggestion_self => '什麼是自我？';
-
-  @override
-  String get ai_suggestion_enlightenment => '如何證悟？';
-
-  @override
-  String get ai_ask_question => '問一個問題...';
-
-  @override
-  String get ai_loading_conversation => '加載對話...';
+  String get ai_ask_question => '請輸入問題．．．．．．';
 
   @override
   String get ai_search_chats => '搜尋對話紀錄';
@@ -529,79 +903,76 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String ai_greeting(String name) {
-    return 'Hi $name';
+    return ' $name，您好！';
   }
 
   @override
-  String get ai_text_not_found => 'Text Not Found';
+  String get ai_text_not_found => '搜尋不到該文本';
 
   @override
   String ai_text_not_found_message(String title) {
-    return 'Could not find the text for \"$title\".\n\nPlease try another source.';
+    return '搜尋不到標題為《$title》的文本。\n\n請嘗試其他名稱或換一種方式搜尋。';
   }
 
   @override
-  String get ai_sources => 'Sources';
+  String get ai_sources => '來源';
 
   @override
   String ai_sources_count(int count) {
-    return '$count sources';
+    return '$count 個來源';
   }
 
   @override
   String search_no_results(String query) {
-    return 'No results found for \"$query\"';
+    return '找不到「$query」的結果';
   }
 
   @override
-  String get search_show_more => 'Show More';
+  String get search_show_more => '顯示更多';
 
   @override
-  String get search_contents => 'Contents';
+  String get search_contents => '內容';
 
   @override
-  String get search_titles => 'Titles';
+  String get search_titles => '標題';
 
   @override
-  String get search_all => 'All';
+  String get search_all => '全部';
 
   @override
-  String get search_author => 'Author';
+  String get search_author => '作者';
 
   @override
-  String get search_tab_ai_mode => 'AI Mode';
+  String get search_tab_ai_mode => 'AI 模式';
 
   @override
   String search_error(String message) {
-    return 'Error: $message';
+    return '錯誤：$message';
   }
 
   @override
-  String get search_retrying => 'Retrying...';
+  String get search_retrying => '重試中...';
 
   @override
   String search_no_titles_found(String query) {
-    return 'No titles found for \"$query\"';
+    return '找不到「$query」的標題';
   }
 
   @override
   String search_no_contents_found(String query) {
-    return 'No contents found for \"$query\"';
+    return '找不到「$query」的內容';
   }
 
   @override
   String search_no_authors_found(String query) {
-    return 'No authors found for \"$query\"';
+    return '找不到「$query」的作者';
   }
 
   @override
-  String get search_coming_soon => '即将推出';
+  String get search_buddhist_texts => '搜尋佛教文本...';
 
   @override
-  String get search_buddhist_texts => 'Search Buddhist texts...';
-
-  @override
-  String get common_ok => 'OK';
+  String get common_ok => '確定';
 
   @override
   String get comingSoonHeadline => '即将推出';
@@ -610,103 +981,75 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routine_title => '日常修持';
 
   @override
+  String get bookmarks => '书签';
+
+  @override
   String get routine_empty_title => '日常修持';
 
   @override
   String get routine_edit => '編輯';
 
   @override
-  String get routine_empty_description =>
-      '建立您的日常修持，保持祈禱生活的穩定。選擇時間和課程，我們會提醒您祈禱！';
+  String get routine_empty_description => '探索更多課程與修持計畫，加入學習選單或新增至您的修持安排';
 
   @override
   String get routine_build => '建立日常修持';
 
   @override
-  String get routine_session => '課程';
-
-  @override
-  String get routine_time => '時間';
-
-  @override
-  String get routine_notification => '通知';
-
-  @override
-  String get routine_save => '保存日常修持';
-
-  @override
-  String get routine_morning => '早晨';
-
-  @override
-  String get routine_afternoon => '下午';
-
-  @override
-  String get routine_evening => '晚上';
-
-  @override
   String get routine_add_session => '添加課程';
-
-  @override
-  String get routine_select_time => '選擇時間';
-
-  @override
-  String get routine_remind_me => '提醒我';
 
   @override
   String get routine_edit_title => '編輯日常修持';
 
   @override
-  String get routine_delete_block => '刪除區塊';
+  String get routine_delete_block => '刪除時段';
 
   @override
-  String get routine_delete_time_block => '刪除區塊';
+  String get routine_delete_time_block => '移除時段';
 
   @override
-  String get routine_add_plan => '添加計劃';
+  String get routine_add_plan => '添加計畫';
 
   @override
   String get routine_add_recitation => '添加持誦';
 
   @override
-  String get routine_add_plan_to_routine => 'Add to Routine';
+  String get routine_add_plan_to_routine => '新增至日常修持';
 
   @override
-  String get routine_go_to_practice => 'Go to Practice';
+  String get routine_load_error => '無法載入。請檢查您的網路連線，然後再試一次。';
 
   @override
-  String get routine_load_error => '無法載入你的日常修持，請重試。';
-
-  @override
-  String get routine_empty_block_title_singular => '空白時間區塊';
+  String get routine_empty_block_title_singular => '空白時段';
 
   @override
   String routine_empty_block_title_plural(int count) {
-    return '空白時間區塊 ($count)';
+    return '空白時段 ($count)';
   }
 
   @override
   String get routine_empty_block_message_singular =>
-      '此時間區塊沒有任何項目。你要添加項目還是刪除區塊？';
+      '此時段尚未新增內容。請新增或將其從您的修持安排中移除';
 
   @override
   String routine_empty_block_message_plural(int count) {
-    return '你有 $count 個時間區塊沒有任何項目。你要添加項目還是刪除這些區塊？';
+    return '有 $count 個時段尚未新增內容。請新增，或從您的修持安排中移除';
   }
 
   @override
-  String get routine_empty_block_add_items => '添加項目';
+  String get routine_empty_block_add_items => '新增清單';
 
   @override
-  String get routine_empty_block_delete_singular => '刪除區塊';
+  String get routine_empty_block_delete_singular => '刪除時段';
 
   @override
-  String get routine_empty_block_delete_plural => '刪除空白區塊';
+  String get routine_empty_block_delete_plural => '刪除空白時段';
 
   @override
-  String get routine_notification_title => '讓祈禱成為日常';
+  String get routine_notification_title => '讓修持成為習慣';
 
   @override
-  String get routine_notification_description => '允許通知以接收祈禱提醒。';
+  String get routine_notification_description => '請開啟通知權限，以便我們提醒您進行修持。';
 
   @override
   String get routine_notification_enable => '啟用通知';
@@ -716,11 +1059,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String routine_time_adjusted(String time, int gap) {
-    return '已調整為 $time（最少 $gap 分鐘間隔）';
+    return '已調整為 $time（最少 $gap 分鐘的間隔）';
   }
 
   @override
-  String get routine_add_block_label => '時間區塊';
+  String get routine_add_block_label => '時段';
 
   @override
   String get continueWithGoogle => '使用 Google 繼續';
@@ -732,6 +1075,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get continueAsGuest => '以訪客身份繼續';
 
   @override
+  String get exploreAsGuest => '以訪客身份探索';
+
+  @override
   String get signIn => '登入';
 
   @override
@@ -741,7 +1087,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profileTitle => '個人資料';
 
   @override
-  String get notLoggedIn => '未登入';
+  String get notLoggedIn => '尚未登入';
 
   @override
   String get retry => '重試';
@@ -762,15 +1108,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pleaseTryAgain => '請再試一次';
 
   @override
-  String get successfully => '成功';
-
-  @override
-  String get failedTo => '失敗';
-
-  @override
-  String get unableTo => '無法';
-
-  @override
   String get error => '錯誤';
 
   @override
@@ -780,70 +1117,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noContentAvailable => '沒有可用內容';
 
   @override
-  String get missingParameters => '缺少必需參數';
-
-  @override
-  String get invalidParameters => '無效參數';
-
-  @override
-  String get cannotOpenLink => '無法打開此鏈接';
-
-  @override
-  String get invalidUrlFormat => '無效的URL格式';
-
-  @override
-  String get cannotOpenEmail => '無法打開此郵件';
-
-  @override
-  String get invalidEmailFormat => '無效的郵件格式';
-
-  @override
-  String get unableToLoad => '無法加載，請再試一次';
+  String get unableToLoad => '無法載入，請再試一次';
 
   @override
   String get somethingWrong => '出了點問題，請檢查您的連接並重試';
-
-  @override
-  String get typing => '正在輸入...';
 
   @override
   String get source => '來源';
 
   @override
   String get searchResults => '搜索結果';
-
-  @override
-  String get deleteConversation => '刪除對話？';
-
-  @override
-  String get errorOops => '哎呀，請再試一次';
-
-  @override
-  String get tabAll => '全部';
-
-  @override
-  String get tabAuthors => '作者';
-
-  @override
-  String get tabContents => '內容';
-
-  @override
-  String get tabTitles => '標題';
-
-  @override
-  String get option1 => '選項 1';
-
-  @override
-  String get option2 => '選項 2';
-
-  @override
-  String get option3 => '選項 3';
-
-  @override
-  String get languageTibetan => '藏文';
-
-  @override
-  String get languageEnglish => '英文';
 
   @override
   String get noTasks => '沒有可用任務';
@@ -855,17 +1138,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get updateTaskError => '無法更新任務狀態';
 
   @override
-  String enrollSuccess(String planTitle) {
-    return '成功加入 $planTitle';
-  }
-
-  @override
-  String get enrollError => '無法加入計劃，請再試一次';
-
-  @override
-  String enrollErrorDetail(String error) {
-    return '無法加入計劃';
-  }
+  String get enrollError => '無法完成註冊。請檢查您的網路連線，然後再試一次。';
 
   @override
   String unenrollSuccess(String planTitle) {
@@ -873,20 +1146,20 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get unenrollError => '目前無法退出，請再試一次';
+  String get unenrollError => '無法取消註冊。請檢查您的網路連線，然後再試一次';
 
   @override
-  String get unenrollGenericError => '出了點問題，請檢查您的連接並重試';
+  String get unenrollGenericError => '發生錯誤。請檢查您的網路連線，然後再試一次';
 
   @override
-  String get notFound => '找不到計劃，請再試一次';
+  String get notFound => '此內容已無法使用。請重新編輯您的修持安排，以進行更新。';
 
   @override
   String get noTimeSlot => '沒有可用的時間段，請先移除一個區塊';
 
   @override
   String maxBlocks(int max) {
-    return '已達到 $max 個時間區塊的上限';
+    return '已達最多 $max 個可選時間區段上限。';
   }
 
   @override
@@ -897,31 +1170,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String removeConfirmation(String itemName) {
-    return '要從此區塊中移除「$itemName」嗎？';
+    return '要從此時段中移除「$itemName」嗎？';
   }
 
   @override
   String shareError(String error) {
-    return '無法分享';
+    return '無法分享。請再試一次';
   }
 
   @override
-  String get updateOrderError => '無法更新順序，請再試一次';
+  String get updateOrderError => '無法更新順序。請再試一次';
 
   @override
-  String get noCollections => '沒有可用的收藏';
+  String get loadFailed => '無法載入。請檢查您的網路連線，然後再試一次。';
 
   @override
-  String get loadCollectionsError => '無法加載收藏';
+  String get captureError => 'QR code 掃描失敗，請再試一次';
 
   @override
-  String get loadFailed => '加載收藏失敗';
-
-  @override
-  String get captureError => '捕獲二維碼失敗，請再試一次';
-
-  @override
-  String get qrShareError => '無法分享二維碼，請稍後再試';
+  String get qrShareError => '無法分享QRcode，請稍後再試';
 
   @override
   String errorDetail(String error) {
@@ -929,22 +1196,19 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get text_qrCode => '二維碼';
-
-  @override
   String missedDaysCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count missed days',
-      one: '1 missed day',
-      zero: '0 missed days',
+      other: '錯過$count天',
+      one: '錯過1天',
+      zero: '未錯過天數',
     );
     return '$_temp0';
   }
 
   @override
-  String get plan_enrolled => '已加入';
+  String get plan_status_on_track => '進度正常！';
 
   @override
   String get start_now => '立即開始';
@@ -953,7 +1217,702 @@ class AppLocalizationsZh extends AppLocalizations {
   String get plan_enroll => '加入';
 
   @override
-  String plan_starts_on(String date) {
-    return '開始於 $date';
+  String get show_second_version => '顯示次要版本';
+
+  @override
+  String get enable_add_msg => '開啟以同時對讀主文的其他翻譯或音譯';
+
+  @override
+  String get main_version => '主要版本';
+
+  @override
+  String get second_version => '次要版本';
+
+  @override
+  String get second_version_msg => '次要版本將會顯示在主要版本的內文下方';
+
+  @override
+  String get version => '所有版本';
+
+  @override
+  String get parallel_version => '對讀版本';
+
+  @override
+  String get version_not_available => '無可用版本';
+
+  @override
+  String get read_full_text => '閱讀完整文本';
+
+  @override
+  String get reader_source_label => '來源';
+
+  @override
+  String get reader_license_label => '授權';
+
+  @override
+  String series_stats(int planCount, int totalDays) {
+    return '$planCount 個章節 · $totalDays 天';
+  }
+
+  @override
+  String get force_update_title => '需要更新';
+
+  @override
+  String get force_update_message => '有新版本可用，請更新後繼續使用。';
+
+  @override
+  String get force_update_button => '立即更新';
+
+  @override
+  String get settings_section_personalisation => '個人化';
+
+  @override
+  String get settings_section_more => '更多';
+
+  @override
+  String get settings_section_account => '帳號';
+
+  @override
+  String get settings_edit_profile => '編輯個人檔案';
+
+  @override
+  String get settings_theme => '主題';
+
+  @override
+  String get settings_notification_row => '通知';
+
+  @override
+  String get settings_feedback_row => '意見回饋';
+
+  @override
+  String get edit_profile_title => '編輯個人檔案';
+
+  @override
+  String get edit_profile_save => '儲存';
+
+  @override
+  String get edit_profile_first_name => '名字';
+
+  @override
+  String get edit_profile_last_name => '姓氏';
+
+  @override
+  String get edit_profile_bio => '自我介紹';
+
+  @override
+  String get edit_profile_bio_hint => '向大家介紹一下自己';
+
+  @override
+  String get edit_profile_delete_account => '刪除帳號';
+
+  @override
+  String get edit_profile_photo_not_uploaded => '相片尚未上傳';
+
+  @override
+  String get edit_profile_photo_too_large => '圖片過大，請選擇 1 MB 以下的相片後再試一次';
+
+  @override
+  String get edit_profile_photo_upload_failed => '無法上傳您的相片，請再試一次';
+
+  @override
+  String get edit_profile_choose_from_library => '從相簿選擇';
+
+  @override
+  String get edit_profile_take_photo => '拍照';
+
+  @override
+  String get edit_profile_offline => '您目前離線，請連接網路後再試一次';
+
+  @override
+  String get edit_profile_save_failed => '無法儲存您的變更，請再試一次';
+
+  @override
+  String get edit_profile_traditions => '傳承';
+
+  @override
+  String get edit_profile_choose_traditions => '選擇您的傳承';
+
+  @override
+  String get edit_profile_tradition_remove_failed => '無法移除傳承，請再試一次';
+
+  @override
+  String get edit_profile_tradition_save_failed => '無法儲存傳承，請再試一次';
+
+  @override
+  String get username_label => '使用者名稱';
+
+  @override
+  String get username_taken => '這個名稱已被使用';
+
+  @override
+  String get username_available_label => '可使用：';
+
+  @override
+  String get username_check_error => '無法檢查使用者名稱，請再試一次';
+
+  @override
+  String get username_invalid_format => '使用者名稱格式無效';
+
+  @override
+  String get username_min_length => '使用者名稱至少需 3 個字元';
+
+  @override
+  String get username_max_length => '使用者名稱不可超過 30 個字元';
+
+  @override
+  String get username_no_spaces => '使用者名稱不可包含空格';
+
+  @override
+  String get username_invalid_chars => '僅允許字母、數字、_ . -';
+
+  @override
+  String get username_must_start_alphanumeric => '使用者名稱須以字母或數字開頭';
+
+  @override
+  String get username_must_end_alphanumeric => '使用者名稱須以字母或數字結尾';
+
+  @override
+  String get person_name_min_length => '至少需要 1 個字元';
+
+  @override
+  String get person_name_max_length => '不得超過 50 個字元';
+
+  @override
+  String get person_name_invalid_chars => '僅允許字母、空格、連字號和撇號';
+
+  @override
+  String get about_title => '關於';
+
+  @override
+  String get about_connect_with_us => '與我們交流';
+
+  @override
+  String get about_description =>
+      '我們協助佛教徒透過每日的學習、修持與交流，減少惡行、增長善行，更深入地了解自己的心。並希望藉此，讓一切眾生皆能離苦得樂。';
+
+  @override
+  String get about_social_website => '網頁';
+
+  @override
+  String get me_guest_headline => '體驗完整功能';
+
+  @override
+  String get me_guest_subtitle => '建立免費帳號以儲存您的進度';
+
+  @override
+  String get me_my_stats => '我的統計';
+
+  @override
+  String me_day_streak(int count) {
+    return '連續 $count 天';
+  }
+
+  @override
+  String me_best_streak(int count) {
+    return '最長連續：$count 天';
+  }
+
+  @override
+  String get accumulations => '累積';
+
+  @override
+  String get accumulations_search => '搜索累積';
+
+  @override
+  String get accumulations_search_for => '尋找累積內容';
+
+  @override
+  String get accumulations_no_found => '尚無相關累積內容';
+
+  @override
+  String get me_accumulation => '累積總數';
+
+  @override
+  String get me_counts => '次';
+
+  @override
+  String get me_minutes => '分鐘';
+
+  @override
+  String get me_hours => '小時';
+
+  @override
+  String get me_total_meditation_time => '禪修總時間';
+
+  @override
+  String get me_days_plan_practiced_suffix => '天計畫已完成';
+
+  @override
+  String me_streak_share_message(int count, String appName) {
+    return '我在 $appName 已連續 $count 天！';
+  }
+
+  @override
+  String get me_streak_share_quote => '我在 WeBuddhist 的連續紀錄！';
+
+  @override
+  String me_streak_days_count(int count) {
+    return '$count 天';
+  }
+
+  @override
+  String get share_this_streak => '分享我的連續紀錄';
+
+  @override
+  String get me_streak_share_error => '無法分享連續紀錄，請重試';
+
+  @override
+  String get delete_account_title => '刪除帳號';
+
+  @override
+  String get delete_account_description =>
+      '若您刪除帳號，您在 WeBuddhist 中的所有資料、紀錄與個人化設定將被永久刪除。請注意，此操作無法復原。如欲繼續，請點按下方按鈕。';
+
+  @override
+  String get delete_account_button => '刪除帳號';
+
+  @override
+  String get delete_account_confirm_message => '您確定要刪除您的 WeBuddhist 帳號嗎？';
+
+  @override
+  String get legal_title => '法律資訊';
+
+  @override
+  String get legal_terms_of_service => '使用條款';
+
+  @override
+  String get legal_privacy_policy => '隱私政策';
+
+  @override
+  String get follow => '追蹤';
+
+  @override
+  String get following => '追蹤中';
+
+  @override
+  String get calendar_title => '日历';
+
+  @override
+  String get calendar_upcoming_events => '近期活动';
+
+  @override
+  String get calendar_day_short => '日';
+
+  @override
+  String get calendar_day_label => '日';
+
+  @override
+  String calendar_day_month(int day, int month) {
+    return '藏历$month月$day日';
+  }
+
+  @override
+  String calendar_lunar_month(String ordinal) {
+    return '藏历$ordinal月';
+  }
+
+  @override
+  String get moon_phase_new_moon => '新月';
+
+  @override
+  String get moon_phase_waxing_crescent => '蛾眉月';
+
+  @override
+  String get moon_phase_first_quarter => '上弦月';
+
+  @override
+  String get moon_phase_waxing_gibbous => '盈凸月';
+
+  @override
+  String get moon_phase_full_moon => '满月';
+
+  @override
+  String get moon_phase_waning_gibbous => '亏凸月';
+
+  @override
+  String get moon_phase_last_quarter => '下弦月';
+
+  @override
+  String get moon_phase_waning_crescent => '残月';
+
+  @override
+  String get join => '加入';
+
+  @override
+  String get joined => '已加入';
+
+  @override
+  String get group_member => '位成員';
+
+  @override
+  String get group_members => '位成員';
+
+  @override
+  String get group_tab_members => '成員';
+
+  @override
+  String get group_tab_followers => '追蹤者';
+
+  @override
+  String group_members_heading(int count) {
+    return '成員($count)';
+  }
+
+  @override
+  String group_followers_heading(int count) {
+    return '追蹤者($count)';
+  }
+
+  @override
+  String get group_invite => '邀請';
+
+  @override
+  String get group_members_load_error => '無法載入成員，請再試一次。';
+
+  @override
+  String get group_followers_load_error => '無法載入追蹤者，請再試一次。';
+
+  @override
+  String get group_members_empty => '尚無成員';
+
+  @override
+  String get group_followers_empty => '尚無追蹤者';
+
+  @override
+  String get group_follower => '位追蹤者';
+
+  @override
+  String get group_followers => '位追蹤者';
+
+  @override
+  String get group_links_title => '連結';
+
+  @override
+  String group_and_more_links(int count) {
+    return '及另外 $count 個連結';
+  }
+
+  @override
+  String get group_practice_with_us => '與我們一起修行';
+
+  @override
+  String series_practicing_with_group(String groupName) {
+    return '與 $groupName 一起修行';
+  }
+
+  @override
+  String get group_change_practice_title => 'Change group practice';
+
+  @override
+  String get group_change_practice_message =>
+      'You are already practicing this plan with another group. Would you like to change your practice group?';
+
+  @override
+  String get group_join_to_contribute => '加入以貢獻';
+
+  @override
+  String get group_accumulator_join_error => '無法加入累積，請再試一次。';
+
+  @override
+  String group_accumulator_participants(int count) {
+    return '$count 位參與者';
+  }
+
+  @override
+  String get group_accumulator_leaderboard => '排行榜';
+
+  @override
+  String get group_accumulator_my_contributions => '我的貢獻';
+
+  @override
+  String get group_accumulator_recited => '已誦讀';
+
+  @override
+  String get group_accumulator_total => '總數';
+
+  @override
+  String get group_accumulator_contributions_empty => '加入此累積以追蹤您的貢獻。';
+
+  @override
+  String get group_accumulator_recite_now => '立即誦念';
+
+  @override
+  String get share_this_quote => '分享这句话';
+
+  @override
+  String get shared_from => '分享自';
+
+  @override
+  String get verse_share_error => '无法分享引文，请重试';
+
+  @override
+  String get share_app_message => '我一直在用这款应用培养每日佛法修行的习惯，觉得你也会喜欢。';
+
+  @override
+  String get share_streak_message =>
+      '我一直在养成每日修行的好习惯，想和你分享。有朋友一起坚持会更容易。来WeBuddhist和我一起吧。';
+
+  @override
+  String get share_chant_message =>
+      '我想和你分享这段诵文。你可以在WeBuddhist上练习它，还能找到整个诵文和经典库。';
+
+  @override
+  String get share_quote_message =>
+      '我喜欢WeBuddhist上的这段引语，想和你分享。在WeBuddhist应用上阅读更多深刻的引语。';
+
+  @override
+  String get share_mala_message =>
+      '我一直在WeBuddhist上使用这串电子念珠，想和你分享。这是一个随时随地修行的便捷方式。';
+
+  @override
+  String get share_passage_message => '我喜欢这段经文，想和你分享。你可以在WeBuddhist上阅读完整的上下文。';
+
+  @override
+  String get share_timer_message => '我想和你分享WeBuddhist上的这个禅修计时器。它让建立禅修习惯变得更轻松。';
+
+  @override
+  String get share_plan_message =>
+      '我正在跟随这个佛法修行计划，想和你分享。你可以在WeBuddhist上免费和我一起修行。';
+
+  @override
+  String get share_plan_subject => '在WeBuddhist上和我一起吧';
+
+  @override
+  String get share_group_invite_message => '我希望你能加入我们的群组。让我们在WeBuddhist上一起修行吧。';
+
+  @override
+  String get weekday_monday => '週一';
+
+  @override
+  String get weekday_tuesday => '週二';
+
+  @override
+  String get weekday_wednesday => '週三';
+
+  @override
+  String get weekday_thursday => '週四';
+
+  @override
+  String get weekday_friday => '週五';
+
+  @override
+  String get weekday_saturday => '週六';
+
+  @override
+  String get weekday_sunday => '週日';
+
+  @override
+  String get reader_search_failed => '搜尋失敗。\n請重試';
+
+  @override
+  String get reader_swipe_up_for_more => '向上滑動查看更多';
+
+  @override
+  String get reader_videos => '影片';
+
+  @override
+  String get reader_about_this_version => '關於此版本';
+
+  @override
+  String reader_version_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 個版本',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mala_no_mantras => '暫無咒語';
+
+  @override
+  String get mala_count_load_error => '無法載入您的計數';
+
+  @override
+  String get mala_mantra_label => '咒語';
+
+  @override
+  String get bookmarks_empty_all_title => '尚無書籤。';
+
+  @override
+  String get bookmarks_empty_all_subtitle => '將任何內容加入書籤即可儲存於此。';
+
+  @override
+  String get bookmarks_empty_plans_title => '尚無已加書籤的計畫。';
+
+  @override
+  String get bookmarks_empty_plans_subtitle => '將計畫加入書籤即可儲存於此。';
+
+  @override
+  String get bookmarks_empty_malas_title => '尚無已加書籤的念珠。';
+
+  @override
+  String get bookmarks_empty_malas_subtitle => '將念珠加入書籤即可儲存於此。';
+
+  @override
+  String get bookmarks_empty_timers_title => '尚無已加書籤的計時器。';
+
+  @override
+  String get bookmarks_empty_timers_subtitle => '將計時器加入書籤即可儲存於此。';
+
+  @override
+  String get bookmarks_empty_texts_title => '尚無已加書籤的文本。';
+
+  @override
+  String get bookmarks_empty_texts_subtitle => '將文本加入書籤即可儲存於此。';
+
+  @override
+  String get bookmark_removed => '已移除書籤';
+
+  @override
+  String get bookmark_remove_failed => '移除書籤失敗';
+
+  @override
+  String get bookmark_saved => '書籤已儲存';
+
+  @override
+  String get bookmark_save_failed => '儲存書籤失敗';
+
+  @override
+  String get bookmarks_yesterday => '昨天';
+
+  @override
+  String get webview_timeout_error => '頁面載入時間過長。請檢查您的網路連線。';
+
+  @override
+  String get webview_load_failed => '頁面載入失敗';
+
+  @override
+  String get privacy_policy_load_error => '無法載入隱私政策頁面。';
+
+  @override
+  String get terms_of_service_load_error => '無法載入服務條款頁面。';
+
+  @override
+  String get series_enroll_error => '加入系列失敗';
+
+  @override
+  String series_share_message(String title, String url) {
+    return '和我一起在 WeBuddhist 上修習 $title。\n\n$url';
+  }
+
+  @override
+  String get player_back_10 => '後退 10 秒';
+
+  @override
+  String get player_pause => '暫停';
+
+  @override
+  String get player_play => '播放';
+
+  @override
+  String get player_forward_10 => '快進 10 秒';
+
+  @override
+  String get session_plans_load_error => '無法載入計畫。\n請稍後重試。';
+
+  @override
+  String get session_chants_load_error => '無法載入課誦';
+
+  @override
+  String get session_no_chants => '未找到課誦';
+
+  @override
+  String get session_malas_load_error => '無法載入念珠';
+
+  @override
+  String get session_no_malas => '未找到念珠';
+
+  @override
+  String get session_timers_load_error => '無法載入計時器';
+
+  @override
+  String get session_no_timers => '未找到計時器';
+
+  @override
+  String days_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 天',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String timer_minute_session(int minutes) {
+    return '$minutes 分鐘練習';
+  }
+
+  @override
+  String get ai_use_search_instead => '改用搜尋';
+
+  @override
+  String get ai_mode_label => 'AI';
+
+  @override
+  String plan_day_of(int day, int total) {
+    return '第 $day 天，共 $total 天';
+  }
+
+  @override
+  String pagination_position(int current, int total) {
+    return '$current / $total';
+  }
+
+  @override
+  String get plan_shorts_title => '社群短片';
+
+  @override
+  String get author_details_load_error => '無法載入作者資訊。\n請重試。';
+
+  @override
+  String get link_cannot_open => '無法開啟此連結';
+
+  @override
+  String get link_invalid => '無效的網址';
+
+  @override
+  String get author_no_plans => '尚未建立計畫';
+
+  @override
+  String get author_plans_load_error => '無法載入計畫';
+
+  @override
+  String source_with_value(String value) {
+    return '來源：$value';
+  }
+
+  @override
+  String license_with_value(String value) {
+    return '授權：$value';
+  }
+
+  @override
+  String loading_previous_pages(int count) {
+    return '正在載入上文……（$count 頁）';
+  }
+
+  @override
+  String loading_more_pages(int count) {
+    return '正在載入更多……（$count 頁）';
+  }
+
+  @override
+  String get drag_to_resize => '拖動以調整大小';
+
+  @override
+  String get day_completion_share_message =>
+      '我刚在 WeBuddhist 上完成了一天的修行练习。加入我，一起培养每日修行的好习惯。';
+
+  @override
+  String group_accumulator_share_message(String accumulation, String group) {
+    return '我正在 WeBuddhist 上参加 $group 的累积活动「$accumulation」，快来加入我吧！';
+  }
+
+  @override
+  String group_accumulator_share_message_no_group(String accumulation) {
+    return '我正在 WeBuddhist 上参加累积活动「$accumulation」，快来加入我吧！';
   }
 }

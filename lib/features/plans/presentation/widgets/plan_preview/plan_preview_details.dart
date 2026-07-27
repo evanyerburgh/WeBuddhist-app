@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
+import 'package:flutter_pecha/features/plans/data/utils/plan_utils.dart';
+import 'package:flutter_pecha/features/plans/data/utils/series_plan_utils.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
@@ -22,24 +27,82 @@ import 'preview_activity_list.dart';
 /// - Has no task toggle functionality (read-only preview)
 /// - Has "Start Reading" button to begin reading without enrolling
 class PlanPreviewDetails extends ConsumerStatefulWidget {
-  const PlanPreviewDetails({super.key, required this.plan});
+  const PlanPreviewDetails({
+    super.key,
+    required this.plan,
+    this.seriesId,
+    this.initialDay,
+  });
 
   final Plan plan;
+  final String? seriesId;
+
+  /// When non-null, the day carousel opens on this day instead of computing
+  /// a default from the plan start date. Used by deep links so the recipient
+  /// lands on the same day that was shared.
+  final int? initialDay;
 
   @override
   ConsumerState<PlanPreviewDetails> createState() => _PlanPreviewDetailsState();
 }
 
+final _logger = AppLogger('PlanPreviewDetails');
+
 class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
-  int selectedDay = 1;
+  late int selectedDay;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use the explicit initial day when provided (e.g. from a plan-day deep
+    // link), otherwise fall back to computing today's day from the start date.
+    selectedDay =
+        widget.initialDay?.clamp(1, widget.plan.totalDays) ??
+        _defaultSelectedDay();
+  }
+
+  /// For fixed-date plans that have already started, default the carousel
+  /// to today's plan day so an unenrolled visitor sees they'd be joining
+  /// mid-stream. Before the start date (or for flexible plans without a
+  /// start date), default to Day 1. After the plan has ended, clamp to the
+  /// final day.
+  int _defaultSelectedDay() {
+    final startDate = widget.plan.startDate;
+    if (startDate == null) return 1;
+    final day = PlanUtils.dayNumberFor(
+      startDate,
+      DateTime.now(),
+      widget.plan.totalDays,
+    );
+    final selected = day < 1 ? 1 : day;
+    _logger.info(
+      '[ENROLL-DAY] preview ${widget.plan.id} '
+      'startDate=${startDate.toIso8601String()} '
+      'totalDays=${widget.plan.totalDays} default=$selected',
+    );
+    return selected;
+  }
 
   bool _isPlanInRoutine(RoutineData routineData) {
     return routineData.blocks.any(
       (block) => block.items.any(
         (item) =>
-            item.id == widget.plan.id && item.type == RoutineItemType.plan,
+            item.id == widget.plan.id && item.type == RoutineItemType.series,
       ),
     );
+  }
+
+  /// True when the plan has a fixed start date that is strictly after today's
+  /// local calendar date. The backend blocks enrolling in future-dated plans,
+  /// so the bottom "Add to Routine" button is hidden in that case to avoid a
+  /// guaranteed-failure tap and the downstream "Plan not found" snackbar in
+  /// the routine screen. Flexible plans (`startDate == null`) are unaffected.
+  bool _isFuturePlan() {
+    final startDate = widget.plan.startDate;
+    if (startDate == null) return false;
+    final today = DateUtils.dateOnly(DateTime.now());
+    final start = DateUtils.dateOnly(startDate.toLocal());
+    return start.isAfter(today);
   }
 
   void _handleAddToRoutine() {
@@ -57,6 +120,7 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
     final authState = ref.watch(authProvider);
     final isGuest = authState.isGuest;
     final alreadyInRoutine = _isCurrentlyInRoutine();
+    final isFuturePlan = _isFuturePlan();
 
     return Scaffold(
       appBar: _buildAppBar(context, alreadyInRoutine),
@@ -67,14 +131,15 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  PlanCoverImage(imageUrl: widget.plan.coverImageUrl ?? ''),
+                  PlanCoverImage(image: widget.plan.coverImage),
                   _buildDayCarouselSection(language),
                   _buildDayContentSection(context, language),
                 ],
               ),
             ),
           ),
-          if (!alreadyInRoutine) _buildBottomButton(context, isGuest),
+          if (!alreadyInRoutine && !isFuturePlan)
+            _buildBottomButton(context, isGuest),
         ],
       ),
     );
@@ -89,41 +154,13 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
 
   AppBar _buildAppBar(BuildContext context, bool alreadyInRoutine) {
     return AppBar(
+      leading: IconButton(
+        icon: const Icon(AppAssets.arrowLeft),
+        onPressed: () => context.pop(),
+      ),
       title: Text(widget.plan.title, style: const TextStyle(fontSize: 20)),
       elevation: 0,
-      actions: [
-        if (alreadyInRoutine)
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      context.l10n.plan_enrolled,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.check, color: Colors.white, size: 14),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
+      actions: const [],
     );
   }
 
@@ -152,6 +189,8 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
       language: language,
       days: days,
       selectedDay: selectedDay,
+      lockFutureDays: true,
+      previewUnlockDayCount: _firstPlanPreviewUnlockDayCount(ref),
       startDate: widget.plan.startDate ?? DateTime.now(),
       dayCompletionStatus: null, // No completion status in preview mode
       onDaySelected: (day) {
@@ -159,6 +198,42 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
           selectedDay = day;
         });
       },
+    );
+  }
+
+  int _firstPlanPreviewUnlockDayCount(WidgetRef ref) {
+    final seriesId = widget.seriesId;
+    if (seriesId != null) {
+      final seriesAsync = ref.watch(seriesByIdProvider(seriesId));
+      return seriesAsync.when(
+        data:
+            (either) => either.fold(
+              (_) => _previewUnlockDayCountFromSeriesList(ref),
+              (series) => SeriesPlanUtils.previewUnlockDayCountForPlan(
+                widget.plan.id,
+                series: series,
+              ),
+            ),
+        loading: () => 0,
+        error: (_, __) => _previewUnlockDayCountFromSeriesList(ref),
+      );
+    }
+    return _previewUnlockDayCountFromSeriesList(ref);
+  }
+
+  int _previewUnlockDayCountFromSeriesList(WidgetRef ref) {
+    final seriesAsync = ref.watch(seriesListFutureProvider);
+    return seriesAsync.when(
+      data:
+          (either) => either.fold(
+            (_) => 0,
+            (seriesList) => SeriesPlanUtils.previewUnlockDayCountForPlan(
+              widget.plan.id,
+              seriesList: seriesList,
+            ),
+          ),
+      loading: () => 0,
+      error: (_, __) => 0,
     );
   }
 
@@ -182,10 +257,12 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
                 (content) => PreviewActivityList(
                   language: language,
                   tasks: content.tasks ?? [],
+                  videos: content.videos,
                   today: selectedDay,
                   totalDays: widget.plan.totalDays,
                   planId: widget.plan.id,
                   dayNumber: selectedDay,
+                  dayAudioUrl: content.audioUrl,
                 ),
               );
             },
@@ -202,7 +279,7 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Unable to load the tasks for the day',
+          context.l10n.plan_day_tasks_load_error,
           style: TextStyle(color: Colors.red[600]),
         ),
         const SizedBox(height: 8),
@@ -228,7 +305,7 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
     return Align(
       alignment: Alignment.topLeft,
       child: Text(
-        "Days $day of ${widget.plan.totalDays}",
+        context.l10n.plan_day_of(day, widget.plan.totalDays),
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
@@ -256,9 +333,7 @@ class _AddToRoutineButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor =
-        isDark
-            ? AppColors.scaffoldBackgroundLight
-            : AppColors.scaffoldBackgroundDark;
+        isDark ? AppColors.surfaceWhite : AppColors.scaffoldBackgroundDark;
     final foregroundColor =
         isDark ? AppColors.textPrimary : AppColors.textPrimaryDark;
 

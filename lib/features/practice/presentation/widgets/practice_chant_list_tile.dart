@@ -1,0 +1,180 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/constants/app_config.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/theme/font_config.dart';
+import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
+import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
+import 'package:flutter_pecha/shared/utils/helper_functions.dart';
+
+RecitationModel recitationModelFromRoutineItem(RoutineItem item) {
+  return RecitationModel(
+    textId: item.id,
+    title: item.title,
+    language: item.language,
+    firstSegment: item.firstSegment,
+  );
+}
+
+class PracticeChantListTile extends StatelessWidget {
+  const PracticeChantListTile({
+    super.key,
+    required this.recitation,
+    this.onTap,
+    this.showTrailingCaret = true,
+    this.includeOuterPadding = true,
+    this.trailing,
+  });
+
+  final RecitationModel recitation;
+  final VoidCallback? onTap;
+  final bool showTrailingCaret;
+  final bool includeOuterPadding;
+  final Widget? trailing;
+
+  static const double _titleFontSize = 16;
+  static const double _tibetanSegmentFontSize = 15;
+  static const double _segmentFontSize = 13;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = theme.colorScheme.onSurfaceVariant;
+    final firstSegmentContent =
+        normalizeSegmentText(recitation.firstSegment?.content).trim();
+    final hasFirstSegment = firstSegmentContent.isNotEmpty;
+    final hasTibetanTitle = _containsTibetan(recitation.title);
+    final hasTibetanSegment = _containsTibetan(firstSegmentContent);
+    final hasTibetanText = hasTibetanTitle || hasTibetanSegment;
+    final firstSegmentLanguage =
+        hasTibetanSegment ? AppConfig.tibetanLanguageCode : recitation.language;
+    final segmentFontSize =
+        hasTibetanSegment ? _tibetanSegmentFontSize : _segmentFontSize;
+    final titleStyle =
+        hasTibetanTitle
+            ? getContentTextStyle(
+              AppConfig.tibetanLanguageCode,
+              TextStyle(
+                fontSize: _titleFontSize,
+                fontWeight: FontWeight.bold,
+                height: AppFontConfig.tibetanContentLineHeight,
+                leadingDistribution: AppFontConfig.tibetanLeadingDistribution,
+              ),
+            )
+            : const TextStyle(
+              fontSize: _titleFontSize,
+              fontWeight: FontWeight.bold,
+            );
+    final firstSegmentStyle = getContentTextStyle(
+      firstSegmentLanguage,
+      theme.textTheme.bodySmall?.copyWith(
+        color: isDark ? AppColors.textSubtleDark : AppColors.grey900,
+        fontSize: segmentFontSize,
+        height:
+            hasTibetanSegment ? AppFontConfig.tibetanContentLineHeight : 1.35,
+        leadingDistribution:
+            hasTibetanSegment ? AppFontConfig.tibetanLeadingDistribution : null,
+      ),
+    );
+
+    final tile = Material(
+      color: isDark ? AppColors.cardBackgroundDark : Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          // Extra vertical room so stacked Tibetan glyphs aren't clipped by
+          // Material's antiAlias clip (same issue fixed on home/series cards).
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white : AppColors.grey800,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        recitation.title,
+                        style: titleStyle,
+                        strutStyle:
+                            hasTibetanTitle
+                                ? AppFontConfig.tibetanStrutStyle(
+                                  AppConfig.tibetanLanguageCode,
+                                  _titleFontSize,
+                                )
+                                : null,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (hasFirstSegment) ...[
+                        SizedBox(height: hasTibetanSegment ? 6 : 4),
+                        Text(
+                          firstSegmentContent,
+                          style: firstSegmentStyle,
+                          strutStyle:
+                              hasTibetanSegment
+                                  ? AppFontConfig.tibetanStrutStyle(
+                                    AppConfig.tibetanLanguageCode,
+                                    segmentFontSize,
+                                  )
+                                  : null,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (trailing != null) ...[
+                  const SizedBox(width: 8),
+                  trailing!,
+                ] else if (showTrailingCaret) ...[
+                  const SizedBox(width: 8),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: color.withAlpha(100),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(AppAssets.caretRight, size: 16, color: color),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (!includeOuterPadding) {
+      return tile;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: tile,
+    );
+  }
+
+  bool _containsTibetan(String value) {
+    return RegExp(r'[\u0F00-\u0FFF]').hasMatch(value);
+  }
+}

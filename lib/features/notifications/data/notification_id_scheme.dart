@@ -1,0 +1,87 @@
+/// Central registry for every notification ID range the app owns.
+///
+/// The reconciliation engine uses [isOurs] to scope cancellation: it must
+/// never cancel an ID that doesn't belong to this app. Each scheme below
+/// matches the constants that previously lived inline in
+/// `routine_notification_service.dart` and `RoutineBlock.notificationId`.
+class NotificationIdScheme {
+  NotificationIdScheme._();
+
+  /// Diagnostic test notification ID (mirrors the constant used by
+  /// [`notification_settings_screen.dart`]).
+  static const int kDiagnosticTestId = 9999;
+
+  // ── Legacy plan/series ranges ───────────────────────────────────────────
+  // Plan and series reminders are delivered via server push (FCM) now and are
+  // no longer scheduled locally. These ranges are retained ONLY so [isOurs]
+  // still recognises leftover notifications scheduled by older app versions,
+  // letting the reconcile pass cancel them on the first sync after upgrade.
+  // No generators remain — nothing issues new IDs in these ranges.
+
+  // Special-plan notifications (immediate one-shots + daily series both fell in
+  // this band). Retained so [isOurs] can cancel leftovers from older versions.
+  static const int specialPlanOneShotBase = 800;
+  static const int specialPlanOneShotMax = 899;
+
+  // Routine block hash (FNV-1a in [RoutineBlock.notificationId]).
+  static const int routineBlockMin = 1000;
+  static const int routineBlockMax = 999999;
+
+  // General-plan immediate one-shot.
+  static const int planOneShotBase = 9000000;
+  static const int planOneShotMax = 9009999;
+
+  // General-plan daily series.
+  static const int planSeriesBase = 10000000;
+  static const int planSeriesMax = 15004999;
+
+  // Routine block accumulator (mala) daily-repeat. A block may hold both a
+  // recitation and a mala; the recitation keeps [RoutineBlock.notificationId]
+  // (routineBlock* range) while the mala maps into this parallel range so the
+  // two daily-repeats never collide on one ID.
+  static const int accumulatorBlockBase = 20000000;
+  static const int accumulatorBlockMax = 20999999;
+
+  // Routine block timer daily-repeat. A timer block fires ONE daily reminder at
+  // block time ("timer started"), in its own parallel range so it never
+  // collides with the recitation/mala daily-repeats a block may also hold.
+  static const int timerStartBase = 21000000;
+  static const int timerStartMax = 21999999;
+
+  /// Stable daily-repeat ID for a mala/accumulator block. Derived from the
+  /// block's own notification ID so it survives restarts, but lives in a
+  /// range separate from the recitation daily-repeat
+  /// ([RoutineBlock.notificationId]) so a block holding both never collides.
+  static int accumulatorBlockId(int blockNotificationId) =>
+      accumulatorBlockBase + (blockNotificationId - routineBlockMin);
+
+  /// Stable daily-repeat ID for a timer block's "started" reminder, fired at
+  /// block time. Derived from the block's own notification ID (like
+  /// [accumulatorBlockId]) but in a separate range so a block holding a timer
+  /// plus other item types never collides.
+  static int timerStartId(int blockNotificationId) =>
+      timerStartBase + (blockNotificationId - routineBlockMin);
+
+  /// True when [id] is a routine daily-repeat: recitation/chants via
+  /// [routineBlockMin]–[routineBlockMax], mala via the accumulator range, or a
+  /// timer start reminder via the timer range. These are the only notification
+  /// kinds the engine schedules locally.
+  static bool isRoutineDailyRepeat(int id) =>
+      (id >= routineBlockMin && id <= routineBlockMax) ||
+      (id >= accumulatorBlockBase && id <= accumulatorBlockMax) ||
+      (id >= timerStartBase && id <= timerStartMax);
+
+  /// True when [id] was issued by any of the schemes registered here.
+  /// Used by the engine to scope reconciliation: it must NEVER cancel an
+  /// ID that doesn't belong to this app (e.g. another plugin's IDs).
+  static bool isOurs(int id) {
+    if (id == kDiagnosticTestId) return true;
+    if (id >= specialPlanOneShotBase && id <= specialPlanOneShotMax) return true;
+    if (id >= routineBlockMin && id <= routineBlockMax) return true;
+    if (id >= planOneShotBase && id <= planOneShotMax) return true;
+    if (id >= planSeriesBase && id <= planSeriesMax) return true;
+    if (id >= accumulatorBlockBase && id <= accumulatorBlockMax) return true;
+    if (id >= timerStartBase && id <= timerStartMax) return true;
+    return false;
+  }
+}

@@ -1,5 +1,6 @@
 library;
 
+import 'package:flutter_pecha/core/constants/app_config.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -7,29 +8,17 @@ import 'package:share_plus/share_plus.dart';
 class AppShareService {
   final _logger = AppLogger('AppShareService');
 
-  static const String _iosAppStoreUrl =
-      'https://apps.apple.com/app/webuddhist/id6745810914';
-  static const String _androidPlayStoreUrl =
-      'https://play.google.com/store/apps/details?id=org.pecha.app';
-
-  String generateShareMessage() {
-    return '''I'm using WeBuddhist to learn and practice Buddhism. Join me!
-
-📲 Download:
-iOS: $_iosAppStoreUrl
-Android: $_androidPlayStoreUrl''';
+  String buildShareMessage(String localizedMessage) {
+    return '$localizedMessage\n\n${AppConfig.airbridgeTrackingLink}';
   }
 
-  Future<void> shareApp() async {
+  Future<void> shareApp(String localizedMessage) async {
     try {
-      _logger.info('Sharing WeBuddhist app');
-
-      final message = generateShareMessage();
+      _logger.info('Sharing WeBuddhist app with Airbridge tracking link');
 
       await SharePlus.instance.share(
         ShareParams(
-          text: message,
-          subject: 'Join me on WeBuddhist',
+          text: buildShareMessage(localizedMessage),
         ),
       );
 

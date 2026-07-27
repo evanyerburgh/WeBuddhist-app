@@ -34,6 +34,16 @@
 				<string>$(AUTH0_SCHEME)</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>webuddhist</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>webuddhist</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
@@ -41,15 +51,22 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>WeBuddhist does not use the microphone. This permission is required by audio playback libraries for App Store compliance.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>WeBuddhist needs access to photo library to save the image</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>WeBuddhist needs access to your photo library to let you choose a profile picture.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>WeBuddhist needs camera access to let you take a profile picture.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
+		<string>remote-notification</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
@@ -60,11 +77,17 @@
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-    	<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationPortraitUpsideDown</string>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+		</array>
+		<key>com.posthog.posthog.AUTO_INIT</key>
+		<false/>
+		<key>AIRBRIDGE_APP_NAME</key>
+		<string>$(AIRBRIDGE_APP_NAME)</string>
+	<key>AIRBRIDGE_SDK_TOKEN</key>
+	<string>$(AIRBRIDGE_SDK_TOKEN)</string>
 </dict>
 </plist>

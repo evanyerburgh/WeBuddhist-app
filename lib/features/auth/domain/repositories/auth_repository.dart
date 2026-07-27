@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/auth_credentials.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
+import 'package:flutter_pecha/features/auth/domain/entities/username_update_result.dart';
 
 /// Auth repository interface (Domain Layer)
 ///
@@ -30,14 +33,15 @@ abstract class AuthRepository {
   /// Get current auth credentials
   Future<Either<Failure, AuthCredentials>> getCredentials();
 
-  /// Check if ID token is expired
+  /// Check if a JWT (ID token, for identity) is expired
   bool isIdTokenExpired(String idToken);
 
-  /// Get valid ID token (refreshes if expired)
-  Future<Either<Failure, String>> getValidIdToken();
+  /// Get a valid access token (the API bearer); refreshes proactively if near
+  /// expiry.
+  Future<Either<Failure, String>> getValidAccessToken();
 
-  /// Refresh ID token
-  Future<Either<Failure, String>> refreshIdToken();
+  /// Force a renewal and return a fresh access token (reactive 401 path).
+  Future<Either<Failure, String>> forceRefreshAccessToken();
 
   // ========== Guest Mode Operations ==========
 
@@ -54,4 +58,26 @@ abstract class AuthRepository {
 
   /// Get current user profile from backend
   Future<Either<Failure, User>> getCurrentUser();
+
+  /// Update user profile on the backend (POST /users/info)
+  Future<Either<Failure, User>> updateUserInfo({
+    String? firstName,
+    String? lastName,
+    String? title,
+    String? organization,
+    String? location,
+    String? aboutMe,
+    String? avatarUrl,
+    List<String>? educations,
+    List<Map<String, String>>? socialProfiles,
+  });
+
+  /// PATCH /users/username — saves username; returns conflict with suggestions on 409.
+  Future<Either<Failure, UsernameUpdateResult>> updateUsername(String username);
+
+  /// POST /users/upload — uploads [file] as avatar and returns the hosted URL.
+  Future<Either<Failure, String>> uploadAvatar(File file);
+
+  /// DELETE /users/info — permanently deletes the authenticated user's account.
+  Future<Either<Failure, void>> deleteAccount();
 }

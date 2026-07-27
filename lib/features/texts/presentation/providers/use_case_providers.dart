@@ -3,6 +3,7 @@ import 'package:flutter_pecha/features/texts/data/datasource/collections_remote_
 import 'package:flutter_pecha/features/texts/data/datasource/segment_remote_datasource.dart';
 import 'package:flutter_pecha/features/texts/data/datasource/share_remote_datasource.dart';
 import 'package:flutter_pecha/features/texts/data/datasource/text_remote_datasource.dart';
+import 'package:flutter_pecha/features/texts/data/models/segment_detail_with_text.dart';
 import 'package:flutter_pecha/features/texts/data/repositories/collections_repository.dart';
 import 'package:flutter_pecha/features/texts/data/repositories/segment_repository.dart';
 import 'package:flutter_pecha/features/texts/data/repositories/share_repository.dart';
@@ -106,6 +107,11 @@ final authorSearchUseCaseProvider = Provider<AuthorSearchUseCase>((ref) {
 
 // ========== Segment Use Case Providers ==========
 
+/// Provider for GetSegmentInfoUseCase.
+final getSegmentInfoUseCaseProvider = Provider<GetSegmentInfoUseCase>((ref) {
+  return GetSegmentInfoUseCase(ref.watch(segmentDomainRepositoryProvider));
+});
+
 /// Provider for GetSegmentCommentariesUseCase.
 final getSegmentCommentariesUseCaseProvider =
     Provider<GetSegmentCommentariesUseCase>((ref) {
@@ -134,4 +140,12 @@ final getCollectionsUseCaseProvider = Provider<GetCollectionsUseCase>((ref) {
 /// Provider for GetShareUrlUseCase.
 final getShareUrlUseCaseProvider = Provider<GetShareUrlUseCase>((ref) {
   return GetShareUrlUseCase(ref.watch(shareDomainRepositoryProvider));
+});
+
+// ========== Segment Detail Provider ==========
+
+final segmentDetailProvider = FutureProvider.autoDispose
+    .family<SegmentDetailWithText, String>((ref, segmentId) async {
+  final repo = ref.watch(segmentDomainRepositoryProvider);
+  return repo.getSegmentWithTextDetails(segmentId);
 });

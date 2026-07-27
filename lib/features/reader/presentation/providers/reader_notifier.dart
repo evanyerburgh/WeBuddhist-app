@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show VoidCallback;
 
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
@@ -70,7 +71,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       _onDualSettingsChanged,
       fireImmediately: false,
     );
-    _initialize();
+    Future<void>(_initialize);
   }
 
   /// Reload primary content when the user picks a different version of the
@@ -305,8 +306,9 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
 
   /// Load the previous page of content
   Future<void> loadPreviousPage() async {
-    if (_isDisposed || state.isLoadingPrevious || !state.hasPreviousPage)
+    if (_isDisposed || state.isLoadingPrevious || !state.hasPreviousPage) {
       return;
+    }
 
     state = state.copyWith(isLoadingPrevious: true);
     final fetchVersionId = _activeVersionId;
@@ -395,7 +397,12 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   /// Open commentary panel for a segment
   void openCommentary(String segmentId) {
     if (_isDisposed) return;
-    state = state.copyWith(commentarySegmentId: segmentId);
+    final isOpening = !state.isCommentaryOpen;
+    state = state.copyWith(
+      commentarySegmentId: segmentId,
+      splitRatio:
+          isOpening ? ReaderConstants.defaultSplitRatio : state.splitRatio,
+    );
   }
 
   /// Close commentary panel
@@ -418,7 +425,12 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   /// Open translation panel for a segment
   void openTranslation(String segmentId) {
     if (_isDisposed) return;
-    state = state.copyWith(translationSegmentId: segmentId);
+    final isOpening = !state.isTranslationOpen;
+    state = state.copyWith(
+      translationSegmentId: segmentId,
+      splitRatio:
+          isOpening ? ReaderConstants.defaultSplitRatio : state.splitRatio,
+    );
   }
 
   /// Close translation panel
@@ -448,6 +460,26 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     state = state.copyWith(splitRatio: clampedRatio);
   }
 
+  /// Update split ratio while dragging a panel handle. If the resulting panel
+  /// height shrinks below [ReaderConstants.minPanelHeightBeforeDismiss], the
+  /// caller is asked to dismiss the panel via [onDismiss] instead of resizing.
+  /// Returns `true` when a dismiss was triggered so callers can stop emitting
+  /// further drag updates for this gesture.
+  bool updateSplitRatioOrDismiss({
+    required double ratio,
+    required double availableHeight,
+    required VoidCallback onDismiss,
+  }) {
+    if (_isDisposed) return false;
+    final panelHeight = availableHeight * (1 - ratio);
+    if (panelHeight < ReaderConstants.minPanelHeightBeforeDismiss) {
+      onDismiss();
+      return true;
+    }
+    updateSplitRatio(ratio);
+    return false;
+  }
+
   /// Trigger highlight for a segment
   void _triggerHighlight(String segmentId, NavigationSource source) {
     if (_isDisposed) return;
@@ -466,6 +498,8 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       NavigationSource.search => ReaderConstants.searchHighlightDuration,
       NavigationSource.deepLink => ReaderConstants.deepLinkHighlightDuration,
       NavigationSource.normal => Duration.zero,
+      NavigationSource.recitationList => Duration.zero,
+      NavigationSource.routine => Duration.zero,
     };
 
     if (duration > Duration.zero) {
@@ -508,7 +542,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
 }
 
 /// Provider for reader notifier
-final readerNotifierProvider =
-    StateNotifierProvider.family<ReaderNotifier, ReaderState, ReaderParams>(
+final readerNotifierProvider = StateNotifierProvider.autoDispose
+    .family<ReaderNotifier, ReaderState, ReaderParams>(
       (ref, params) => ReaderNotifier(ref: ref, params: params),
     );

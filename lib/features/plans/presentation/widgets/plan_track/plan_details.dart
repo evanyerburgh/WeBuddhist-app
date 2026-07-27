@@ -1,21 +1,37 @@
+import 'dart:async';
+
+import 'package:flutter/services.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
+import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
+import 'package:flutter_pecha/features/home/presentation/providers/routine_info_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
+import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
+import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
+import 'package:flutter_pecha/features/plans/data/utils/series_plan_utils.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_day_share.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/features/plans/data/models/response/user_plan_day_detail_response.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../day_completion_bottom_sheet.dart';
 import '../plan_cover_image.dart';
 import '../day_carousel.dart';
@@ -30,10 +46,12 @@ class PlanDetails extends ConsumerStatefulWidget {
     required this.plan,
     required this.selectedDay,
     required this.startDate,
+    this.seriesId,
   });
   final UserPlansModel plan;
   final int selectedDay;
   final DateTime startDate;
+  final String? seriesId;
 
   @override
   ConsumerState<PlanDetails> createState() => _PlanDetailsState();
@@ -43,11 +61,29 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   late int selectedDay;
   final Set<String> _togglingTaskIds = {};
   final Map<int, bool> _dayCompletionTracker = {};
+  final Map<String, bool> _optimisticCompletions = {};
+  final GlobalKey _shareButtonKey = GlobalKey();
+  bool _isSharing = false;
 
   @override
   void initState() {
     super.initState();
     selectedDay = widget.selectedDay;
+    _logger.info(
+      'PlanDetails opened — id: ${widget.plan.id} | title: "${widget.plan.title}"',
+    );
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .track(
+            AnalyticsEvents.planViewed,
+            properties: {
+              AnalyticsProperties.planId: widget.plan.id,
+              AnalyticsProperties.planName: widget.plan.title,
+              AnalyticsProperties.totalDays: widget.plan.totalDays,
+            },
+          ),
+    );
   }
 
   @override
@@ -66,7 +102,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  PlanCoverImage(imageUrl: widget.plan.imageUrl ?? ''),
+                  PlanCoverImage(image: widget.plan.coverImage),
                   _buildDayCarouselSection(language),
                   _buildDayContentSection(context, language),
                 ],
@@ -98,7 +134,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
             if (_dayCompletionTracker.containsKey(day)) {
               final wasCompleted = _dayCompletionTracker[day]!;
               if (!wasCompleted && dayContent.isCompleted) {
-                _onDayCompleted(day);
+                _onDayCompleted(dayContent);
               }
             }
             _dayCompletionTracker[day] = dayContent.isCompleted;
@@ -121,7 +157,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     });
   }
 
-  Future<void> _onDayCompleted(int dayNumber) async {
+  Future<void> _onDayCompleted(UserPlanDayDetailResponse dayContent) async {
     try {
       final completionStatusEither = await ref.read(
         userPlanDaysCompletionStatusProvider(widget.plan.id).future,
@@ -134,6 +170,21 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         (completionStatus) {
           final completedDays = completionStatus.values.where((v) => v).length;
 
+          unawaited(
+            ref
+                .read(analyticsServiceProvider)
+                .track(
+                  AnalyticsEvents.planDayCompleted,
+                  properties: {
+                    AnalyticsProperties.planId: widget.plan.id,
+                    AnalyticsProperties.planName: widget.plan.title,
+                    AnalyticsProperties.dayNumber: dayContent.dayNumber,
+                    AnalyticsProperties.totalDays: widget.plan.totalDays,
+                    AnalyticsProperties.completedDays: completedDays,
+                  },
+                ),
+          );
+
           if (!mounted) return;
 
           showModalBottomSheet(
@@ -142,11 +193,15 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
             backgroundColor: Colors.transparent,
             builder:
                 (_) => DayCompletionBottomSheet(
-                  dayNumber: dayNumber,
+                  dayNumber: dayContent.dayNumber,
                   totalDays: widget.plan.totalDays,
                   completedDays: completedDays,
-                  imageUrl: widget.plan.imageUrl,
+                  fallbackImageUrl: widget.plan.imageUrl,
+                  thumbnailUrl: dayContent.thumbnailUrl,
+                  shareableImageUrl: dayContent.shareableImageUrl,
                   planTitle: widget.plan.title,
+                  planId: widget.plan.id,
+                  planLanguage: widget.plan.language,
                 ),
           );
         },
@@ -162,6 +217,17 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     AppLocalizations localizations,
   ) {
     return AppBar(
+      leading: IconButton(
+        icon: const Icon(AppAssets.arrowLeft),
+        onPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            // Opened via deep link with no route beneath — go home.
+            context.go(AppRoutes.home);
+          }
+        },
+      ),
       title: Text(widget.plan.title, style: TextStyle(fontSize: 20)),
       elevation: 0,
     );
@@ -228,11 +294,67 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       selectedDay: selectedDay,
       startDate: widget.startDate,
       dayCompletionStatus: completionStatus,
+      lockFutureDays: true,
+      previewUnlockDayCount: _firstPlanPreviewUnlockDayCount(ref),
       onDaySelected: (day) {
         setState(() {
           selectedDay = day;
         });
       },
+    );
+  }
+
+  int _firstPlanPreviewUnlockDayCount(WidgetRef ref) {
+    final fromList = _previewUnlockDayCountFromSeriesList(ref);
+    if (fromList > 0) return fromList;
+
+    if (widget.seriesId != null) {
+      final fromExplicit = _previewUnlockFromSeriesById(ref, widget.seriesId!);
+      if (fromExplicit > 0) return fromExplicit;
+    }
+
+    return _previewUnlockFromEnrolledSeries(ref);
+  }
+
+  int _previewUnlockFromSeriesById(WidgetRef ref, String seriesId) {
+    final seriesAsync = ref.watch(seriesByIdProvider(seriesId));
+    return seriesAsync.when(
+      data:
+          (either) => either.fold(
+            (_) => 0,
+            (series) => SeriesPlanUtils.previewUnlockDayCountForPlan(
+              widget.plan.id,
+              series: series,
+            ),
+          ),
+      loading: () => 0,
+      error: (_, __) => 0,
+    );
+  }
+
+  int _previewUnlockFromEnrolledSeries(WidgetRef ref) {
+    final enrollments =
+        ref.watch(userSeriesEnrollmentsProvider).valueOrNull ?? {};
+    for (final seriesId in enrollments) {
+      final count = _previewUnlockFromSeriesById(ref, seriesId);
+      if (count > 0) return count;
+    }
+    return 0;
+  }
+
+  int _previewUnlockDayCountFromSeriesList(WidgetRef ref) {
+    final seriesAsync = ref.watch(seriesListFutureProvider);
+    return seriesAsync.when(
+      data:
+          (either) => either.fold(
+            (_) => 0,
+            (seriesList) => SeriesPlanUtils.previewUnlockDayCountForPlan(
+              widget.plan.id,
+              seriesList: seriesList,
+            ),
+          ),
+      loading: () => 0,
+      error: (_, __) => 0,
     );
   }
 
@@ -261,17 +383,22 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
             data: (dayContentEither) {
               return dayContentEither.fold(
                 (failure) => _buildDayContentError(),
-                (dayContent) => ActivityList(
-                  language: language,
-                  tasks: dayContent.tasks,
-                  today: selectedDay,
-                  totalDays: dayContent.tasks.length,
-                  planId: widget.plan.id,
-                  dayNumber: selectedDay,
-                  onActivityToggled:
-                      (taskId) => _handleTaskToggle(taskId, dayContent.tasks),
-                  onReaderClosed: _onReaderClosed,
-                ),
+                (dayContent) {
+                  final tasks = _applyOptimisticState(dayContent.tasks);
+                  return ActivityList(
+                    language: language,
+                    tasks: tasks,
+                    videos: dayContent.videos,
+                    today: selectedDay,
+                    totalDays: tasks.length,
+                    planId: widget.plan.id,
+                    dayNumber: selectedDay,
+                    dayAudioUrl: dayContent.audioUrl,
+                    onActivityToggled:
+                        (taskId) => _handleTaskToggle(taskId, dayContent.tasks),
+                    onReaderClosed: _onReaderClosed,
+                  );
+                },
               );
             },
             loading: () => const DayContentSkeleton(),
@@ -286,7 +413,10 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Unable to load tasks', style: TextStyle(color: Colors.red[600])),
+        Text(
+          context.l10n.plan_no_tasks_error,
+          style: TextStyle(color: Colors.red[600]),
+        ),
         const SizedBox(height: 8),
         ElevatedButton(
           onPressed: () {
@@ -323,7 +453,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          "Day $day of ${widget.plan.totalDays}",
+          context.l10n.plan_day_of(day, widget.plan.totalDays),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -332,9 +462,15 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         ),
         if (completionStatus != null)
           MissedDaysBadge(
-            startDate: widget.startDate,
+            planStartDate: widget.startDate,
             totalDays: widget.plan.totalDays,
             completionStatus: completionStatus,
+            onTap: (firstMissedDay) {
+              HapticFeedback.lightImpact();
+              setState(() {
+                selectedDay = firstMissedDay;
+              });
+            },
           ),
       ],
     );
@@ -344,12 +480,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     String taskId,
     List<UserTasksDto> tasks,
   ) async {
-    // Prevent race condition: Check if task is already being toggled
-    if (_togglingTaskIds.contains(taskId)) {
-      return;
-    }
+    if (_togglingTaskIds.contains(taskId)) return;
 
-    // Safely find the task - return early if not found or list is empty
     if (tasks.isEmpty) {
       _showErrorSnackbar(context.l10n.noTasks);
       return;
@@ -362,22 +494,24 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     }
 
     final task = tasks[taskIndex];
+    final newValue = !task.isCompleted;
 
-    // Mark task as being toggled
     setState(() {
       _togglingTaskIds.add(taskId);
+      _optimisticCompletions[taskId] = newValue;
     });
 
     try {
       final resultEither =
-          task.isCompleted
-              ? await ref.read(deleteTaskFutureProvider(taskId).future)
-              : await ref.read(completeTaskFutureProvider(taskId).future);
+          newValue
+              ? await ref.read(completeTaskFutureProvider(taskId).future)
+              : await ref.read(deleteTaskFutureProvider(taskId).future);
 
       resultEither.fold(
         (failure) {
           _logger.error('Error toggling task: ${failure.message}');
           if (mounted) {
+            setState(() => _optimisticCompletions.remove(taskId));
             _showErrorSnackbar(context.l10n.updateTaskError);
           }
         },
@@ -388,11 +522,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                 PlanDaysParams(planId: widget.plan.id, dayNumber: selectedDay),
               ),
             );
-            // Also invalidate completion status to refresh checkmarks
             ref.invalidate(
               userPlanDaysCompletionStatusProvider(widget.plan.id),
             );
           } else if (!success && mounted) {
+            setState(() => _optimisticCompletions.remove(taskId));
             _showErrorSnackbar(context.l10n.updateTaskError);
           }
         },
@@ -400,16 +534,42 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     } catch (e) {
       _logger.error('Error toggling task', e);
       if (mounted) {
+        setState(() => _optimisticCompletions.remove(taskId));
         _showErrorSnackbar(context.l10n.errorDetail(e.toString()));
       }
     } finally {
-      // Always remove task from toggling set
       if (mounted) {
-        setState(() {
-          _togglingTaskIds.remove(taskId);
-        });
+        setState(() => _togglingTaskIds.remove(taskId));
       }
     }
+  }
+
+  List<UserTasksDto> _applyOptimisticState(List<UserTasksDto> tasks) {
+    if (_optimisticCompletions.isEmpty) return tasks;
+    final keysToRemove = <String>[];
+    final result =
+        tasks.map((task) {
+          if (_optimisticCompletions.containsKey(task.id)) {
+            if (task.isCompleted == _optimisticCompletions[task.id]) {
+              keysToRemove.add(task.id);
+              return task;
+            }
+            return task.copyWith(isCompleted: _optimisticCompletions[task.id]!);
+          }
+          return task;
+        }).toList();
+    if (keysToRemove.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            for (final key in keysToRemove) {
+              _optimisticCompletions.remove(key);
+            }
+          });
+        }
+      });
+    }
+    return result;
   }
 
   // TODO: Wire up this dialog to a menu button in the AppBar
@@ -418,14 +578,15 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     final localizations = context.l10n;
     final locale = ref.watch(localeProvider);
     final language = locale.languageCode;
-    final fontSize = language == 'bo' || language == 'BO' ? 16.0 : 14.0;
+    final isTibetan = AppFontConfig.isTibetanLanguage(language);
+    final fontSize = getLocalizedFontSize(AppTextSize.label);
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text(localizations.plan_unenroll),
           content: Text(
-            language == 'bo' || language == 'BO'
+            isTibetan
                 ? '${widget.plan.title} ${localizations.unenroll_confirmation}\n\n ${localizations.unenroll_message}'
                 : '${localizations.unenroll_confirmation} "${widget.plan.title}"?\n\n ${localizations.unenroll_message}',
             style: TextStyle(fontSize: fontSize),
@@ -473,10 +634,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         },
         (success) {
           if (success) {
-            // Invalidate plans to refresh the list
+            // Invalidate plans to refresh the list and home stats
             ref.invalidate(myPlansPaginatedProvider);
             ref.invalidate(findPlansPaginatedProvider);
             ref.invalidate(userPlansFutureProvider);
+            ref.invalidate(routineInfoFutureProvider);
 
             if (mounted) {
               // Pop back to plans list
@@ -515,7 +677,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     );
   }
 
-  void _startReading(List<UserTasksDto> tasks) {
+  void _startReading(List<UserTasksDto> tasks, {String? audioUrl}) {
     final planTextItems = PlanSubtaskNavigation.fromUserTasks(tasks);
     if (planTextItems.isEmpty) return;
 
@@ -531,10 +693,14 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       targetSegmentId: target.firstSegmentId,
       planTextItems: planTextItems,
       currentTextIndex: index,
+      dayAudioUrl: audioUrl,
     );
 
-    PlanNavigator.push(context, target, navigationContext)
-        .then((_) => _onReaderClosed());
+    PlanNavigator.push(
+      context,
+      target,
+      navigationContext,
+    ).then((_) => _onReaderClosed());
   }
 
   Widget _buildStartReadingButton(
@@ -547,44 +713,110 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       ),
     );
 
-    // Extract tasks from Either type
-    final tasks = dayContent.valueOrNull?.fold(
-      (failure) => <UserTasksDto>[],
-      (dayContent) => dayContent.tasks,
-    );
+    // Extract tasks and audioUrl from Either type
+    final dayData = dayContent.valueOrNull?.fold((failure) => null, (d) => d);
+    final tasks = dayData?.tasks ?? <UserTasksDto>[];
+    final audioUrl = dayData?.audioUrl;
 
     final hasReadableContent =
-        tasks != null && tasks.any(PlanSubtaskNavigation.isUserTaskNavigable);
+        tasks.isNotEmpty &&
+        tasks.any(PlanSubtaskNavigation.isUserTaskNavigable);
+
+    final shareableImageUrl = dayData?.shareableImageUrl?.trim();
+    final showShareButton =
+        dayData != null &&
+        dayData.isCompleted &&
+        shareableImageUrl != null &&
+        shareableImageUrl.isNotEmpty;
+
+    final buttonStyle = FilledButton.styleFrom(
+      backgroundColor: Theme.of(context).colorScheme.onSurface,
+      foregroundColor: Theme.of(context).colorScheme.surface,
+      disabledBackgroundColor: Theme.of(
+        context,
+      ).colorScheme.onSurface.withValues(alpha: 0.5),
+      disabledForegroundColor: Theme.of(
+        context,
+      ).colorScheme.surface.withValues(alpha: 0.85),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    );
 
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SizedBox(
           width: double.infinity,
-          child: FilledButton(
-            onPressed: hasReadableContent ? () => _startReading(tasks) : null,
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.onSurface,
-              foregroundColor: Theme.of(context).colorScheme.surface,
-              disabledBackgroundColor: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            child: Text(
-              localizations.start_reading,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.3,
-              ),
-            ),
-          ),
+          child:
+              showShareButton
+                  ? FilledButton.icon(
+                    key: _shareButtonKey,
+                    onPressed:
+                        _isSharing
+                            ? null
+                            : () =>
+                                _shareDay(shareableImageUrl, dayData.dayNumber),
+                    style: buttonStyle,
+                    icon:
+                        _isSharing
+                            ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surface.withValues(alpha: 0.85),
+                              ),
+                            )
+                            : const Icon(AppAssets.readerShare, size: 22),
+                    label: Text(
+                      localizations.share,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  )
+                  : FilledButton(
+                    onPressed:
+                        hasReadableContent
+                            ? () => _startReading(tasks, audioUrl: audioUrl)
+                            : null,
+                    style: buttonStyle,
+                    child: Text(
+                      localizations.start_reading,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
         ),
       ),
     );
+  }
+
+  Future<void> _shareDay(String shareableImageUrl, int dayNumber) async {
+    if (_isSharing) return;
+
+    setState(() => _isSharing = true);
+
+    try {
+      await sharePlanDayImage(
+        context: context,
+        shareableImageUrl: shareableImageUrl,
+        dayNumber: dayNumber,
+        planId: widget.plan.id,
+        planLanguage: widget.plan.language,
+        shareButtonKey: _shareButtonKey,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSharing = false);
+      }
+    }
   }
 }

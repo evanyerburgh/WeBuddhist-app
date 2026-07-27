@@ -4,6 +4,8 @@ enum NavigationSource {
   search,
   plan,
   deepLink,
+  recitationList,
+  routine,
 }
 
 /// Discriminator for the kind of content a [PlanTextItem] carries.
@@ -12,10 +14,9 @@ enum NavigationSource {
 ///   and is rendered by `ReaderScreen`.
 /// - [inlineText] carries inline content via [PlanTextItem.inlineContent]
 ///   and is rendered by `PlanTextScreen`.
-enum PlanItemContentType {
-  sourceReference,
-  inlineText,
-}
+/// - [inlineImage] carries an image URL via [PlanTextItem.imageUrl]
+///   and is rendered by `PlanTextScreen`.
+enum PlanItemContentType { sourceReference, inlineText, inlineImage }
 
 /// API-level content type strings used by the plan endpoints.
 class PlanContentTypes {
@@ -23,14 +24,17 @@ class PlanContentTypes {
 
   static const String sourceReference = 'SOURCE_REFERENCE';
   static const String text = 'TEXT';
+  static const String image = 'IMAGE';
 
   /// Map a raw API value to a [PlanItemContentType], or null if unknown.
   static PlanItemContentType? parse(String? raw) {
-    switch (raw) {
+    switch (raw?.trim().toUpperCase()) {
       case sourceReference:
         return PlanItemContentType.sourceReference;
       case text:
         return PlanItemContentType.inlineText;
+      case image:
+        return PlanItemContentType.inlineImage;
       default:
         return null;
     }
@@ -39,7 +43,7 @@ class PlanContentTypes {
 
 /// Represents a navigable subtask within a plan.
 ///
-/// Plan subtasks come in two flavours, both of which appear in the same
+/// Plan subtasks come in three flavours, all of which appear in the same
 /// linear navigation strip ("1 of N", "2 of N", ...):
 ///
 /// - **SOURCE_REFERENCE** — opens `ReaderScreen` for [textId] and scrolls
@@ -48,23 +52,30 @@ class PlanContentTypes {
 /// - **TEXT** — opens `PlanTextScreen` and renders [inlineContent] directly.
 ///   Stripped-down view: title in app bar, font size control, no other
 ///   reader features.
+/// - **IMAGE** — opens `PlanTextScreen` and renders [imageUrl] directly from
+///   the subtask `content` field.
 ///
-/// Construct via [PlanTextItem.sourceReference] or [PlanTextItem.inlineText]
-/// to get compile-time validation of which fields are required.
+/// Construct via [PlanTextItem.sourceReference], [PlanTextItem.inlineText], or
+/// [PlanTextItem.inlineImage] to get compile-time validation of which fields
+/// are required.
 class PlanTextItem {
   final PlanItemContentType contentType;
 
   /// SOURCE_REFERENCE only: the remote text id used by the route
-  /// `/reader/:textId`. Empty string for inline TEXT items.
+  /// `/reader/:textId`. Empty string for inline content items.
   final String textId;
 
   /// SOURCE_REFERENCE only: ordered list of segments to scroll through.
-  /// Null/empty for inline TEXT items.
+  /// Null/empty for inline content items.
   final List<String>? segmentIds;
 
   /// TEXT only: the inline content rendered by `PlanTextScreen`.
   /// Null for SOURCE_REFERENCE items.
   final String? inlineContent;
+
+  /// IMAGE only: the image URL rendered by `PlanTextScreen`.
+  /// Null for SOURCE_REFERENCE and TEXT items.
+  final String? imageUrl;
 
   /// Display title used in app bars and bottom-bar progress text.
   final String title;
@@ -75,9 +86,28 @@ class PlanTextItem {
   /// unenrolled plans.
   final String? subtaskId;
 
+  /// The parent task ID. Used to look up audio windows in
+  /// [PlanDayAudioNotifier] — null for preview (unenrolled) items.
+  final String? taskId;
+
   /// Whether the subtask is already completed. Prevents duplicate
   /// completion API calls.
   final bool isCompleted;
+
+  /// This subtask's own audio file URL, if any. When present it takes
+  /// precedence over the day-level audio track (see
+  /// [NavigationContext.effectiveAudioUrlFor]). Null when the subtask has no
+  /// dedicated audio.
+  final String? audioUrl;
+
+  /// Audio segment start offset in milliseconds. For a subtask-level
+  /// [audioUrl] this is an offset within that file; for the day-level track
+  /// it is an offset within the day audio. Defaults to 0 when null.
+  final int? startMs;
+
+  /// Audio segment end offset in milliseconds. When null, playback runs to the
+  /// natural end of the resolved file (the common case for per-subtask audio).
+  final int? endMs;
 
   const PlanTextItem._({
     required this.contentType,
@@ -85,8 +115,13 @@ class PlanTextItem {
     required this.title,
     this.segmentIds,
     this.inlineContent,
+    this.imageUrl,
     this.subtaskId,
+    this.taskId,
     this.isCompleted = false,
+    this.audioUrl,
+    this.startMs,
+    this.endMs,
   });
 
   /// Build a SOURCE_REFERENCE item. Throws if [textId] is empty.
@@ -95,7 +130,11 @@ class PlanTextItem {
     required String title,
     List<String>? segmentIds,
     String? subtaskId,
+    String? taskId,
     bool isCompleted = false,
+    String? audioUrl,
+    int? startMs,
+    int? endMs,
   }) {
     assert(textId.isNotEmpty, 'sourceReference requires non-empty textId');
     return PlanTextItem._(
@@ -104,7 +143,11 @@ class PlanTextItem {
       title: title,
       segmentIds: segmentIds,
       subtaskId: subtaskId,
+      taskId: taskId,
       isCompleted: isCompleted,
+      audioUrl: audioUrl,
+      startMs: startMs,
+      endMs: endMs,
     );
   }
 
@@ -113,7 +156,11 @@ class PlanTextItem {
     required String content,
     required String title,
     String? subtaskId,
+    String? taskId,
     bool isCompleted = false,
+    String? audioUrl,
+    int? startMs,
+    int? endMs,
   }) {
     assert(content.trim().isNotEmpty, 'inlineText requires non-blank content');
     return PlanTextItem._(
@@ -122,7 +169,37 @@ class PlanTextItem {
       inlineContent: content,
       title: title,
       subtaskId: subtaskId,
+      taskId: taskId,
       isCompleted: isCompleted,
+      audioUrl: audioUrl,
+      startMs: startMs,
+      endMs: endMs,
+    );
+  }
+
+  /// Build an IMAGE item. Throws if [imageUrl] is blank.
+  factory PlanTextItem.inlineImage({
+    required String imageUrl,
+    required String title,
+    String? subtaskId,
+    String? taskId,
+    bool isCompleted = false,
+    String? audioUrl,
+    int? startMs,
+    int? endMs,
+  }) {
+    assert(imageUrl.trim().isNotEmpty, 'inlineImage requires non-blank URL');
+    return PlanTextItem._(
+      contentType: PlanItemContentType.inlineImage,
+      textId: '',
+      imageUrl: imageUrl,
+      title: title,
+      subtaskId: subtaskId,
+      taskId: taskId,
+      isCompleted: isCompleted,
+      audioUrl: audioUrl,
+      startMs: startMs,
+      endMs: endMs,
     );
   }
 
@@ -132,6 +209,9 @@ class PlanTextItem {
 
   /// True if this item is an inline TEXT item.
   bool get isInlineText => contentType == PlanItemContentType.inlineText;
+
+  /// True if this item is an inline IMAGE item.
+  bool get isInlineImage => contentType == PlanItemContentType.inlineImage;
 
   /// Get the first segment ID for initial scroll position
   /// (SOURCE_REFERENCE only).
@@ -143,18 +223,28 @@ class PlanTextItem {
     String? textId,
     List<String>? segmentIds,
     String? inlineContent,
+    String? imageUrl,
     String? title,
     String? subtaskId,
+    String? taskId,
     bool? isCompleted,
+    String? audioUrl,
+    int? startMs,
+    int? endMs,
   }) {
     return PlanTextItem._(
       contentType: contentType ?? this.contentType,
       textId: textId ?? this.textId,
       segmentIds: segmentIds ?? this.segmentIds,
       inlineContent: inlineContent ?? this.inlineContent,
+      imageUrl: imageUrl ?? this.imageUrl,
       title: title ?? this.title,
       subtaskId: subtaskId ?? this.subtaskId,
+      taskId: taskId ?? this.taskId,
       isCompleted: isCompleted ?? this.isCompleted,
+      audioUrl: audioUrl ?? this.audioUrl,
+      startMs: startMs ?? this.startMs,
+      endMs: endMs ?? this.endMs,
     );
   }
 
@@ -166,8 +256,13 @@ class PlanTextItem {
         other.textId != textId ||
         other.title != title ||
         other.inlineContent != inlineContent ||
+        other.imageUrl != imageUrl ||
         other.subtaskId != subtaskId ||
-        other.isCompleted != isCompleted) {
+        other.taskId != taskId ||
+        other.isCompleted != isCompleted ||
+        other.audioUrl != audioUrl ||
+        other.startMs != startMs ||
+        other.endMs != endMs) {
       return false;
     }
     if (segmentIds == null && other.segmentIds == null) return true;
@@ -181,14 +276,19 @@ class PlanTextItem {
 
   @override
   int get hashCode => Object.hash(
-        contentType,
-        textId,
-        Object.hashAll(segmentIds ?? const []),
-        inlineContent,
-        title,
-        subtaskId,
-        isCompleted,
-      );
+    contentType,
+    textId,
+    Object.hashAll(segmentIds ?? const []),
+    inlineContent,
+    imageUrl,
+    title,
+    subtaskId,
+    taskId,
+    isCompleted,
+    audioUrl,
+    startMs,
+    endMs,
+  );
 
   @override
   String toString() {
@@ -210,6 +310,11 @@ class NavigationContext {
   final List<PlanTextItem>? planTextItems;
   final int? currentTextIndex;
   final SwipeDirection? navigationDirection; // slide direction (left/right)
+  /// When true, the reader should auto-play this item's audio segment on open.
+  final bool autoPlay;
+
+  /// The day-level audio URL shared by all tasks in this plan day.
+  final String? dayAudioUrl;
 
   const NavigationContext({
     required this.source,
@@ -219,6 +324,8 @@ class NavigationContext {
     this.planTextItems,
     this.currentTextIndex,
     this.navigationDirection,
+    this.autoPlay = false,
+    this.dayAudioUrl,
   });
 
   /// Whether this context can navigate between plan items at all
@@ -261,6 +368,21 @@ class NavigationContext {
   /// Get the current text item's segment IDs for visibility control
   List<String>? get currentSegmentIds => currentItem?.segmentIds;
 
+  /// Resolve the audio URL for [item], applying precedence: a subtask's own
+  /// [PlanTextItem.audioUrl] wins over the shared [dayAudioUrl] fallback.
+  /// Returns null when neither is available.
+  String? effectiveAudioUrlFor(PlanTextItem item) =>
+      item.audioUrl ?? dayAudioUrl;
+
+  /// Whether [item] has any playable audio once precedence is applied.
+  bool hasAudioFor(PlanTextItem item) => effectiveAudioUrlFor(item) != null;
+
+  /// The resolved audio URL for the current item, if any.
+  String? get currentAudioUrl {
+    final item = currentItem;
+    return item == null ? null : effectiveAudioUrlFor(item);
+  }
+
   NavigationContext copyWith({
     NavigationSource? source,
     String? planId,
@@ -269,6 +391,8 @@ class NavigationContext {
     List<PlanTextItem>? planTextItems,
     int? currentTextIndex,
     SwipeDirection? navigationDirection,
+    bool? autoPlay,
+    String? dayAudioUrl,
   }) {
     return NavigationContext(
       source: source ?? this.source,
@@ -278,6 +402,8 @@ class NavigationContext {
       planTextItems: planTextItems ?? this.planTextItems,
       currentTextIndex: currentTextIndex ?? this.currentTextIndex,
       navigationDirection: navigationDirection ?? this.navigationDirection,
+      autoPlay: autoPlay ?? this.autoPlay,
+      dayAudioUrl: dayAudioUrl ?? this.dayAudioUrl,
     );
   }
 
@@ -293,16 +419,11 @@ class NavigationContext {
   }
 
   @override
-  int get hashCode => Object.hash(
-        source,
-        planId,
-        dayNumber,
-        targetSegmentId,
-        currentTextIndex,
-      );
+  int get hashCode =>
+      Object.hash(source, planId, dayNumber, targetSegmentId, currentTextIndex);
 
   @override
   String toString() {
-    return 'NavigationContext(source: $source, planId: $planId, dayNumber: $dayNumber, targetSegmentId: $targetSegmentId, currentTextIndex: $currentTextIndex, navigationDirection: $navigationDirection)';
+    return 'NavigationContext(source: $source, planId: $planId, dayNumber: $dayNumber, targetSegmentId: $targetSegmentId, currentTextIndex: $currentTextIndex, navigationDirection: $navigationDirection, autoPlay: $autoPlay)';
   }
 }

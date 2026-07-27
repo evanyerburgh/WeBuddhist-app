@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
+import 'package:flutter_pecha/features/practice/data/utils/routine_item_display.dart';
 import 'package:flutter_pecha/features/practice/data/utils/routine_time_utils.dart';
+import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart';
+import 'package:flutter_pecha/features/practice/presentation/widgets/practice_chant_list_tile.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/routine_item_card.dart';
-import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class RoutineTimeBlock extends StatelessWidget {
   final TimeOfDay time;
@@ -33,26 +36,12 @@ class RoutineTimeBlock extends StatelessWidget {
 
   Future<void> _confirmDeleteItem(BuildContext context, int index) async {
     final l10n = context.l10n;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(l10n.removeItem),
-            content: Text(l10n.removeConfirmation(items[index].title)),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(l10n.cancel),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(
-                  l10n.delete,
-                  style: TextStyle(color: Colors.red.shade400),
-                ),
-              ),
-            ],
-          ),
+    final confirmed = await showDestructiveConfirmationDialog(
+      context,
+      title: l10n.removeItem,
+      message: l10n.removeConfirmation(
+        routineItemDisplayTitle(items[index], l10n),
+      ),
     );
     if (confirmed == true) {
       onDeleteItem(index);
@@ -61,28 +50,10 @@ class RoutineTimeBlock extends StatelessWidget {
 
   Future<void> _confirmDeleteBlock(BuildContext context) async {
     final localizations = context.l10n;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(localizations.routine_delete_block),
-            content: const Text(
-              'This will remove the time block and all its items.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red.shade400),
-                ),
-              ),
-            ],
-          ),
+    final confirmed = await showDestructiveConfirmationDialog(
+      context,
+      title: localizations.routine_delete_block,
+      message: localizations.routine_delete_block_message,
     );
     if (confirmed == true) {
       await onDelete();
@@ -132,25 +103,47 @@ class RoutineTimeBlock extends StatelessWidget {
             proxyDecorator: (child, index, animation) {
               return Material(
                 elevation: 2,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 child: child,
               );
             },
             itemBuilder: (context, i) {
               final item = items[i];
-              return Column(
+              return Padding(
                 key: ValueKey(item.id),
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RoutineItemCard(
-                    title: item.title,
-                    imageUrl: item.imageUrl,
-                    type: item.type,
-                    onDelete: () => _confirmDeleteItem(context, i),
-                    reorderIndex: i,
-                  ),
-                  const Divider(height: 1, indent: 140),
-                ],
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Minus button — outside the card
+                    GestureDetector(
+                      onTap: () => _confirmDeleteItem(context, i),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        margin: const EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.surfaceVariantDark
+                              : AppColors.grey100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Icon(
+                            AppAssets.minus,
+                            size: 14,
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildItemTile(context, item, i, isDark),
+                    ),
+                  ],
+                ),
               );
             },
           ),
@@ -163,6 +156,54 @@ class RoutineTimeBlock extends StatelessWidget {
           isDark: isDark,
         ),
       ],
+    );
+  }
+
+  Widget _buildItemTile(
+    BuildContext context,
+    RoutineItem item,
+    int index,
+    bool isDark,
+  ) {
+    final dragHandle = ReorderableDragStartListener(
+      index: index,
+      child: GestureDetector(
+        onTapDown: (_) => HapticFeedback.heavyImpact(),
+        child: Icon(
+          AppAssets.list,
+          size: 22,
+          color:
+              isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+        ),
+      ),
+    );
+
+    if (item.type == RoutineItemType.recitation) {
+      return PracticeChantListTile(
+        recitation: recitationModelFromRoutineItem(item),
+        includeOuterPadding: false,
+        showTrailingCaret: false,
+        trailing: dragHandle,
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.cardBackgroundDark
+            : AppColors.cardBackgroundLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: RoutineItemCard(
+          title: routineItemDisplayTitle(item, context.l10n),
+          coverImage: item.coverImage,
+          type: item.type,
+          reorderIndex: index,
+          imageSize: 56,
+        ),
+      ),
     );
   }
 }
@@ -209,7 +250,7 @@ class _TimeSelector extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Icon(
-              PhosphorIconsRegular.caretDown,
+              AppAssets.caretDown,
               size: 18,
               fontWeight: FontWeight.w600,
               color:
@@ -249,7 +290,7 @@ class _NotificationIcon extends StatelessWidget {
           ),
         ),
         child: Icon(
-          enabled ? PhosphorIconsRegular.bell : PhosphorIconsRegular.bellSlash,
+          enabled ? AppAssets.bell : AppAssets.bellSlash,
           size: 20,
           color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
         ),
@@ -301,7 +342,7 @@ class _AddSessionButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.only(left: 54),
+          padding: const EdgeInsets.only(left: 40),
           child: Row(
             children: [
               Container(
@@ -313,7 +354,7 @@ class _AddSessionButton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  PhosphorIconsRegular.plus,
+                  AppAssets.plus,
                   size: 24,
                   color:
                       isDark

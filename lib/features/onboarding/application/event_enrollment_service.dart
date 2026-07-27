@@ -1,6 +1,10 @@
+import 'dart:async';
+
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
-import 'package:flutter_pecha/features/notifications/application/plan_enrollment_hook.dart';
-import 'package:flutter_pecha/features/notifications/application/special_plan_enrollment_hook.dart';
+import 'package:flutter_pecha/features/notifications/application/notification_sync_engine.dart';
 import 'package:flutter_pecha/features/plans/data/models/response/user_plan_list_response_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
 import 'package:flutter_pecha/features/plans/domain/usecases/user_plans_usecases.dart';
@@ -62,26 +66,24 @@ class EventEnrollmentService {
       await _addToRoutine(planId);
     }
 
-    // Fetch the user's enrolled plans BEFORE persisting the routine so the
-    // special-plan startedAt cache is primed by the time
-    // [RoutineNotificationService.scheduleBlockNotification] is called inside
-    // [_persistRoutineLocallyAndScheduleNotifications]. Otherwise the first
-    // schedule on enrollment day would fall back to default routine content.
+    // Fetch the user's enrolled plans to return to the caller. Plan/series
+    // reminders are delivered via server push (FCM) now, so there is no local
+    // plan-metadata cache to prime here.
     _logger.info('[SP-ENROLL] fetching enrolled plans');
     final enrolledPlans = await _fetchEnrolledPlans(planIds);
     _logger.info(
       '[SP-ENROLL] fetched ${enrolledPlans.length} enrolled plans: '
       '${enrolledPlans.map((p) => "${p.id}@${p.startedAt.toIso8601String()}").join(", ")}',
     );
-    for (final plan in enrolledPlans) {
-      await onSpecialPlanEnrolled(plan); // ITCC and other hardcoded series
-      await onPlanEnrolled(plan);        // all other plans: caches startedAt + totalDays
-    }
 
-    // Mirror the practice-tab edit-routine save flow: persist the final
-    // server routine to Hive and schedule device-local notifications.
+    // Persist the final server routine to Hive, then reconcile local
+    // recitation/mala/timer notifications for the newly-saved routine.
     _logger.info('[SP-ENROLL] persisting routine + scheduling notifications');
     await _persistRoutineLocallyAndScheduleNotifications();
+
+    await _ref
+        .read(notificationSyncEngineProvider)
+        .sync(trigger: SyncTrigger.routineSaved);
 
     _logger.info('[SP-ENROLL] enrollInEvents DONE returning ${enrolledPlans.length} plans');
     return enrolledPlans;
@@ -99,14 +101,25 @@ class EventEnrollmentService {
         // be enrolled from a previous onboarding attempt.
         _logger.warning('subscribe plan $planId: ${failure.message} (continuing)');
       },
-      (_) => _logger.info('Subscribed to plan $planId'),
+      (success) {
+        _logger.info('Subscribed to plan $planId');
+        if (success) {
+          unawaited(
+            _ref.read(analyticsServiceProvider).track(
+              AnalyticsEvents.planEnrolled,
+              properties: {AnalyticsProperties.planId: planId},
+            ),
+          );
+        }
+      },
     );
   }
 
   // ─── Step 2: Add to routine at 07:30 ───
 
   Future<void> _addToRoutine(String planId) async {
-    final routineResult = await _getUserRoutineUseCase();
+    final language = _ref.read(contentLanguageProvider);
+    final routineResult = await _getUserRoutineUseCase(language: language);
     final routineData = routineResult.fold((_) => null, (data) => data);
     final routineId = routineData?.apiRoutineId;
 
@@ -114,7 +127,7 @@ class EventEnrollmentService {
     if (routineData != null) {
       final alreadyInRoutine = routineData.blocks.any(
         (block) => block.items.any(
-          (item) => item.id == planId && item.type == RoutineItemType.plan,
+          (item) => item.id == planId && item.type == RoutineItemType.series,
         ),
       );
       if (alreadyInRoutine) {
@@ -129,7 +142,7 @@ class EventEnrollmentService {
       notificationEnabled: true,
       sessions: [
         SessionRequest(
-          sessionType: SessionType.plan,
+          sessionType: SessionType.series,
           sourceId: planId,
           displayOrder: 0,
         ),
@@ -164,12 +177,13 @@ class EventEnrollmentService {
   /// Re-fetches the routine from the server (now includes the newly-added
   /// time blocks) and routes it through [RoutineNotifier.saveRoutine] which:
   ///   - persists blocks to Hive (so startup sync works on next app launch),
-  ///   - calls [RoutineNotificationService.syncNotifications] which schedules
-  ///     a daily AlarmManager / flutter_local_notifications entry per block.
+  ///   - delegates to `NotificationSyncEngine` which reconciles AlarmManager /
+  ///     flutter_local_notifications entries against the routine.
   ///
   /// Also invalidates [userRoutineProvider] so any UI watching it refreshes.
   Future<void> _persistRoutineLocallyAndScheduleNotifications() async {
-    final routineResult = await _getUserRoutineUseCase();
+    final language = _ref.read(contentLanguageProvider);
+    final routineResult = await _getUserRoutineUseCase(language: language);
     final routineData = routineResult.fold((_) => null, (data) => data);
 
     if (routineData == null || routineData.blocks.isEmpty) {

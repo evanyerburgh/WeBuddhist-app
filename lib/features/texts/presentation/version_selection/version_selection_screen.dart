@@ -67,8 +67,8 @@ class VersionSelectionScreen extends ConsumerWidget {
                     Icon(Icons.error_outline, size: 48, color: Colors.grey),
                     SizedBox(height: 16),
                     Text(
-                      'Failed to load versions',
-                      style: TextStyle(fontSize: 16),
+                      localizations.reader_versions_load_error,
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
@@ -122,8 +122,8 @@ class VersionSelectionScreen extends ConsumerWidget {
                 Icon(Icons.error_outline, size: 48, color: Colors.grey),
                 SizedBox(height: 16),
                 Text(
-                  'Failed to load versions',
-                  style: TextStyle(fontSize: 16),
+                  localizations.reader_versions_load_error,
+                  style: const TextStyle(fontSize: 16),
                 ),
               ],
             ),
@@ -172,7 +172,7 @@ class VersionSelectionScreen extends ConsumerWidget {
               child: Row(
                 children: [
                   Text(
-                    getLanguageName(currentLanguageCode),
+                    getLanguageName(currentLanguageCode, context),
                     style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                   ),
                   const SizedBox(width: 8),
@@ -211,7 +211,7 @@ class VersionSelectionScreen extends ConsumerWidget {
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
           subtitle: Text(
-            '${getLanguageName(version.language)}, ${version.publishedBy}',
+            '${getLanguageName(version.language, context)}, ${version.publishedBy}',
           ),
           trailing: Icon(Icons.info_outline, color: Colors.grey.shade700),
         );
@@ -267,7 +267,7 @@ class VersionSearchDelegate extends SearchDelegate<Version?> {
     if (filteredVersions.isEmpty) {
       return Center(
         child: Text(
-          'No versions found for "$query"',
+          AppLocalizations.of(context)!.version_search_no_results(query),
           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
       );
@@ -297,7 +297,7 @@ class VersionSearchDelegate extends SearchDelegate<Version?> {
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           subtitle: Text(
-            '${getLanguageName(version.language)}, ${version.publishedBy}',
+            '${getLanguageName(version.language, context)}, ${version.publishedBy}',
           ),
         );
       },

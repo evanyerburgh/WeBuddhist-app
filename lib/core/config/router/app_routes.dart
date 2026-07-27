@@ -12,57 +12,34 @@ class AppRoutes {
   static const String splash = '/splash';
   static const String onboarding = '/onboarding';
   static const String login = '/login';
+  static const String getApp = '/get-app';
+  static const String open = '/open';
 
   // ========== MAIN ROUTES ==========
   static const String home = '/home';
   static const String texts = "/ai-mode";
   static const String practice = "/practice";
   static const String more = "/more";
+  static const String settings = '/settings';
   static const String profile = '/profile';
-  static const String creatorInfo = '/creator_info';
+  static const String about = '/about';
+  static const String legal = '/legal';
+  static const String termsOfService = '/terms-of-service';
+  static const String privacyPolicy = '/privacy-policy';
   static const String notifications = '/notifications';
+  static const String deleteAccount = '/delete-account';
 
-  // ========== HOME SUB ROUTES ==========
-  static const String homeVideoPlayer = '/home/video_player';
-  static const String homeViewIllustration = '/home/view_illustration';
-  static const String homeMeditationOfTheDay = '/home/meditation_of_the_day';
-  static const String homeMeditationVideo = '/home/meditation_video';
-  static const String homeStories = '/home/stories';
-  static const String homeStoriesPresenter = '/home/stories-presenter';
-  static const String homePlanStoriesPresenter = '/home/plan-stories-presenter';
-  static const String homePrayerOfTheDay = '/home/prayer_of_the_day';
-  static const String homePlans = '/home/plans';
-
-  // ========== TEXTS/AI MODE SUB ROUTES ==========
-  static const String aiModeSearchResults = '/ai-mode/search-results';
-  static const String aiModeTextChapters =
-      '/ai-mode/search-results/text-chapters';
-  static const String textsCollections = '/texts/collections';
-  static const String textsCategory = '/texts/category';
-  static const String textsWorks = '/texts/works';
-  static const String textsTexts = '/texts/texts';
-  static const String textsChapters = '/texts/chapters';
-  static const String textsVersionSelection = '/texts/version_selection';
-  static const String textsLanguageSelection = '/texts/language_selection';
-  static const String textsSegmentImageChooseImage =
-      '/texts/segment_image/choose_image';
-  static const String textsSegmentImageCreateImage =
-      '/texts/segment_image/create_image';
-  static const String textsCommentary = '/texts/commentary';
+  // ========== MALA ROUTE ==========
+  /// Digital prayer-bead mala. Login-gated (see [_protectedBasePaths]).
+  static const String mala = '/mala';
 
   // ========== PRACTICE SUB ROUTES ==========
   static const String practiceEditRoutine = '/practice/edit-routine';
-  static const String practiceSelectPlan = '/practice/edit-routine/select-plan';
-  static const String practiceSelectRecitation =
-      '/practice/edit-routine/select-recitation';
-  static const String practiceText = '/practice/texts';
+  static const String practiceMyPractices = '/practice/my-practices';
   static const String practicePlanPreview = '/practice/plans/preview';
-  static const String practicePlanInfo = '/practice/plans/info';
-  static const String practicePlanDetails = '/practice/plans/info/details';
 
   // ========== PLANS SUB ROUTES ==========
   static const String plansInfo = '/plans/info';
-  static const String plansDetails = '/plans/details';
 
   // ========== RECITATIONS SUB ROUTES ==========
   static const String recitationDetail = '/recitations/detail';
@@ -71,21 +48,23 @@ class AppRoutes {
   static const String reader = '/reader';
 
   // ========== PLAN TEXT ROUTES ==========
-  /// Inline plan text screen — renders subtasks where `content_type == "TEXT"`.
+  /// Inline plan content screen — renders subtasks where `content_type` is
+  /// `TEXT` or `IMAGE`.
   /// Path param is the subtask id; the actual content travels in `extra`
-  /// as a [NavigationContext] whose `currentItem` carries `inlineContent`.
+  /// as a [NavigationContext] whose `currentItem` carries inline content.
   static const String planText = '/plan-text';
-
-  // ========== NOTIFICATIONS SUB ROUTES ==========
-  static const String notificationSettings = '/notifications/settings';
 
   // ========== SEARCH ROUTES ==========
   static const String searchResults = '/search-results';
 
+  // ========== CALENDAR ROUTES ==========
+  /// Tibetan calendar screen. Nested under /home so the bottom nav persists.
+  static const String calendar = '/home/calendar';
+
   // ========== ROUTE CATEGORIES ==========
 
   /// Routes that don't require any authentication
-  static const Set<String> publicRoutes = {splash, login};
+  static const Set<String> publicRoutes = {splash, login, getApp, open};
 
   /// Routes accessible to guest users.
   ///
@@ -99,14 +78,18 @@ class AppRoutes {
   /// - Sub-routes that guests must NOT access under a guest-accessible parent:
   ///   add the base path to [_protectedBasePaths] — it takes priority.
   static const Set<String> guestAccessibleRoutes = {
+    open,
+    getApp,
     home,
     more,
+    settings, // Guests can access settings (theme, language, notifications)
     texts,
     practice, // Guests can see empty practice screen
+    practiceMyPractices, // Guests can browse my practices empty state
     practicePlanPreview, // Allow guests to browse/preview plans
     reader,
     notifications, // Local-only — guests can configure routine notifications
-    planText, // Guests can see inline TEXT subtasks
+    planText, // Guests can see inline TEXT/IMAGE subtasks
   };
 
   /// Base paths that require full authentication (prefix matching)
@@ -115,6 +98,7 @@ class AppRoutes {
     profile,
     plansInfo,
     recitationDetail,
+    mala, // Mala counting is login-gated (no guest mode)
   };
 
   // ========== HELPER METHODS ==========

@@ -3,21 +3,44 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/plans/data/utils/plan_utils.dart';
 
 class MissedDaysBadge extends StatelessWidget {
-  final DateTime startDate;
+  /// Day-1 anchor of the plan (= `plan.startDate ?? plan.startedAt`).
+  final DateTime planStartDate;
   final int totalDays;
   final Map<int, bool> completionStatus;
 
+  /// Called when the badge is tapped. Receives the first missed day number.
+  final void Function(int firstMissedDay)? onTap;
+
   const MissedDaysBadge({
     super.key,
-    required this.startDate,
+    required this.planStartDate,
     required this.totalDays,
     required this.completionStatus,
+    this.onTap,
   });
+
+  int? _findFirstMissedDay() {
+    final now = DateTime.now();
+    final normalizedToday = DateTime(now.year, now.month, now.day);
+    final todayDayNumber = PlanUtils.dayNumberFor(planStartDate, now, totalDays);
+
+    final start = planStartDate.toLocal();
+    final normalizedStart = DateTime(start.year, start.month, start.day);
+    final lastPlanDay = normalizedStart.add(Duration(days: totalDays - 1));
+
+    final isPlanOver = normalizedToday.isAfter(lastPlanDay);
+    final upperBound = isPlanOver ? totalDays : todayDayNumber - 1;
+
+    for (int day = 1; day <= upperBound; day++) {
+      if (completionStatus[day] != true) return day;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     final missedDays = PlanUtils.calculateMissedDays(
-      startDate,
+      planStartDate,
       totalDays,
       completionStatus,
     );
@@ -25,19 +48,40 @@ class MissedDaysBadge extends StatelessWidget {
     if (missedDays <= 0) return const SizedBox.shrink();
 
     final color = Theme.of(context).colorScheme.onSurfaceVariant;
+    final firstMissedDay = _findFirstMissedDay();
+    final isTappable = onTap != null && firstMissedDay != null;
+    if (!isTappable) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        child: Text(
+          context.l10n.missedDaysCount(missedDays),
+          style: TextStyle(fontSize: 10, color: color),
+        ),
+      );
+    }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        context.l10n.missedDaysCount(missedDays),
-        style: TextStyle(
-          fontSize: 9,
-          color: color,
-          fontFamily: "Inter",
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onTap?.call(firstMissedDay),
+        borderRadius: BorderRadius.circular(20),
+        child: Ink(
+          decoration: BoxDecoration(
+            border: Border.all(color: color.withValues(alpha: 0.35)),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.arrow_back, size: 10, color: color),
+              const SizedBox(width: 4),
+              Text(
+                context.l10n.missedDaysCount(missedDays),
+                style: TextStyle(fontSize: 10, color: color),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/core/utils/iana_timezone.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Simple in-memory cache for GET requests.
 ///
@@ -15,13 +17,20 @@ class CacheInterceptor extends Interceptor {
   /// Default TTL for cache entries (5 minutes)
   static const defaultTTL = Duration(minutes: 5);
 
+  /// User-specific responses must not be cached — keys are not scoped by token.
+  static bool isUserSpecificPath(String path) {
+    return path == '/users/info' || path.startsWith('/users/me');
+  }
+
   @override
   void onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) {
-    // Only cache GET requests
-    if (options.method.toUpperCase() == 'GET') {
+    // Only cache GET requests (unless explicitly opted out)
+    if (options.method.toUpperCase() == 'GET' &&
+        options.extra['no_cache'] != true &&
+        _shouldCache(options.path)) {
       final cacheKey = _generateCacheKey(options);
       final cached = _cache[cacheKey];
 
@@ -67,6 +76,7 @@ class CacheInterceptor extends Interceptor {
     // Cache successful GET responses
     if (method == 'GET' &&
         statusCode == 200 &&
+        _shouldCache(request.path) &&
         !response.extra.containsKey('cached')) {
       final cacheKey = _generateCacheKey(request);
       final ttl = request.extra['cache_ttl'] as Duration? ?? defaultTTL;
@@ -126,13 +136,44 @@ class CacheInterceptor extends Interceptor {
       paths.add('/users/me/routine');
       paths.add('/users/me/plans');
     }
+
+    // Join/leave or follow/unfollow group mutations should refresh group lists.
+    final groupJoinMatch = RegExp(
+      r'/author/groups/([^/]+)/(join|follow)',
+    ).firstMatch(path);
+    if (groupJoinMatch != null) {
+      paths.add('/author/groups/${groupJoinMatch.group(1)}');
+      paths.add('/author/groups');
+      paths.add('/users/me/joined/author/groups');
+      paths.add('/users/me/following/author/groups');
+    }
+
+    // Series enrollment may auto-join the group and updates group-scoped flags.
+    if (path.startsWith('/users/me/series')) {
+      paths.add('/author/groups');
+      paths.add('/users/me/joined/author/groups');
+      paths.add('/users/me/following/author/groups');
+    }
+
+    // Accumulator and timer sessions update aggregated user stats.
+    if (path.contains('/accumulators') || path.contains('/timers')) {
+      paths.add('/users/me/stats');
+    }
     
     return paths;
   }
 
   /// Check if a segment is an action (not data to be cached)
   bool _isActionSegment(String value) {
-    const actions = ['complete', 'incomplete', 'toggle', 'delete', 'archive'];
+    const actions = [
+      'complete',
+      'incomplete',
+      'toggle',
+      'delete',
+      'archive',
+      'join',
+      'follow',
+    ];
     return actions.contains(value.toLowerCase());
   }
 
@@ -157,16 +198,17 @@ class CacheInterceptor extends Interceptor {
   /// Generate a unique cache key for the request
   String _generateCacheKey(RequestOptions options) {
     final path = options.path;
-    final queryParams = options.queryParameters;
-    if (queryParams.isEmpty) {
-      return path;
+    final params = Map<String, dynamic>.from(options.queryParameters);
+    final timezone = options.headers[IanaTimezone.headerName]?.toString();
+    if (timezone != null && timezone.isNotEmpty) {
+      params[IanaTimezone.headerName] = timezone;
     }
-    // Sort query params for consistent keys
-    final sortedParams = queryParams.entries.toList()
+    if (params.isEmpty) return path;
+
+    final sortedParams = params.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
-    final queryString = sortedParams
-        .map((e) => '${e.key}=${e.value}')
-        .join('&');
+    final queryString =
+        sortedParams.map((e) => '${e.key}=${e.value}').join('&');
     return '$path?$queryString';
   }
 
@@ -176,12 +218,27 @@ class CacheInterceptor extends Interceptor {
     _logger.info('Cache cleared');
   }
 
+  /// Drop cached GET responses for authenticated user endpoints.
+  void clearUserScoped() {
+    _cache.removeWhere((key, _) => isUserSpecificPath(_pathFromCacheKey(key)));
+    _logger.info('User-scoped HTTP cache cleared');
+  }
+
   /// Remove a specific cache entry
   void invalidate(String path) {
     _cache.removeWhere((key, _) => key.startsWith(path));
     _logger.info('Cache invalidated for: $path');
   }
+
+  bool _shouldCache(String path) => !isUserSpecificPath(path);
+
+  String _pathFromCacheKey(String cacheKey) => cacheKey.split('?').first;
 }
+
+/// Shared [CacheInterceptor] instance wired into the main Dio client.
+final cacheInterceptorProvider = Provider<CacheInterceptor>((ref) {
+  return CacheInterceptor(AppLogger('CacheInterceptor'));
+});
 
 class _CacheEntry {
   _CacheEntry({

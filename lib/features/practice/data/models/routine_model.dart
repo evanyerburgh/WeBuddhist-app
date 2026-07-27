@@ -1,32 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/features/practice/data/utils/routine_time_utils.dart';
+import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
+import 'package:flutter_pecha/shared/domain/value_objects/responsive_image.dart';
 import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
 
-enum RoutineItemType { plan, recitation }
+enum RoutineItemType { series, recitation, timer, accumulator }
 
 class RoutineItem {
   final String id;
   final String title;
-  final String? imageUrl;
+  final ResponsiveImage? coverImage;
   final RoutineItemType type;
   final DateTime? enrolledAt;
+  final String? language;
+  final DateTime? startDate;
+  final String? currentPlanId;
+  final String? currentPlanTitle;
+
+  /// Duration in milliseconds — only present for [RoutineItemType.timer] items.
+  final int? durationMs;
+
+  /// Preview text for [RoutineItemType.recitation] items (from API or selection).
+  final RecitationFirstSegmentModel? firstSegment;
 
   const RoutineItem({
     required this.id,
     required this.title,
-    this.imageUrl,
+    this.coverImage,
     required this.type,
     this.enrolledAt,
+    this.language,
+    this.startDate,
+    this.currentPlanId,
+    this.currentPlanTitle,
+    this.durationMs,
+    this.firstSegment,
   });
+
+  /// Smallest cover URL — legacy persistence and notifications.
+  String? get imageUrl => coverImage?.displayUrl;
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'title': title,
+    if (coverImage != null) 'coverImage': coverImage!.toJson(),
     'imageUrl': imageUrl,
     'type': type.name,
     'enrolledAt': enrolledAt?.toIso8601String(),
+    if (language != null) 'language': language,
+    if (startDate != null) 'startDate': startDate!.toIso8601String(),
+    if (currentPlanId != null) 'currentPlanId': currentPlanId,
+    if (currentPlanTitle != null) 'currentPlanTitle': currentPlanTitle,
+    if (durationMs != null) 'durationMs': durationMs,
+    if (firstSegment != null) 'firstSegment': firstSegment!.toJson(),
   };
 
   /// Safely parses a [RoutineItem] from JSON with null checks and fallbacks.
@@ -44,10 +72,36 @@ class RoutineItem {
     return RoutineItem(
       id: id,
       title: title,
-      imageUrl: json['imageUrl'] as String?,
+      coverImage: _parseCoverImage(json),
       type: _parseRoutineItemType(json['type']),
       enrolledAt: _parseDateTime(json['enrolledAt']),
+      language: json['language'] as String?,
+      startDate: _parseDateTime(json['startDate']),
+      currentPlanId: json['currentPlanId'] as String?,
+      currentPlanTitle: json['currentPlanTitle'] as String?,
+      durationMs: (json['durationMs'] as num?)?.toInt(),
+      firstSegment: _parseFirstSegment(json),
     );
+  }
+
+  static RecitationFirstSegmentModel? _parseFirstSegment(
+    Map<String, dynamic> json,
+  ) {
+    final raw = json['firstSegment'] ?? json['first_segment'];
+    if (raw is! Map<String, dynamic>) return null;
+    return RecitationFirstSegmentModel.fromJson(raw);
+  }
+
+  static ResponsiveImage? _parseCoverImage(Map<String, dynamic> json) {
+    final dynamic rawCover = json['coverImage'];
+    if (rawCover is Map<String, dynamic>) {
+      return ResponsiveImage.fromJson(rawCover);
+    }
+    final String? legacyUrl = json['imageUrl'] as String?;
+    if (legacyUrl != null && legacyUrl.isNotEmpty) {
+      return ResponsiveImage.uniform(legacyUrl);
+    }
+    return null;
   }
 
   factory RoutineItem.fromJson(Map<String, dynamic> json) {
@@ -58,13 +112,17 @@ class RoutineItem {
     return item;
   }
 
-  /// Safely parses [RoutineItemType] with fallback to [RoutineItemType.plan].
+  /// Safely parses [RoutineItemType] with fallback to [RoutineItemType.series].
   static RoutineItemType _parseRoutineItemType(dynamic value) {
-    if (value is! String) return RoutineItemType.plan;
-    return RoutineItemType.values.firstWhere(
-      (e) => e.name == value,
-      orElse: () => RoutineItemType.plan,
-    );
+    if (value is! String) return RoutineItemType.series;
+    return switch (value) {
+      'plan' => RoutineItemType.series,
+      'series' => RoutineItemType.series,
+      'recitation' => RoutineItemType.recitation,
+      'timer' => RoutineItemType.timer,
+      'accumulator' => RoutineItemType.accumulator,
+      _ => RoutineItemType.series,
+    };
   }
 
   /// Safely parses a [DateTime] from an ISO 8601 string.

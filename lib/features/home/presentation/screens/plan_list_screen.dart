@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/plans_by_tag_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/plan_list_view.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
+import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,7 +17,9 @@ class PlanListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(myPlansPaginatedProvider); // pre-warm so enrolled state is ready when list items render
+    ref.watch(
+      myPlansPaginatedProvider,
+    ); // pre-warm so enrolled state is ready when list items render
     final plansAsync = ref.watch(plansByTagProvider(tag));
     final localizations = AppLocalizations.of(context)!;
 
@@ -62,7 +65,7 @@ class PlanListScreen extends ConsumerWidget {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios),
+            icon: const Icon(AppAssets.arrowLeft),
             onPressed: () => context.pop(),
           ),
           Expanded(
@@ -94,8 +97,7 @@ class PlanListScreen extends ConsumerWidget {
     AppLocalizations localizations,
     WidgetRef ref,
   ) {
-    final locale = ref.watch(localeProvider);
-    final fontSize = locale.languageCode == 'bo' ? 22.0 : 18.0;
+    final fontSize = getLocalizedFontSize(AppTextSize.title);
 
     return Center(
       child: Padding(

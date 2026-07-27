@@ -3,6 +3,12 @@ class AppConfig {
 
   static const String appName = 'WeBuddhist';
   static const String appPackageName = 'org.pecha.app';
+  
+  /// Airbridge tracking link that handles attribution and deep linking
+  /// Automatically redirects to the appropriate app store (iOS/Android)
+  static const String airbridgeTrackingLink = 'https://join.webuddhist.com/get-app';
+  
+  // Direct store URLs (kept for reference, use airbridgeTrackingLink for sharing)
   static const String appStoreUrl =
       'https://apps.apple.com/app/webuddhist/id6745810914';
   static const String playStoreUrl =
@@ -14,15 +20,33 @@ class AppConfig {
   static const String chineseSystemFont = 'Noto Sans Traditional Chinese';
   static const String chineseContentFont = 'Noto Serif Traditional Chinese';
   static const String tibetanSystemFont = 'Noto Serif Tibetan';
-  static const String tibetanContentFont = 'SambhotaUnicode';
+  static const String tibetanContentFont = 'BabelStoneTibetan';
 
   // Language configuration
   static const String tibetanLanguageCode = 'bo';
   static const String englishLanguageCode = 'en';
   static const String chineseLanguageCode = 'zh';
+  static const String hindiLanguageCode = 'hi';
+  static const String mongolianLanguageCode = 'mn';
+  static const String nepaliLanguageCode = 'ne';
   static const String tibetanAdaptationLanguageCode = 'tib';
   static const String tibetanTransliterationLanguageCode = 'tibphono';
-  static const List<String> supportedLanguages = ['en', 'zh', 'bo'];
+  static const List<String> supportedLanguages = [
+    'en',
+    'zh',
+    'bo',
+    'hi',
+    'mn',
+    'ne',
+  ];
+
+  /// Maps a UI locale to the language code sent to content APIs.
+  /// Returns the locale when it is a supported app language; otherwise English.
+  static String resolveContentLanguage(String localeCode) {
+    final code = localeCode.toLowerCase();
+    if (supportedLanguages.contains(code)) return code;
+    return englishLanguageCode;
+  }
 
   // Theme configuration
   static const String defaultLanguage = 'en';

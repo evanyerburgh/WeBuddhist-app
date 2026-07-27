@@ -39,6 +39,13 @@ class NotificationService {
   static GoRouter? _router;
   static ProviderContainer? _container;
 
+  /// Delegate for push (FCM) payloads. Foreground push notifications are shown
+  /// through this same shared plugin, so their taps land in [_onNotificationTapped].
+  /// When the tapped payload is push-shaped (carries `session_type`), it is
+  /// forwarded here instead of the routine deep-link logic, keeping push and
+  /// local-notification taps routed by their own owners.
+  static void Function(Map<String, dynamic> data)? _pushTapHandler;
+
   // Method to set the router reference
   static void setRouter(GoRouter router) {
     _router = router;
@@ -47,6 +54,12 @@ class NotificationService {
   // Method to set the provider container
   static void setContainer(ProviderContainer container) {
     _container = container;
+  }
+
+  /// Registers the handler for foreground push-notification taps. Set by the
+  /// push-notification bootstrap so FCM payloads route via PushMessageNavigator.
+  static void setPushTapHandler(void Function(Map<String, dynamic> data) handler) {
+    _pushTapHandler = handler;
   }
 
   bool get isInitialized => _isInitialized;
@@ -367,21 +380,48 @@ class NotificationService {
     if (payload != null && payload.isNotEmpty) {
       try {
         final data = jsonDecode(payload) as Map<String, dynamic>;
+
+        // Foreground push (FCM) notifications are shown through this shared
+        // plugin. Forward push-shaped payloads to the push navigator so they
+        // route the same way as background/terminated taps.
+        if (data.containsKey('session_type')) {
+          _logger.info('Forwarding push payload to push tap handler');
+          _pushTapHandler?.call(data);
+          return;
+        }
+
         final itemId = data['itemId'] as String?;
         final itemTypeStr = data['itemType'] as String?;
         if (itemId != null && itemTypeStr != null) {
-          _logger.info('Storing pending notification nav: $itemTypeStr $itemId');
+          final planId = data['planId'] as String?;
+          final durationMs = (data['durationMs'] as num?)?.toInt();
+          _logger.info(
+            'Storing pending notification nav: $itemTypeStr $itemId '
+            'planId=$planId durationMs=$durationMs',
+          );
           _container!.read(pendingNotificationNavProvider.notifier).state =
-              NotificationNav(itemId: itemId, itemType: itemTypeStr);
+              NotificationNav(
+                itemId: itemId,
+                itemType: itemTypeStr,
+                planId: planId,
+                durationMs: durationMs,
+              );
         }
       } catch (e) {
         _logger.warning('Failed to parse notification payload: $e');
       }
     }
 
-    // Navigate to the practice tab — RoutineFilledState will push the detail screen.
-    _container!.read(mainNavigationIndexProvider.notifier).state = 2;
+    // Navigate to the practice tab, then push the My Practices screen.
+    // Since the main-navigation refactor, RoutineFilledState — which consumes
+    // the pending nav and pushes the chant (reader) / mala / plan detail —
+    // only mounts on /practice/my-practices; the Practice tab itself shows the
+    // explore screen and consumes nothing. Without this push the tap lands on
+    // /home and the detail never opens. Mirrors PushMessageNavigator's plan path.
+    _container!.read(mainNavigationIndexProvider.notifier).state =
+        MainTab.practice.index;
     _router!.go('/home');
+    _router!.push('/practice/my-practices');
   }
 }
 

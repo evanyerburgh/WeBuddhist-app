@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/texts/constants/chapter_constants.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
@@ -199,7 +200,9 @@ class _ContentsChapterState extends ConsumerState<ContentsChapter> {
       children: [
         // Loading previous content indicator
         if (widget.infiniteQuery.isFetchingPreviousPage)
-          _buildLoadingIndicator("Loading previous... ($pagesLoaded pages)"),
+          _buildLoadingIndicator(
+            context.l10n.loading_previous_pages(pagesLoaded),
+          ),
 
         // Main content with ScrollablePositionedList
         Expanded(
@@ -217,7 +220,7 @@ class _ContentsChapterState extends ConsumerState<ContentsChapter> {
 
         // Loading next content indicator
         if (widget.infiniteQuery.isFetchingNextPage)
-          _buildLoadingIndicator("Loading more... ($pagesLoaded pages)"),
+          _buildLoadingIndicator(context.l10n.loading_more_pages(pagesLoaded)),
       ],
     );
   }
@@ -279,7 +282,7 @@ class _ContentsChapterState extends ConsumerState<ContentsChapter> {
 
   Widget _buildSectionTitle(Section section) {
     final language = widget.textDetail.language;
-    final fontSize = language == 'bo' ? 26.0 : 22.0;
+    final fontSize = getLocalizedFontSize(AppTextSize.display);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
@@ -298,7 +301,7 @@ class _ContentsChapterState extends ConsumerState<ContentsChapter> {
     final language = widget.textDetail.language;
     final segment = section.segments[segmentIndex];
     final segmentNumber = segment.segmentNumber.toString().padLeft(2);
-    final content = segment.content;
+    final content = normalizeSegmentHtml(segment.content);
     final selectedSegment = ref.watch(selectedSegmentProvider);
     final isSelected = selectedSegment?.segmentId == segment.segmentId;
     final fontSize = ref.watch(fontSizeProvider);
@@ -361,10 +364,11 @@ class _ContentsChapterState extends ConsumerState<ContentsChapter> {
                 // Segment content
                 Expanded(
                   child: SegmentHtmlWidget(
-                    htmlContent: content ?? '',
+                    htmlContent: content,
                     segmentIndex: segment.segmentNumber,
                     fontSize: fontSize,
                     language: language,
+                    isSelected: isSelected,
                   ),
                 ),
               ],

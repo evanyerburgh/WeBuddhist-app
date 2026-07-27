@@ -24,9 +24,6 @@ if (localPropertiesFile.exists()) {
     localProperties.load(FileInputStream(localPropertiesFile))
 }
 
-val auth0Domain: String = localProperties.getProperty("auth0Domain") ?: "we-buddhist-prod.us.auth0.com"
-val auth0Scheme: String = localProperties.getProperty("auth0Scheme") ?: "org.pecha.app"
-    
 android {
     namespace = "org.pecha.app"
     compileSdk = flutter.compileSdkVersion
@@ -42,21 +39,30 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "org.pecha.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = maxOf(flutter.minSdkVersion, 23)
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders.putAll(
-            mapOf(
-                "auth0Domain" to auth0Domain,
-                "auth0Scheme" to auth0Scheme
-            )
-        )
+
+        // Airbridge credentials — read from local.properties (gitignored) or
+        // from CI environment variables so plaintext tokens never enter source.
+        val airbridgeName = System.getenv("AIRBRIDGE_APP_NAME")
+            ?: localProperties.getProperty("airbridge.app.name", "")
+        val airbridgeToken = System.getenv("AIRBRIDGE_SDK_TOKEN")
+            ?: localProperties.getProperty("airbridge.app.token", "")
+        buildConfigField("String", "AIRBRIDGE_APP_NAME", "\"$airbridgeName\"")
+        buildConfigField("String", "AIRBRIDGE_SDK_TOKEN", "\"$airbridgeToken\"")
+        // Manifest placeholder so intent filters resolve the Airbridge domains at build time.
+        manifestPlaceholders["airbridgeAppName"] = airbridgeName
     }
 
     val cmKeystorePath: String? = System.getenv("CM_KEYSTORE_PATH")
@@ -96,6 +102,9 @@ android {
             resValue("string", "app_name", "[Dev] WeBuddhist")
             versionNameSuffix = "-dev"
             signingConfigs.findByName("devRelease")?.let { signingConfig = it }
+            manifestPlaceholders["airbridgeAppName"] = "webuddhist"
+            manifestPlaceholders["auth0Domain"] = "dev-vz6o17motc18g45h.us.auth0.com"
+            manifestPlaceholders["auth0Scheme"] = "org.pecha.app.dev"
         }
 
         create("staging") {
@@ -104,6 +113,9 @@ android {
             resValue("string", "app_name", "[Stage] WeBuddhist")
             versionNameSuffix = "-staging"
             signingConfigs.findByName("stagingRelease")?.let { signingConfig = it }
+            manifestPlaceholders["airbridgeAppName"] = "webuddhist"
+            manifestPlaceholders["auth0Domain"] = "we-buddhist-prod.us.auth0.com"
+            manifestPlaceholders["auth0Scheme"] = "org.pecha.app.staging"
         }
 
         create("prod") {
@@ -111,6 +123,9 @@ android {
             applicationId = "org.pecha.app"
             resValue("string", "app_name", "WeBuddhist")
             signingConfigs.findByName("prodRelease")?.let { signingConfig = it }
+            manifestPlaceholders["airbridgeAppName"] = "webuddhist"
+            manifestPlaceholders["auth0Domain"] = "we-buddhist-prod.us.auth0.com"
+            manifestPlaceholders["auth0Scheme"] = "org.pecha.app"
         }
     }
 

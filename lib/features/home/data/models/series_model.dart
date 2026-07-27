@@ -1,15 +1,18 @@
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
 import 'package:flutter_pecha/features/plans/data/models/plans_model.dart';
+import 'package:flutter_pecha/features/plans/data/utils/plan_utils.dart';
 
 class SeriesMetadataModel {
   final String id;
   final String title;
+  final String? subTitle;
   final String description;
   final String language;
 
   SeriesMetadataModel({
     required this.id,
     required this.title,
+    this.subTitle,
     required this.description,
     required this.language,
   });
@@ -18,36 +21,87 @@ class SeriesMetadataModel {
     return SeriesMetadataModel(
       id: (json['id'] as String?) ?? '',
       title: (json['title'] as String?) ?? '',
+      subTitle: json['sub_title'] as String?,
       description: (json['description'] as String?) ?? '',
       language: (json['language'] as String?) ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'sub_title': subTitle,
+      'description': description,
+      'language': language,
+    };
   }
 }
 
 class SeriesModel {
   final String id;
-  final List<SeriesMetadataModel> metadata;
-  final String? image;
+  final List<SeriesMetadataModel> metadataList;
+  final ImageModel? image;
+  final String authorId;
   final bool featured;
   final String? status;
+  final int? planCount;
+  final int? enrolledCount;
+  final DateTime? startDate;
+  final DateTime? endDate;
   final List<PlansModel> plans;
   final int totalDays;
+  final Map<String, dynamic>? groupJson;
+  final Map<String, dynamic>? progressJson;
+  final Map<String, dynamic>? partnerJson;
 
   SeriesModel({
     required this.id,
-    required this.metadata,
+    this.metadataList = const [],
     this.image,
+    this.authorId = '',
     this.featured = false,
     this.status,
+    this.planCount,
+    this.enrolledCount,
+    this.startDate,
+    this.endDate,
     this.plans = const [],
     this.totalDays = 0,
+    this.groupJson,
+    this.progressJson,
+    this.partnerJson,
   });
 
+  String? get imageUrl => image?.displayUrl;
+
+  SeriesMetadataModel? resolveMetadata(String language) {
+    if (metadataList.isEmpty) return null;
+    final upper = language.toUpperCase();
+    return metadataList.cast<SeriesMetadataModel?>().firstWhere(
+      (m) => m!.language.toUpperCase() == upper,
+      orElse:
+          () => metadataList.cast<SeriesMetadataModel?>().firstWhere(
+            (m) => m!.language.toUpperCase() == 'EN',
+            orElse: () => metadataList.first,
+          ),
+    );
+  }
+
   factory SeriesModel.fromJson(Map<String, dynamic> json) {
-    final metadataList =
-        (json['metadata'] as List<dynamic>? ?? [])
-            .map((m) => SeriesMetadataModel.fromJson(m as Map<String, dynamic>))
-            .toList();
+    final metadataJson = json['metadata'];
+    final List<SeriesMetadataModel> metadataList;
+    if (metadataJson is List) {
+      metadataList =
+          metadataJson
+              .whereType<Map<String, dynamic>>()
+              .map(SeriesMetadataModel.fromJson)
+              .toList();
+    } else if (metadataJson is Map<String, dynamic>) {
+      metadataList = [SeriesMetadataModel.fromJson(metadataJson)];
+    } else {
+      metadataList = const [];
+    }
 
     final plansList =
         (json['plans'] as List<dynamic>? ?? [])
@@ -56,40 +110,124 @@ class SeriesModel {
 
     return SeriesModel(
       id: json['id'] as String,
-      metadata: metadataList,
-      image: json['image'] as String?,
+      metadataList: metadataList,
+      image: ImageModel.fromJsonMap(json),
+      authorId: json['author_id'] as String? ?? '',
       featured: json['featured'] as bool? ?? false,
       status: json['status'] as String?,
+      planCount: (json['plan_count'] as num?)?.toInt(),
+      enrolledCount: (json['enrolled_count'] as num?)?.toInt(),
+      startDate: PlanUtils.parseCalendarDate(json['start_date'] as String?),
+      endDate: PlanUtils.parseCalendarDate(json['end_date'] as String?),
       plans: plansList,
-      totalDays: json['total_days'] as int? ?? 0,
+      totalDays: (json['total_days'] as num?)?.toInt() ?? 0,
+      groupJson:
+          json['group'] is Map<String, dynamic>
+              ? json['group'] as Map<String, dynamic>
+              : null,
+      progressJson:
+          json['progress'] is Map<String, dynamic>
+              ? json['progress'] as Map<String, dynamic>
+              : null,
+      partnerJson:
+          json['partner'] is Map<String, dynamic>
+              ? json['partner'] as Map<String, dynamic>
+              : null,
     );
   }
 
-  /// Pick metadata for [activeLanguageCode] (e.g. 'en' → 'EN'), falling back
-  /// to 'EN', then to the first available entry. Returns empty strings if
-  /// no metadata exists at all.
-  SeriesMetadataModel? _pickMetadata(String activeLanguageCode) {
-    if (metadata.isEmpty) return null;
-    final target = activeLanguageCode.toUpperCase();
-    for (final m in metadata) {
-      if (m.language.toUpperCase() == target) return m;
-    }
-    for (final m in metadata) {
-      if (m.language.toUpperCase() == 'EN') return m;
-    }
-    return metadata.first;
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'metadata': metadataList.map((m) => m.toJson()).toList(),
+      'image': image?.toJson(),
+      'author_id': authorId,
+      'featured': featured,
+      'status': status,
+      'plan_count': planCount,
+      'enrolled_count': enrolledCount,
+      'start_date': startDate?.toIso8601String(),
+      'end_date': endDate?.toIso8601String(),
+      'plans': plans.map((p) => p.toJson()).toList(),
+      'total_days': totalDays,
+      'group': groupJson,
+      'progress': progressJson,
+      'partner': partnerJson,
+    };
   }
 
-  Series toEntity(String activeLanguageCode) {
-    final picked = _pickMetadata(activeLanguageCode);
+  Series toEntity({String language = 'en'}) {
+    final resolved = resolveMetadata(language);
     return Series(
       id: id,
-      title: picked?.title ?? '',
-      description: picked?.description ?? '',
-      imageUrl: image,
+      title: resolved?.title ?? '',
+      subTitle: resolved?.subTitle,
+      description: resolved?.description ?? '',
+      coverImage: image?.toResponsiveImage(),
       featured: featured,
       totalDays: totalDays,
+      planCount: planCount ?? plans.length,
+      enrolledCount: enrolledCount ?? 0,
+      startDate: startDate,
+      endDate: endDate,
       plans: plans.map((p) => p.toEntity()).toList(),
+      group: _parseGroup(language),
+      progress: _parseProgress(),
+      partner: _parsePartner(),
+    );
+  }
+
+  SeriesProgress? _parseProgress() {
+    final p = progressJson;
+    if (p == null) return null;
+    return SeriesProgress(
+      totalDayCount: (p['total_day_count'] as num?)?.toInt() ?? 0,
+      currentDayNumber: (p['current_day_number'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  SeriesPartner? _parsePartner() {
+    final p = partnerJson;
+    if (p == null) return null;
+    final name = p['group_name'] as String? ?? '';
+    if (name.isEmpty) return null;
+    return SeriesPartner(
+      groupName: name,
+      groupImage: p['group_image'] as String?,
+    );
+  }
+
+  SeriesGroup? _parseGroup(String language) {
+    if (groupJson == null) return null;
+    final g = groupJson!;
+    final rawMeta = g['metadata'];
+
+    Map<String, dynamic>? resolvedMeta;
+    if (rawMeta is Map<String, dynamic>) {
+      resolvedMeta = rawMeta;
+    } else if (rawMeta is List) {
+      final upper = language.toUpperCase();
+      for (final m in rawMeta) {
+        if (m is Map<String, dynamic>) {
+          final lang = (m['language'] as String? ?? '').toUpperCase();
+          if (lang == upper) {
+            resolvedMeta = m;
+            break;
+          }
+        }
+      }
+      resolvedMeta ??= rawMeta.whereType<Map<String, dynamic>>().firstOrNull;
+    }
+
+    return SeriesGroup(
+      id: g['id'] as String? ?? '',
+      slug: g['slug'] as String? ?? '',
+      isPublic: g['is_public'] as bool? ?? false,
+      title: resolvedMeta?['title'] as String? ?? '',
+      subTitle: resolvedMeta?['sub_title'] as String?,
+      description: resolvedMeta?['description'] as String?,
+      avatarUrl: g['avatar_url'] as String?,
+      bannerUrl: g['banner_url'] as String?,
     );
   }
 }

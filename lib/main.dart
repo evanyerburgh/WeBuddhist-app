@@ -1,22 +1,43 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_pecha/core/analytics/posthog_analytics_service.dart';
 import 'package:flutter_pecha/core/cache/cache_service.dart';
 import 'package:flutter_pecha/core/config/app_feature_flags.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
+import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/core/deep_linking/app_links_deep_link_service.dart';
 import 'package:flutter_pecha/core/network/connectivity_service.dart';
 import 'package:flutter_pecha/core/l10n/l10n.dart';
+import 'package:flutter_pecha/core/services/airbridge_deep_link_service.dart';
 import 'package:flutter_pecha/core/services/service_providers.dart';
-import 'package:flutter_pecha/core/storage/plan_metadata_store.dart';
-import 'package:flutter_pecha/core/storage/special_plan_started_at_store.dart';
 import 'package:flutter_pecha/core/theme/theme_notifier.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
-import 'package:flutter_pecha/features/notifications/application/plan_notification_bootstrap.dart';
-import 'package:flutter_pecha/features/notifications/application/special_plan_bootstrap.dart';
+import 'package:flutter_pecha/features/notifications/data/models/notification_nav.dart';
+import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
+import 'package:flutter_pecha/features/notifications/application/notification_sync_bootstrap.dart';
+import 'package:flutter_pecha/features/notifications/application/notification_sync_engine.dart';
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
+import 'package:flutter_pecha/features/push_notifications/application/push_notification_service.dart';
+import 'package:flutter_pecha/features/push_notifications/presentation/providers/push_notification_providers.dart';
+import 'package:flutter_pecha/features/home/data/datasource/home_local_datasource.dart';
+import 'package:flutter_pecha/features/home/presentation/providers/use_case_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/user_session_bootstrap.dart';
+import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
+import 'package:flutter_pecha/features/mala/data/datasources/mala_local_datasource.dart';
+import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
+import 'package:flutter_pecha/features/more/data/datasource/user_stats_local_datasource.dart';
+import 'package:flutter_pecha/features/plans/data/datasource/plans_local_datasource.dart';
+import 'package:flutter_pecha/features/plans/presentation/providers/use_case_providers.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/routine_local_storage.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_providers.dart';
+import 'package:flutter_pecha/features/timer/data/datasource/timers_local_datasource.dart';
+import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
@@ -25,14 +46,29 @@ import 'package:fquery/fquery.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/material_localizations_bo.dart';
 import 'core/localization/cupertino_localizations_bo.dart';
+import 'package:flutter_pecha/core/services/upgrade/force_update_gate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:airbridge_flutter_sdk/airbridge_flutter_sdk.dart';
 
 final _logger = AppLogger('Main');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await PostHogAnalyticsService.create().initialize();
+    _logger.info('Analytics initialized');
+  } catch (e) {
+    _logger.warning('Error initializing analytics: $e');
+  }
+
   await Firebase.initializeApp();
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+  // Register the FCM background/terminated-state handler. Must be done before
+  // runApp and references a top-level function so it survives AOT and runs in
+  // its own isolate.
+  FirebaseMessaging.onBackgroundMessage(pushNotificationBackgroundHandler);
 
   // Setup environment-aware logging
   AppLogger.init();
@@ -83,15 +119,6 @@ void main() async {
     _logger.warning('Error initializing notification service: $e');
   }
 
-  // Prime notification caches so schedulers can read startedAt / totalDays
-  // synchronously without awaiting SharedPreferences at schedule time.
-  try {
-    await SpecialPlanStartedAtStore.init();
-    await PlanMetadataStore.init();
-  } catch (e) {
-    _logger.warning('Error initializing plan metadata stores: $e');
-  }
-
   // Initialize routine local storage (persistent user data, not cache)
   final routineStorage = RoutineLocalStorage();
   try {
@@ -99,6 +126,46 @@ void main() async {
     _logger.info('Routine local storage initialized');
   } catch (e) {
     _logger.warning('Error initializing routine local storage: $e');
+  }
+
+  // Initialize mala counts local storage (per-user namespaced, not cache)
+  try {
+    await MalaLocalDataSource.init();
+    _logger.info('Mala local storage initialized');
+  } catch (e) {
+    _logger.warning('Error initializing mala local storage: $e');
+  }
+
+  // Initialize Home local storage (source of truth for local-first Home).
+  try {
+    await HomeLocalDatasource.init();
+    _logger.info('Home local storage initialized');
+  } catch (e) {
+    _logger.warning('Error initializing home local storage: $e');
+  }
+
+  // Initialize Me stats local storage (source of truth for local-first stats).
+  try {
+    await UserStatsLocalDatasource.init();
+    _logger.info('Me stats local storage initialized');
+  } catch (e) {
+    _logger.warning('Error initializing me stats local storage: $e');
+  }
+
+  // Initialize Timer local storage (source of truth for local-first timers).
+  try {
+    await TimersLocalDatasource.init();
+    _logger.info('Timer local storage initialized');
+  } catch (e) {
+    _logger.warning('Error initializing timer local storage: $e');
+  }
+
+  // Initialize Plans local storage (source of truth for local-first plans).
+  try {
+    await PlansLocalDatasource.init();
+    _logger.info('Plans local storage initialized');
+  } catch (e) {
+    _logger.warning('Error initializing plans local storage: $e');
   }
 
   // Create provider container for routine storage
@@ -109,31 +176,162 @@ void main() async {
   // Set container reference for notification navigation
   NotificationService.setContainer(container);
 
+  // Initialize Airbridge deep link handler
+  try {
+    Airbridge.setOnDeeplinkReceived((url) {
+      _logger.info('Airbridge deep link received: $url');
+      AirbridgeDeepLinkService.storePendingDeepLink(url);
+    });
+    _logger.info('Airbridge deep link handler initialized');
+  } catch (e) {
+    _logger.warning('Error initializing Airbridge deep link handler: $e');
+  }
+
+  try {
+    await AppLinksDeepLinkService.instance.initialize();
+  } catch (e) {
+    _logger.warning('Error initializing app links handler: $e');
+  }
+
   runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
+  bool _hasRegisteredDeepLinkRouters = false;
+  bool _hasDrainedInitialAppLink = false;
+  bool _hasConsumedLaunchNotification = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Reconcile on every foreground return, wherever the user is in the
+      // app: picks up OS permission changes, timezone moves, and day
+      // rollovers. The engine is idempotent and serialises concurrent
+      // triggers, so overlapping with screen-level resume syncs is safe.
+      ref
+          .read(notificationSyncEngineProvider)
+          .sync(trigger: SyncTrigger.appResume);
+      unawaited(
+        ref.read(timersDomainRepositoryProvider).flushPendingTimerStops(),
+      );
+      unawaited(
+        ref.read(userPlansDomainRepositoryProvider).flushPendingPlanActions(),
+      );
+      // Retry FCM initialization if a previous attempt failed (e.g. transient
+      // Firebase error on cold start). No-op once _initialized is true.
+      unawaited(ref.read(pushNotificationServiceProvider).initialize());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final authState = ref.watch(authProvider);
 
     // Get the singleton router instance - same instance is reused across rebuilds
     // final router = AppRouter().router;
     final router = ref.watch(appRouterProvider);
 
+    // Register the router once so both deep-link sources can drain links that
+    // arrived during cold start and dispatch warm links immediately afterward.
+    if (!_hasRegisteredDeepLinkRouters) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AirbridgeDeepLinkService.setRouter(router);
+        AppLinksDeepLinkService.instance.setRouter(router);
+        AppLinksDeepLinkService.instance.setTabSetter((int tabIndex) {
+          ref.read(mainNavigationIndexProvider.notifier).state = tabIndex;
+        });
+        // Plan deep links resolve the specific plan the same way a PLAN push
+        // does: seed the pending nav, switch to the Practice tab, then open My
+        // Practices where RoutineFilledState resolves the plan + current day
+        // and pushes /practice/details.
+        AppLinksDeepLinkService.instance.setPlanNavigator(
+          (String planId, int? dayNumber, String? planLanguage) {
+            ref.read(pendingNotificationNavProvider.notifier).state =
+                NotificationNav(
+                  itemId: planId,
+                  itemType: RoutineItemType.series.name,
+                  planId: planId,
+                  dayNumber: dayNumber,
+                  planLanguage: planLanguage,
+                );
+            ref.read(mainNavigationIndexProvider.notifier).state =
+                MainTab.practice.index;
+            router.go(AppRoutes.home);
+            router.push(AppRoutes.practiceMyPractices);
+          },
+        );
+      });
+      _hasRegisteredDeepLinkRouters = true;
+    }
+
+    if (!authState.isLoading && !_hasDrainedInitialAppLink) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        AppLinksDeepLinkService.instance.drainPendingLink();
+        _hasDrainedInitialAppLink = true;
+      });
+    }
+
     // Initialize services in background via providers
     ref.watch(audioHandlerProvider);
     ref.watch(notificationServiceProvider);
-    // Bootstrap listeners — watched here so they stay alive for the app lifetime.
-    // specialPlanBootstrapProvider: mirrors startedAt for ITCC and other hardcoded series.
-    // planNotificationBootstrapProvider: mirrors startedAt + totalDays for all other plans.
-    ref.watch(specialPlanBootstrapProvider);
-    ref.watch(planNotificationBootstrapProvider);
+    // Bootstrap listener — kept alive for the app lifetime. Hydrates the
+    // server routine into local Hive on login, then delegates to
+    // NotificationSyncEngine to reconcile local recitation/mala/timer
+    // reminders. Plan/series reminders are delivered via FCM push.
+    ref.watch(notificationSyncBootstrapProvider);
+    // Bootstrap FCM: capture/refresh token, register handlers, and register the
+    // device token with the backend once the user signs in.
+    ref.watch(pushNotificationBootstrapProvider);
+    // Mala background sync — kept alive for the app lifetime so offline counts
+    // flush on lifecycle/connectivity triggers even off the mala screen.
+    ref.watch(malaSyncManagerProvider);
+    // Clears user-scoped HTTP cache and invalidates profile/plan providers
+    // when auth transitions between accounts.
+    ref.watch(userSessionBootstrapProvider);
+    // Home background sync — flushes pending local-first writes when
+    // connectivity returns.
+    ref.watch(homeSyncBootstrapProvider);
+    // Timer background sync — flushes pending local-first writes when
+    // connectivity returns.
+    ref.watch(timerSyncBootstrapProvider);
+    // Plans background sync — flushes pending local-first writes when
+    // connectivity returns.
+    ref.watch(plansSyncBootstrapProvider);
     NotificationService.setRouter(router);
-    NotificationService().consumeLaunchNotification();
+    // Consume a terminated-state launch tap only after auth has settled and a
+    // frame has rendered. Firing it during build (or before the async auth
+    // redirect resolves) races the router's initial redirect and strands the
+    // app on a shell-less /home (no bottom nav). One-shot; mirrors the
+    // deep-link drain above. consumeLaunchNotification is itself idempotent.
+    if (!authState.isLoading && !_hasConsumedLaunchNotification) {
+      _hasConsumedLaunchNotification = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        NotificationService().consumeLaunchNotification();
+      });
+    }
 
     // Add QueryClient provider wrapper
     return QueryClientProvider(
@@ -166,6 +364,9 @@ class MyApp extends ConsumerWidget {
         debugShowCheckedModeBanner: false,
         // routerConfig: router,
         routerConfig: router,
+        builder:
+            (context, child) =>
+                ForceUpdateGate(child: child ?? const SizedBox.shrink()),
       ),
     );
   }

@@ -32,6 +32,7 @@ export 'data/models/plan_tasks_model.dart';
 export 'data/models/plan_subtasks_model.dart';
 export 'data/models/plan_progress_model.dart';
 export 'data/models/plan_days_model.dart';
+export 'data/models/plan_video_model.dart';
 export 'data/models/author/author_model.dart';
 export 'data/models/user/user_plans_model.dart';
 export 'data/models/user/user_tasks_dto.dart';
@@ -45,6 +46,7 @@ export 'data/models/response/user_plan_day_detail_response.dart';
 export 'data/models/response/user_plan_day_completion_status_response.dart';
 
 // Data - Datasources
+export 'data/datasource/plans_local_datasource.dart';
 export 'data/datasource/plans_remote_datasource.dart';
 export 'data/datasource/user_plans_remote_datasource.dart';
 export 'data/datasource/plan_days_remote_datasource.dart';
@@ -62,6 +64,7 @@ export 'data/repositories/author_repository.dart';
 
 // Data - Utils
 export 'data/utils/plan_utils.dart';
+export 'data/utils/plan_date_format.dart';
 
 // Presentation - Providers
 export 'presentation/providers/plan_search_provider.dart';
@@ -88,6 +91,10 @@ export 'presentation/widgets/plan_preview/plan_preview_details.dart';
 export 'presentation/widgets/plan_preview/preview_activity_list.dart';
 export 'presentation/widgets/plan_track/plan_details.dart';
 export 'presentation/widgets/plan_track/activity_list.dart';
+export 'presentation/widgets/plan_track/missed_days_badge.dart';
+export 'presentation/widgets/plan_track/on_track_badge.dart';
+export 'presentation/widgets/plan_track/plan_date_range_label.dart';
+export 'presentation/widgets/plan_track/enrolled_plan_status_indicator.dart';
 export 'presentation/widgets/plan_cover_image.dart';
 
 // Presentation - Search

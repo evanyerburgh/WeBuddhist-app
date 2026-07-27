@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/features/plans/data/models/plan_video_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 
 class UserPlanDayDetailResponse {
@@ -5,12 +6,22 @@ class UserPlanDayDetailResponse {
   final int dayNumber;
   final List<UserTasksDto> tasks;
   final bool isCompleted;
+  final String? audioUrl;
+  final int? audioDurationMs;
+  final String? thumbnailUrl;
+  final String? shareableImageUrl;
+  final List<PlanVideoModel> videos;
 
   UserPlanDayDetailResponse({
     required this.id,
     required this.dayNumber,
     required this.tasks,
     required this.isCompleted,
+    this.audioUrl,
+    this.audioDurationMs,
+    this.thumbnailUrl,
+    this.shareableImageUrl,
+    this.videos = const [],
   });
 
   factory UserPlanDayDetailResponse.fromJson(Map<String, dynamic> json) {
@@ -24,6 +35,18 @@ class UserPlanDayDetailResponse {
               )
               .toList(),
       isCompleted: json['is_completed'] as bool,
+      audioUrl: json['audio_url'] as String?,
+      audioDurationMs: json['audio_duration_ms'] as int?,
+      thumbnailUrl: json['thumbnail_url'] as String?,
+      shareableImageUrl: json['shareable_image_url'] as String?,
+      videos:
+          json['videos'] != null
+              ? (json['videos'] as List<dynamic>)
+                  .map(
+                    (e) => PlanVideoModel.fromJson(e as Map<String, dynamic>),
+                  )
+                  .toList()
+              : const [],
     );
   }
 
@@ -33,6 +56,11 @@ class UserPlanDayDetailResponse {
       'day_number': dayNumber,
       'tasks': tasks.map((e) => e.toJson()).toList(),
       'is_completed': isCompleted,
+      'audio_url': audioUrl,
+      'audio_duration_ms': audioDurationMs,
+      'thumbnail_url': thumbnailUrl,
+      'shareable_image_url': shareableImageUrl,
+      'videos': videos.map((e) => e.toJson()).toList(),
     };
   }
 }

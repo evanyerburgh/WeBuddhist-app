@@ -1,17 +1,30 @@
 import 'package:flutter_pecha/features/plans/data/models/plan_tasks_model.dart';
+import 'package:flutter_pecha/features/plans/data/models/plan_video_model.dart';
 
 class PlanDaysModel {
   final String id;
   final int dayNumber;
   final String? title;
   final List<PlanTasksModel>? tasks;
+  final String? audioUrl;
+  final int? audioDurationMs;
+  final String? thumbnailUrl;
+  final String? shareableImageUrl;
+  final List<PlanVideoModel> videos;
 
   PlanDaysModel({
     required this.id,
     required this.dayNumber,
     this.title,
     this.tasks,
+    this.audioUrl,
+    this.audioDurationMs,
+    this.thumbnailUrl,
+    this.shareableImageUrl,
+    this.videos = const [],
   });
+
+  bool get hasAudio => audioUrl != null;
 
   factory PlanDaysModel.fromJson(Map<String, dynamic> json) {
     return PlanDaysModel(
@@ -26,6 +39,18 @@ class PlanDaysModel {
                   )
                   .toList()
               : null,
+      audioUrl: json['audio_url'] as String?,
+      audioDurationMs: json['audio_duration_ms'] as int?,
+      thumbnailUrl: json['thumbnail_url'] as String?,
+      shareableImageUrl: json['shareable_image_url'] as String?,
+      videos:
+          json['videos'] != null
+              ? (json['videos'] as List<dynamic>)
+                  .map(
+                    (e) => PlanVideoModel.fromJson(e as Map<String, dynamic>),
+                  )
+                  .toList()
+              : const [],
     );
   }
 
@@ -35,37 +60,42 @@ class PlanDaysModel {
       'day_number': dayNumber,
       'title': title,
       'tasks': tasks?.map((e) => e.toJson()).toList(),
+      'audio_url': audioUrl,
+      'audio_duration_ms': audioDurationMs,
+      'thumbnail_url': thumbnailUrl,
+      'shareable_image_url': shareableImageUrl,
+      'videos': videos.map((e) => e.toJson()).toList(),
     };
   }
 
-  /// Create a copy of this plan item with optional field updates
   PlanDaysModel copyWith({
     String? id,
     int? dayNumber,
     String? title,
     List<PlanTasksModel>? tasks,
+    String? audioUrl,
+    int? audioDurationMs,
+    String? thumbnailUrl,
+    String? shareableImageUrl,
+    List<PlanVideoModel>? videos,
   }) {
     return PlanDaysModel(
       id: id ?? this.id,
       dayNumber: dayNumber ?? this.dayNumber,
       title: title ?? this.title,
       tasks: tasks ?? this.tasks,
+      audioUrl: audioUrl ?? this.audioUrl,
+      audioDurationMs: audioDurationMs ?? this.audioDurationMs,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      shareableImageUrl: shareableImageUrl ?? this.shareableImageUrl,
+      videos: videos ?? this.videos,
     );
   }
 
-  /// Check if this plan item is soft deleted
   bool get isDeleted => false;
-
-  /// Check if this plan item is active (not deleted)
   bool get isActive => !isDeleted;
-
-  /// Get a human-readable day label (e.g., "Day 1", "Day 2")
   String get dayLabel => 'Day $dayNumber';
-
-  /// Check if this is the first day of the plan
   bool get isFirstDay => dayNumber == 1;
-
-  /// Validate that day number is positive
   bool get isValidDayNumber => dayNumber > 0;
 
   @override
@@ -80,7 +110,6 @@ class PlanDaysModel {
   int get hashCode => Object.hash(id, dayNumber);
 
   @override
-  String toString() {
-    return 'PlanDaysModel(id: $id, dayNumber: $dayNumber, isDeleted: $isDeleted)';
-  }
+  String toString() =>
+      'PlanDaysModel(id: $id, dayNumber: $dayNumber, hasAudio: $hasAudio)';
 }

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_pecha/core/cache/cache_service.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_pecha/core/config/api_config.dart';
 import 'package:flutter_pecha/core/network/ai_dio_client.dart';
 import 'package:flutter_pecha/core/network/auth_service_token_provider.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_pecha/core/storage/storage_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/ai/config/ai_config.dart';
 import 'package:flutter_pecha/features/auth/auth_service.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 
 // ============ Logger ============
 
@@ -84,28 +86,49 @@ final errorInterceptorProvider = Provider<ErrorInterceptor>((ref) {
   return ErrorInterceptor(ref.watch(loggerProvider));
 });
 
-/// Provider for CacheInterceptor
-final cacheInterceptorProvider = Provider<CacheInterceptor>((ref) {
-  return CacheInterceptor(ref.watch(loggerProvider));
+/// Provider for TimezoneInterceptor (adds X-Timezone to all requests)
+final timezoneInterceptorProvider = Provider<TimezoneInterceptor>((ref) {
+  return TimezoneInterceptor(ref.watch(loggerProvider));
 });
 
-/// Provider for RetryInterceptor
-final retryInterceptorProvider = Provider<RetryInterceptor>((ref) {
+/// Callback invoked by a [RetryInterceptor] when a token renewal fails
+/// *permanently* (refresh token gone/revoked). Flips auth state to logged-out
+/// so the router redirects to login while preserving the intended route.
+///
+/// The notifier is read lazily (not watched) to avoid Riverpod circular-init:
+/// the interceptor is part of the Dio client that the auth notifier ultimately
+/// depends on, so it must not construct the notifier at provider-build time.
+void Function() _authExpiredHandler(Ref ref) {
   final logger = ref.watch(loggerProvider);
-  final authService = ref.watch(authServiceProvider);
+  return () async {
+    try {
+      await ref.read(authProvider.notifier).handleSessionExpired();
+    } catch (e) {
+      logger.warning('Failed to handle session expiry', e);
+    }
+  };
+}
 
+/// Provider for RetryInterceptor (main API Dio client)
+final retryInterceptorProvider = Provider<RetryInterceptor>((ref) {
   return RetryInterceptor(
-    logger,
-    authService,
-    // When token refresh fails, clear credentials to trigger re-authentication
-    () async {
-      try {
-        await authService.localLogout();
-        logger.info('Logged out due to expired token refresh');
-      } catch (e) {
-        logger.warning('Failed to logout after token refresh failure', e);
-      }
-    },
+    ref.watch(loggerProvider),
+    ref.watch(authServiceProvider),
+    _authExpiredHandler(ref),
+  );
+});
+
+/// Provider for a dedicated RetryInterceptor for the AI Dio client.
+///
+/// A separate instance is required because [RetryInterceptor.configure] binds
+/// its internal retry-Dio to one parent's [BaseOptions]; the AI client has a
+/// different base URL. Both instances funnel renewal through the single
+/// in-flight future in [AuthService], so there is no double-refresh.
+final aiRetryInterceptorProvider = Provider<RetryInterceptor>((ref) {
+  return RetryInterceptor(
+    ref.watch(loggerProvider),
+    ref.watch(authServiceProvider),
+    _authExpiredHandler(ref),
   );
 });
 
@@ -134,6 +157,7 @@ final dioClientProvider = Provider<DioClient>((ref) {
   return DioClient(
     options: ref.watch(_dioBaseOptionsProvider),
     authInterceptor: ref.watch(authInterceptorProvider),
+    timezoneInterceptor: ref.watch(timezoneInterceptorProvider),
     loggingInterceptor: ref.watch(loggingInterceptorProvider),
     errorInterceptor: ref.watch(errorInterceptorProvider),
     cacheInterceptor: ref.watch(cacheInterceptorProvider),
@@ -171,13 +195,18 @@ final _aiDioBaseOptionsProvider = Provider<BaseOptions>((ref) {
 /// This is a dedicated HTTP client for AI endpoints. It uses the AI_URL
 /// base URL and automatically adds auth tokens via AuthService TokenProvider.
 final aiDioClientProvider = Provider<AiDioClient>((ref) {
+  final aiRetryInterceptor = ref.watch(aiRetryInterceptorProvider);
   return AiDioClient(
     options: ref.watch(_aiDioBaseOptionsProvider),
+    // Order mirrors DioClient: auth → timezone → retry (401 refresh) → error → logging.
     interceptors: [
       ref.watch(authInterceptorProvider),
-      ref.watch(loggingInterceptorProvider),
+      ref.watch(timezoneInterceptorProvider),
+      aiRetryInterceptor,
       ref.watch(errorInterceptorProvider),
+      ref.watch(loggingInterceptorProvider),
     ],
+    retryInterceptor: aiRetryInterceptor,
   );
 });
 
@@ -192,3 +221,30 @@ final aiDioProvider = Provider<Dio>((ref) {
 final cacheServiceProvider = Provider<CacheService>((ref) {
   return CacheService.instance;
 });
+
+// ============ App Info ============
+
+/// Resolves once and caches the result for the lifetime of the app.
+/// Callers that only need the version string can use [appVersionLabelProvider].
+final packageInfoProvider = FutureProvider<PackageInfo>((ref) async {
+  try {
+    return await PackageInfo.fromPlatform();
+  } catch (_) {
+    return PackageInfo(
+      appName: '',
+      packageName: '',
+      version: '',
+      buildNumber: '',
+    );
+  }
+});
+
+/// Human-readable label, e.g. "Version 2.5.5".
+/// Returns an empty string until the info is available or on failure.
+final appVersionLabelProvider = Provider<String>((ref) {
+  return ref.watch(packageInfoProvider).maybeWhen(
+    data: (info) => info.version.isNotEmpty ? 'Version ${info.version}' : '',
+    orElse: () => '',
+  );
+});
+

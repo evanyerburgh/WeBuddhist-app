@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
@@ -16,8 +17,7 @@ class LibrarySearchDelegate extends SearchDelegate<Map<String, String>?> {
 
   @override
   ThemeData appBarTheme(BuildContext context) {
-    final language = ref.watch(localeProvider).languageCode;
-    final fontSize = language == 'bo' ? 22.0 : 18.0;
+    final fontSize = getLocalizedFontSize(AppTextSize.title);
 
     return Theme.of(context).copyWith(
       appBarTheme: AppBarTheme(
@@ -86,10 +86,10 @@ class LibrarySearchDelegate extends SearchDelegate<Map<String, String>?> {
     if (query.isEmpty) {
       return Container(
         color: Theme.of(context).scaffoldBackgroundColor,
-        child: const Center(
+        child: Center(
           child: Text(
-            'Type to search',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+            AppLocalizations.of(context)!.text_search_hint,
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
         ),
       );
@@ -99,10 +99,10 @@ class LibrarySearchDelegate extends SearchDelegate<Map<String, String>?> {
     if (!_hasSubmitted || _submittedQuery.isEmpty) {
       return Container(
         color: Theme.of(context).scaffoldBackgroundColor,
-        child: const Center(
+        child: Center(
           child: Text(
-            "Press search button to search",
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+            AppLocalizations.of(context)!.text_search_press_button,
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
         ),
       );
@@ -129,20 +129,22 @@ class LibrarySearchDelegate extends SearchDelegate<Map<String, String>?> {
           error: (error, stackTrace) {
             return ErrorStateWidget(
               error: error,
-              customMessage: 'Unable to perform search.\nPlease try again.',
+              customMessage: AppLocalizations.of(context)!.text_search_error,
             );
           },
           data: (searchResponseEither) {
             return searchResponseEither.fold(
               (failure) => ErrorStateWidget(
                 error: failure,
-                customMessage: 'Search failed.\nPlease try again.',
+                customMessage: AppLocalizations.of(context)!.text_search_error,
               ),
               (searchResponse) {
                 if (searchResponse.sources.isEmpty) {
                   return Center(
                     child: Text(
-                      'No results found for "$_submittedQuery"',
+                      AppLocalizations.of(
+                        context,
+                      )!.search_no_results(_submittedQuery),
                       style: const TextStyle(fontSize: 16),
                     ),
                   );
@@ -159,17 +161,20 @@ class LibrarySearchDelegate extends SearchDelegate<Map<String, String>?> {
                     };
                   }
                   for (final segmentMatch in source.segmentMatches) {
-                    (groupedResults[source.text.textId]!['segments'] as List).add({
-                      'segmentId': segmentMatch.segmentId,
-                      'content': segmentMatch.content,
-                    });
+                    (groupedResults[source.text.textId]!['segments'] as List)
+                        .add({
+                          'segmentId': segmentMatch.segmentId,
+                          'content': segmentMatch.content,
+                        });
                   }
                 }
 
                 if (groupedResults.isEmpty) {
                   return Center(
                     child: Text(
-                      'No results found for "$_submittedQuery"',
+                      AppLocalizations.of(
+                        context,
+                      )!.search_no_results(_submittedQuery),
                       style: const TextStyle(fontSize: 16),
                     ),
                   );
@@ -179,7 +184,7 @@ class LibrarySearchDelegate extends SearchDelegate<Map<String, String>?> {
                 final language = ref.watch(localeProvider).languageCode;
                 final fontFamily = getFontFamily(language);
                 final lineHeight = getLineHeight(language);
-                final fontSize = language == 'bo' ? 22.0 : 18.0;
+                final fontSize = getLocalizedFontSize(AppTextSize.content);
 
                 return Container(
                   color: Colors.transparent,
@@ -243,9 +248,12 @@ class LibrarySearchDelegate extends SearchDelegate<Map<String, String>?> {
                                         padding: const EdgeInsets.all(12.0),
                                         decoration: BoxDecoration(
                                           color: Theme.of(context).cardColor,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           border: Border.all(
-                                            color: Theme.of(context).dividerColor,
+                                            color:
+                                                Theme.of(context).dividerColor,
                                             width: 1,
                                           ),
                                         ),

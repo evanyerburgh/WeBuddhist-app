@@ -13,10 +13,14 @@ class ProtectedRoutes {
     // User profile
     '/users/info',
     '/users/upload',
+    '/users/username',
 
     // User progress - all /users/me routes require auth
     '/users/me',
     '/users/me/', // Catch-all: matches all /users/me/* paths
+    '/users/me/push-devices', // Push device token registration
+
+
     '/users/me/plans',
     '/users/me/plans/{planId}',
     '/users/me/plans/{planId}/', // Matches sub-paths like /plans/123/tasks
@@ -39,11 +43,34 @@ class ProtectedRoutes {
     '/threads/{threadId}',
     '/threads/{threadId}/', // Catch-all for thread sub-paths
 
+    // Timers
+    '/timers',
+    '/timers/', // Catch-all for timer sub-paths like /timers/user/timer_stop
+
     // Routines
     '/routines',
     '/routines/{routineId}/time-blocks',
     '/routines/{routineId}/time-blocks/{timeBlockId}',
     '/users/me/routine',
+
+    // Series enrollment
+    '/users/me/series',
+
+    // Mala accumulators (user-specific counts). The public preset catalogue
+    // (`/accumulators/presets`) is only ever fetched by authenticated users, so
+    // a catch-all is safe and also covers detail, create, and update — all of
+    // which are user-scoped and 403 without a token.
+    '/accumulators/', // Catch-all: detail, create (/user), update (/user/{id})
+
+    // Group accumulator counts (submit requires auth).
+    '/group-accumulators/', // Catch-all: POST count, GET detail, etc.
+
+    // Group join / follow
+    '/author/groups/{groupId}/join',
+    '/author/groups/{groupId}/follow',
+
+    // Group accumulators (group prayer accumulations)
+    '/group-accumulators/',
 
     // Plans (public endpoints but may need auth for user-specific data)
     '/plans/{planId}',
@@ -55,6 +82,15 @@ class ProtectedRoutes {
   /// The token is sent when the user is authenticated; silently skipped for guests.
   static const List<String> optionalPaths = [
     '/plans/{planId}/days',
+    // Series list/detail: sends auth when logged in so the response includes
+    // user-enriched fields like `progress` and `partner`.
+    '/series',
+    '/series/{id}',
+    '/series/featured',
+    '/author/groups',
+    // Group detail + members: sends auth when logged in so fields like
+    // `is_group_enrolled` reflect the current user (anonymous GET → false).
+    '/author/groups/',
   ];
 
   /// Check if a given path is protected (requires authentication).
